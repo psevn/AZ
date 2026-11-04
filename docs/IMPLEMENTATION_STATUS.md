@@ -8,7 +8,7 @@ Last checked: 2026-11-04. This file records observed repository/database state; 
 - Region: `ap-south-1` (Mumbai)
 - Status: `ACTIVE_HEALTHY`
 - PostgreSQL: 17.11
-- Applied migrations: 10 (5 original foundation migrations + 5 security migrations)
+- Applied migrations: 11 (5 original foundation migrations + 6 security migrations)
 - Public tables observed: `profiles`, `subjects`, `tasks`, `focus_sessions`, `documents`, `notes`, `quizzes`, `quiz_questions`, `quiz_attempts`, `ai_usage_log`.
 - RLS is enabled on all 10 observed public tables.
 - The `documents` Storage bucket is private and PDF-only.
