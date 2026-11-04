@@ -23,7 +23,7 @@ Cut order if we slip (nothing removed now): P2 first — Home polish → Ask. P0
 
 ## Stage B — Foundation (walking skeleton slice: sign up → create subject → see it, deployed, with isolation proven)
 
-> Progress note: Supabase database foundation and security migrations have been applied partially. This does **not** complete Stage B: app shell, Auth flow, deployment, credit RPCs, and required end-to-end isolation/concurrency tests remain open. See `IMPLEMENTATION_STATUS.md`.
+> Progress note: Supabase database foundation/security is partial. The initial web scaffold and Auth/subjects code are committed, but have not yet been built or runtime-tested locally. Invite-code gating, complete navigation, deployment, credit RPCs, and end-to-end isolation/concurrency tests remain open. See `IMPLEMENTATION_STATUS.md`.
 - [x] Initial repo scaffold, `.gitignore`, `.env.example`, README. No secrets are committed; Edge Function secrets will be configured when functions are introduced.
 - [ ] Migration: all tables in SPEC §5.4, composite FKs, RLS policies, private storage bucket + policies.
 - [ ] Auth + invite code; app shell (4 tabs, AR/EN + RTL, dark mode, responsive, PWA manifest); deploy.
@@ -33,7 +33,7 @@ Cut order if we slip (nothing removed now): P2 first — Home polish → Ask. P0
 ## Stage C — PDF → quiz experiment (decides quality and cost)
 Slices: (1) upload + status machine, (2) extraction with page numbers, (3) summary with source pages, (4) quiz generation, (5) server grading + attempts.
 - Upload: PDF only; configurable limits (start 20 MB / 80 pages); scanned PDFs rejected clearly; sha256 dedup.
-- Status `uploaded/processing/completed/failed`; atomic claim; max 3 retries; stuck-processing sweep; double-trigger test processes once.
+- Status `uploaded/processing/ready/failed`; atomic claim; max 3 retries; stuck-processing sweep; double-trigger test processes once.
 - Measure Edge Function CPU/memory on real PDFs (Arabic and English, small and 80-page); apply fallbacks in SPEC §6 if needed.
 - Every question: correct answer, explanation, source page, evidence quote (checked automatically against page text); unsupported material → "not enough support".
 - Browser never receives answer keys before submission; grading server-side; forged answers rejected.
