@@ -30,6 +30,8 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 - Ambassador program: after beta; count activated users (not sign-ups), higher points for paid conversions, rewards in AI credits/free Pro months/titles, pseudonymous leaderboard, universities only (schools need legal review), start with 3–5 ambassadors.
 - Cafe/library/neon concept: separate EZORD-level idea, revisit only after AZ is profitable. Cheap test later: partner discount with an existing cafe/bookstore. Coffee-redeemable points = financial liability; not in AZ.
 - Native apps, payments, real Groups, Arena, Community, XP.
+- **AZ Connect** (students command Claude/ChatGPT to create files/quizzes inside AZ): V2 candidate. Conditions: API-first design now; scoped OAuth tokens; any path that triggers AZ's own AI goes through the credit system; prompt-injection review; verify third-party integration platforms/policies at that time; prototype on the owner's account after beta.
+- **Claude ↔ ChatGPT automation** (Codex GitHub review, bridges/MCP between the tools): postponed to V1.5 (decided 2026-11-04). Until then ChatGPT only verifies: the owner relays by pasting files or sharing the repo link. No third-party bridge tools, no paid subscriptions for this. Rule when revisited: one agent per branch at a time, no auto-reply loops, check what the owner's ChatGPT plan includes before paying.
 
 ## Open (need a decision)
 1. How Stage B gets built (Claude Code needs a paid plan; deferred; owner cannot subscribe now).
