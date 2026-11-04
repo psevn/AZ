@@ -1,6 +1,6 @@
 # AZ — V1 Specification (v0.2, Stage A)
 
-Status: DRAFT v0.2 — incorporates the ChatGPT review relayed by PSEVN on 2026-11-04. Changes marked **[v0.2]** need PSEVN's explicit approval before they count as decided. Nothing is built. Items marked **[VERIFY]** depend on current provider terms/prices and must be checked on the official page first.
+Status: DRAFT v0.2 — incorporates the ChatGPT review relayed by PSEVN on 2026-11-04. Changes marked **[v0.2]** need PSEVN's explicit approval before they count as decided. Supabase foundation/security migrations are partially applied; the web app source code and Edge Functions are not built. See `IMPLEMENTATION_STATUS.md` for verified state. Items marked **[VERIFY]** depend on current provider terms/prices and must be checked on the official page first.
 
 ## 1. Product
 
