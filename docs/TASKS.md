@@ -22,6 +22,8 @@ Cut order if we slip (nothing removed now): P2 first — Home polish → Ask. P0
 - [ ] Confirm old Supabase project deleted.
 
 ## Stage B — Foundation (walking skeleton slice: sign up → create subject → see it, deployed, with isolation proven)
+
+> Progress note: Supabase database foundation and security migrations have been applied partially. This does **not** complete Stage B: app shell, Auth flow, deployment, credit RPCs, and required end-to-end isolation/concurrency tests remain open. See `IMPLEMENTATION_STATUS.md`.
 - [ ] Repo, `.gitignore`, `.env.example`, README; secrets only in function secrets.
 - [ ] Migration: all tables in SPEC §5.4, composite FKs, RLS policies, private storage bucket + policies.
 - [ ] Auth + invite code; app shell (4 tabs, AR/EN + RTL, dark mode, responsive, PWA manifest); deploy.
