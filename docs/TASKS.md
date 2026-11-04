@@ -59,5 +59,12 @@ Slices: (1) upload + status machine, (2) extraction with page numbers, (3) summa
 - [ ] Legal check before charging (professional).
 - [ ] Waitlist/landing; unbuilt features labeled "concept / coming soon".
 
+## Post-web phase — Android + iOS apps (planned next; not part of V1)
+- [ ] Review web MVP stability, beta feedback, and mobile-specific user needs.
+- [ ] Choose the implementation route (Capacitor vs React Native/Expo) based on reuse, native UX requirements, and maintenance cost; record the decision before coding.
+- [ ] Build mobile-specific navigation and screens while reusing Supabase Auth, database, Storage, and Edge Function APIs.
+- [ ] Test sign-in/session handling, data sync, file access, and core study flows on supported Android and iOS devices.
+- [ ] Complete platform privacy, security, accessibility, and store-release checks before publishing.
+
 ## Accounts/decisions the owner handles personally
 GitHub (repo AZ), Supabase, Cloudflare, AI provider account with a spend limit, domain (deferred), Claude Code access (deferred), legal advice. Never paste keys into chat.
