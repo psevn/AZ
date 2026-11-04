@@ -93,3 +93,18 @@ Read-only inspection of current constraints and storage policies found:
 - **Account-deletion item:** relational rows have `ON DELETE CASCADE` references to `auth.users`, but Storage objects are not deleted by relational cascades. The future account-deletion backend must explicitly remove each user's objects from the `documents` bucket before/while deleting the Auth user, and verify no orphaned files remain.
 
 No additional schema migration was applied during this read-only review. These items are recorded as implementation follow-ups, not completed functionality.
+
+
+## Stage B web scaffold — committed, not yet runtime-verified
+
+Checked on 2026-11-04:
+
+- PSEVN approved SPEC v0.2 as the V1 implementation baseline; the approval is recorded in `DECISIONS.md`, `SPEC.md`, and `TASKS.md`.
+- Added the first React + TypeScript + Vite web app scaffold under `src/`.
+- Added Arabic-first responsive sign-up/sign-in UI, English toggle, RTL/LTR, dark/light theme, and a basic authenticated subjects list.
+- The browser client uses only the Supabase Project URL and Publishable key. No service-role key or secret is present in frontend source.
+- Subject reads and inserts use the existing `public.subjects` table and rely on its authenticated RLS policies. The insert uses the user ID returned by Supabase Auth; RLS remains the enforcement boundary.
+- Added `.env.example`, `.gitignore`, `README.md`, and a basic PWA manifest.
+- Dependencies are pinned to exact versions in `package.json`. A `package-lock.json` must be generated and committed by running `npm install` in the owner's local project.
+- **Not yet runtime-verified:** no local build, browser sign-up/sign-in test, two-user isolation test, or production deployment has been run. The Supabase Publishable key has not been placed in local environment configuration. Do not describe this as a working deployed app yet.
+- Remaining Stage B work includes invite-code gating, complete app navigation, credit RPCs, end-to-end tests, PWA offline support, deployment, and verification of email redirect settings.
