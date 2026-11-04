@@ -1,6 +1,6 @@
 # AZ — V1 Specification (v0.2, Stage A)
 
-Status: DRAFT v0.2 — incorporates the ChatGPT review relayed by PSEVN on 2026-11-04. Changes marked **[v0.2]** need PSEVN's explicit approval before they count as decided. Supabase foundation/security migrations are partially applied; the web app source code and Edge Functions are not built. See `IMPLEMENTATION_STATUS.md` for verified state. Items marked **[VERIFY]** depend on current provider terms/prices and must be checked on the official page first.
+Status: APPROVED v0.2 — PSEVN approved the eight proposed technical corrections on 2026-11-04. Changes marked **[v0.2]** are part of the approved V1 baseline. Supabase foundation/security migrations are partially applied; the web app source code and Edge Functions are not built. See `IMPLEMENTATION_STATUS.md` for verified state. Items marked **[VERIFY]** depend on current provider terms/prices and must be checked on the official page first.
 
 ## 1. Product
 
@@ -101,7 +101,7 @@ Each parent table has `UNIQUE (id, user_id)`; each child uses a **composite fore
 - `subjects(id, user_id, name, exam_date)`
 - `tasks(id, user_id, subject_id, title, note, due_at, priority, est_minutes, status)`
 - `focus_sessions(id, user_id, task_id, started_at, ended_at, minutes)`
-- `documents(id, user_id, subject_id, title, storage_path, sha256, page_count, kind[slides|notes|past_exam|other], status[uploaded|processing|completed|failed], failed_reason, attempts, locked_at, processed_at)`
+- `documents(id, user_id, subject_id, title, storage_path, sha256, page_count, kind[slides|notes|past_exam|other], status[uploaded|processing|ready|failed], failed_reason, attempts, locked_at, processed_at)`
 - `document_pages(id, user_id, document_id, page_no, text)`
 - `summaries(id, user_id, document_id, content, source_pages[], provider, model, prompt_version)`
 - `quizzes(id, user_id, document_id, mode[standard|professional], created_at)`
