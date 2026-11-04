@@ -65,3 +65,19 @@ Checked on 2026-11-04:
 **Do not recreate these five files from the current schema and label them as originals.** That would hide migration drift and may fail to reproduce triggers, policies, functions, storage configuration, or ordering.
 
 Next action: retrieve the exact five SQL files from the environment/tool that originally created/applied them (likely the original local/Claude working directory), then commit those exact files to `supabase/migrations/`. Until then, a clean database cannot be reliably rebuilt from this repository alone.
+
+## Least-privilege grants for user-managed tables — applied
+
+Migration `20261104150300_limit_client_table_grants_to_crud.sql` was applied to the live Supabase database and committed to GitHub.
+
+- For `subjects`, `tasks`, `focus_sessions`, and `notes`, the `authenticated` role now has only SELECT, INSERT, UPDATE, and DELETE table privileges.
+- Excess table privileges such as TRUNCATE, TRIGGER, and REFERENCES were revoked from browser clients.
+- No table-level privileges were granted to `anon`.
+- Existing per-user RLS policies remain in place.
+- Post-migration grant inspection confirmed exactly the four intended CRUD privileges for authenticated clients on these four tables.
+
+## Latest advisor review
+
+- Security advisor: one INFO finding remains on `private.question_keys` because RLS is enabled and there are deliberately no client policies (default-deny).
+- Performance advisor: 17 INFO findings report unused indexes. The project has no meaningful production workload/data yet; these indexes are not dropped merely to silence the advisor. Reassess after representative queries and load testing.
+- These advisor INFO findings are not proof of end-to-end authorization correctness. Authenticated multi-user tests remain outstanding.
