@@ -1,0 +1,17 @@
+{
+  "name": "AZ — Academic Space",
+  "short_name": "AZ",
+  "description": "Your academic space.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10131d",
+  "theme_color": "#10131d",
+  "icons": [
+    {
+      "src": "/az-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
