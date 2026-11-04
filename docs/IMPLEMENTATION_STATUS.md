@@ -52,3 +52,16 @@ The Supabase security advisor reports one INFO finding because `private.question
 3. Connect the app/API to the grading RPC and test through the actual UI.
 4. Implement the remaining V1 schema and credit controls only against the approved specification.
 5. Reconcile Stage A/Stage B documentation after PSEVN confirms the pending v0.2 decisions.
+
+## Migration-source recovery — blocked pending original files
+
+Checked on 2026-11-04:
+
+- Supabase migration history confirms the first five versions/names are `20261104141452 core_schema`, `20261104141502 storage`, `20261104142612 storage_documents_policies`, `20261104143417 fk_covering_indexes_and_storage_path_check`, and `20261104143425 profile_autocreate_and_handoff_comments`.
+- The Supabase migration-history interface exposes version/name metadata only; it does not return the original SQL bodies.
+- The GitHub `main` tree contains only the five security migration files, not the five original foundation files.
+- No exact original SQL source was found in prior project context. The local working copy is known to be `C:\\Users\\ASUS\\Projects\\AZ`, but this session cannot read files from that Windows path.
+
+**Do not recreate these five files from the current schema and label them as originals.** That would hide migration drift and may fail to reproduce triggers, policies, functions, storage configuration, or ordering.
+
+Next action: retrieve the exact five SQL files from the environment/tool that originally created/applied them (likely the original local/Claude working directory), then commit those exact files to `supabase/migrations/`. Until then, a clean database cannot be reliably rebuilt from this repository alone.
