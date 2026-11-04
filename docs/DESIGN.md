@@ -143,3 +143,37 @@ The following require confirmation from the original brand assets before being l
 - Final shape, radius, shadow, and elevation tokens.
 
 Until those inputs are verified, treat them as open design-system decisions rather than facts.
+
+## Future-Forward Web Experience Direction
+
+This section records the product experience direction discussed with the founder. It is a design ambition and exploration brief, not permission to add every effect indiscriminately or a finalized implementation specification.
+
+The goal is to make AZ feel like a product from the next generation of the web: exceptionally fluid, responsive, agile, immersive, and polished. The ambition is to exceed familiar premium-web expectations through AZ's own identity, not by copying Apple or another product.
+
+### Experience pillars
+
+1. **Fluidity** — Smooth, coherent transitions and immediate feedback. The interface should never feel heavy or sluggish.
+2. **Spatial UI** — Meaningful depth, layered surfaces, and a clear sense of spatial presence. Layers must improve hierarchy and comprehension.
+3. **Cursor Interaction** — On pointer-capable devices, the cursor may influence ambient lighting, selected elements, and subtle interface responses.
+4. **Living Background** — A calm, dynamic background that can respond to pointer movement without distracting from studying or planning.
+5. **Micro-interactions** — Deliberate visual feedback for clicks, loading, success, completion, and other meaningful state changes.
+6. **Intelligent Motion** — Motion should explain relationships, guide attention, communicate state, and support orientation; never motion for spectacle alone.
+7. **Performance** — High perceived and actual speed, low resource use, and excellent usability on modest hardware as well as powerful devices.
+
+### Design and engineering guardrails
+
+- Preserve AZ's distinctive brand identity; do not imitate another brand's visual language.
+- Keep academic work, reading, planning, and focus as the visual priority. Effects must not compete with content.
+- Prefer subtle, purposeful motion over constant animation.
+- Respect reduced-motion preferences and provide a complete usable experience without pointer effects, including on touch devices.
+- Treat cursor-reactive effects as progressive enhancement, not a required interaction.
+- Avoid expensive blur, large continuously animated surfaces, excessive DOM work, and unnecessary GPU effects.
+- Keep interactions responsive under realistic low-end device and battery constraints; measure performance rather than assuming effects are cheap.
+- Maintain accessible contrast, keyboard navigation, clear focus states, and predictable controls.
+- Consider Arabic/RTL and English/LTR layouts in every motion and spatial interaction.
+- Do not implement this entire direction as one large visual effect. Explore, prototype, test, and selectively adopt effects where they measurably improve the experience.
+
+### Exploration status
+
+The founder intends to collect more references and ideas before finalizing the web experience. Treat this section as the current north-star direction. Specific motion curves, durations, pointer behavior, background techniques, component patterns, and performance budgets remain to be researched and agreed before implementation.
+
