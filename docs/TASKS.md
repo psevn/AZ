@@ -16,15 +16,15 @@ Time (draft, re-plan after the first slice with real hours): ~12.5–15 h/week �
 Cut order if we slip (nothing removed now): P2 first — Home polish → Ask. P0 never cut (see SPEC §12).
 
 ## Stage A — Plan
-- [ ] PSEVN approves SPEC v0.2 / DECISIONS v0.2 (the 8 proposed items).
+- [x] PSEVN approves SPEC v0.2 / DECISIONS v0.2 (the 8 proposed items) — approved 2026-11-04.
 - [ ] 3–5 course PDFs prepared (≥1 Arabic) for Stage C.
-- [ ] Decide how Stage B gets built (Claude Code access).
+- [x] Decide how Stage B gets built — initial scaffold/integration authored through the GitHub-assisted ChatGPT workflow; Claude Code remains deferred.
 - [ ] Confirm old Supabase project deleted.
 
 ## Stage B — Foundation (walking skeleton slice: sign up → create subject → see it, deployed, with isolation proven)
 
 > Progress note: Supabase database foundation and security migrations have been applied partially. This does **not** complete Stage B: app shell, Auth flow, deployment, credit RPCs, and required end-to-end isolation/concurrency tests remain open. See `IMPLEMENTATION_STATUS.md`.
-- [ ] Repo, `.gitignore`, `.env.example`, README; secrets only in function secrets.
+- [x] Initial repo scaffold, `.gitignore`, `.env.example`, README. No secrets are committed; Edge Function secrets will be configured when functions are introduced.
 - [ ] Migration: all tables in SPEC §5.4, composite FKs, RLS policies, private storage bucket + policies.
 - [ ] Auth + invite code; app shell (4 tabs, AR/EN + RTL, dark mode, responsive, PWA manifest); deploy.
 - [ ] Credit RPCs (`reserve/settle/refund`) + sweep job skeleton, tested with a mock provider.
