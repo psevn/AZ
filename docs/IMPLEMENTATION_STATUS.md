@@ -8,7 +8,7 @@ Last checked: 2026-11-04. This file records observed repository/database state; 
 - Region: `ap-south-1` (Mumbai)
 - Status: `ACTIVE_HEALTHY`
 - PostgreSQL: 17.11
-- Applied migrations: 8 (5 original foundation migrations + 3 quiz-security migrations)
+- Applied migrations: 9 (5 original foundation migrations + 4 security migrations)
 - Public tables observed: `profiles`, `subjects`, `tasks`, `focus_sessions`, `documents`, `notes`, `quizzes`, `quiz_questions`, `quiz_attempts`, `ai_usage_log`.
 - RLS is enabled on all 10 observed public tables.
 - The `documents` Storage bucket is private and PDF-only.
@@ -24,13 +24,22 @@ The following changes are applied to the live database and their migration files
 5. `public.submit_answer` is a SECURITY INVOKER RPC wrapper. It calls `private.submit_answer`, which is SECURITY DEFINER, verifies the caller with `auth.uid()`, checks question ownership and answer bounds, records the attempt, and returns correctness/explanation only after submission.
 6. Anonymous users cannot execute the grading RPC.
 
-Observed permission checks passed for the intended grants. The Supabase security advisor no longer reports an exposed SECURITY DEFINER RPC. It reports one INFO finding because `private.question_keys` has RLS enabled and deliberately has no policies; this is intentional default-deny behavior for the server-only answer-key table.
+## Additional client-permission hardening — applied
+
+Migration `20261104145529_restrict_client_writes_to_server_managed_tables.sql` was applied to the live database and committed to GitHub.
+
+- `documents` and `quizzes`: authenticated clients can SELECT only their own rows; direct client writes are revoked. Trusted backend functions must create/process them.
+- `ai_usage_log`: direct client writes are revoked; users retain SELECT access to their own rows under RLS.
+- `profiles`: authenticated users can SELECT their own profile and UPDATE only `display_name` and `language`; they cannot modify other columns such as plan/entitlement fields.
+- Post-migration checks confirmed the intended table grants and row policies.
+
+The Supabase security advisor previously reported one INFO finding because `private.question_keys` has RLS enabled and deliberately has no policies; this is intentional default-deny behavior for the server-only answer-key table.
 
 **Not yet runtime-tested:** the current tables contain no quiz rows, and no test-user JWT was available for an end-to-end RPC test. Do not mark quiz security acceptance tests complete until a real authenticated test submits both correct and incorrect answers and attempts cross-user/forged writes.
 
 ## Repository gaps
 
-- The current repository has the three new quiz-security migrations, but the five original foundation migration source files are still missing from GitHub. A fresh environment therefore cannot yet recreate the live database from the repository alone.
+- The current repository has four new security migrations, but the five original foundation migration source files are still missing from GitHub. A fresh environment therefore cannot yet recreate the live database from the repository alone.
 - No application source code is present in the inspected `main` tree.
 - No Supabase Edge Functions are deployed.
 - The live schema is not yet the complete V1 schema in `docs/SPEC.md`; several planned tables and credit/idempotency mechanisms remain unimplemented.
