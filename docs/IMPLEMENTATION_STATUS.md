@@ -39,7 +39,7 @@ The Supabase security advisor reports one INFO finding because `private.question
 
 ## Repository gaps
 
-- The current repository has five new security migrations, but the five original foundation migration source files are still missing from GitHub. A fresh environment therefore cannot yet recreate the live database from the repository alone.
+- The current repository has six security migration files, but the five original foundation migration source files are still missing from GitHub. A fresh environment therefore cannot yet recreate the live database from the repository alone.
 - No application source code is present in the inspected `main` tree.
 - No Supabase Edge Functions are deployed.
 - The live schema is not yet the complete V1 schema in `docs/SPEC.md`; several planned tables and credit/idempotency mechanisms remain unimplemented.
@@ -108,3 +108,13 @@ Checked on 2026-11-04:
 - Dependencies are pinned to exact versions in `package.json`. A `package-lock.json` must be generated and committed by running `npm install` in the owner's local project.
 - **Not yet runtime-verified:** no local build, browser sign-up/sign-in test, two-user isolation test, or production deployment has been run. The Supabase Publishable key has not been placed in local environment configuration. Do not describe this as a working deployed app yet.
 - Remaining Stage B work includes invite-code gating, complete app navigation, credit RPCs, end-to-end tests, PWA offline support, deployment, and verification of email redirect settings.
+
+
+## Migration inventory cross-check
+
+A follow-up comparison of the live Supabase migration history against the GitHub `supabase/migrations/` directory found a filename/version discrepancy that must be reconciled before relying on a clean database rebuild:
+
+- Live history reports `20261104145805 index_private_question_keys_owner_fk`.
+- GitHub currently contains `20261104145802_index_private_question_keys_owner_fk.sql`.
+- Do not rename or replay either migration until the exact applied SQL and source history are reconciled.
+- The original five foundation migration SQL bodies are not present in the repository's historical commits checked so far; the earliest planning commit contains only the three docs files. Recovery still requires the original authoring workspace or an exact SQL export/source.
