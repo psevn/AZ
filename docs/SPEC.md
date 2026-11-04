@@ -8,7 +8,7 @@ AZ is an AI academic platform for university students. V1 closes one loop, with 
 
 **Plan → Study → Practice → Review mistakes → Improve**
 
-Positioning: "The Life Operating System, starting with students." V1 covers Academic only. Web-first (responsive + installable PWA), Arabic/English with RTL from day one, dark mode first-class. Market: Qatar university students first.
+Positioning: "The Life Operating System, starting with students." V1 covers Academic only. Web-first (responsive + installable PWA), Arabic/English with RTL from day one, dark mode first-class. Market: Qatar university students first. Product sequence: launch the web product first, then make Android and iOS apps the next planned delivery after the web launch; native apps are outside V1.
 
 ## 2. V1 scope (unchanged)
 
@@ -64,6 +64,8 @@ Recommendation: **Supabase Edge Functions as the only backend; Cloudflare used f
 | Backend | Supabase Edge Functions | Workers (limits above); Calling AI from browser (leaks keys) |
 | Database/Auth/Storage | Supabase Postgres + Auth + private Storage bucket, RLS on every table | Firebase (NoSQL, lock-in); self-hosted Postgres (ops burden) |
 | AI | Provider-independent interface (§8) | Hardcoding one provider |
+
+Mobile readiness: keep the backend/API independent from the web UI, use stable authenticated endpoints and shared user data, and avoid browser-only assumptions in business logic. The later Android/iOS apps must reuse the same Supabase Auth, database, Storage, and Edge Function backend. The mobile UI will be designed for native device layouts rather than assumed to be a copy of desktop web. The implementation route (Capacitor vs React Native/Expo) is intentionally undecided until the web MVP is validated; no mobile framework or extra subscription is approved now.
 
 Region: Supabase Mumbai (ap-south-1) for V1; revisit for V2 after legal advice.
 
@@ -206,7 +208,7 @@ Dates are targets, not promises: launch is gated by quality gates (tests passing
 Free tier + Pro $6.99/month; $4.99 for the first 500 students (3 vs 6 months undecided). Payments deferred. Caps blank until Stage C. Margin check at the subscriber's full cap, including the $4.99 price.
 
 ## 14. Versions
-V1.0 beta → web launch (target early Feb 2027); V1.1 beta fixes + deferred items; V1.2 payments (after legal check); V1.3 real Groups; V2.0 GCC/North Africa + native-app decision (only when: weekly usage proven, a need the PWA can't meet, revenue justifies maintenance; cheapest route is wrapping the web app, e.g. Capacitor, verify then). Design now: responsive UI, API separate from frontend.
+V1.0 beta → web launch (target early Feb 2027); V1.1 beta fixes + deferred items; V1.2 payments (after legal check); V1.3 real Groups; post-web phase: Android + iOS apps are the next planned delivery, gated by a stable web MVP and a review of user feedback/capacity. Choose Capacitor vs React Native/Expo at that point; do not assume the choice now. Design now: responsive UI, API separate from frontend, shared authentication and data.
 
 ## 15. Working process
 Spec/criteria per stage → Claude Code implements → push to GitHub with a test report (changes, what was tested, results) → ChatGPT reviews (security, permissions, cost; repo link or pasted files; PSEVN relays) → fixes → next stage only when tests pass. No architecture change without review; no paid services without approval; "works" only with a test that ran.
