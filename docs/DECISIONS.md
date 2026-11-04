@@ -15,7 +15,7 @@ Last updated: 2026-11-04 (v0.2). Owner: PSEVN.
 - Process: Claude Code implements, ChatGPT reviews at end of each stage, owner relays via GitHub/files; tests must pass before the next stage.
 - Approval guardrail: no paid subscriptions/purchases or new implementation scope without PSEVN's explicit approval. Supabase foundation/security migrations already applied are historical implementation work documented in IMPLEMENTATION_STATUS.md; they do not mean V1 or Stage B is complete.
 
-## Proposed in v0.2 — pending PSEVN approval
+## Approved in v0.2 — PSEVN approval recorded 2026-11-04
 Technical corrections from the ChatGPT review (Claude agrees with all; none changes an approved decision):
 1. `user_id` on every user-content table + composite foreign keys (SPEC §5).
 2. Answer keys server-only; grading server-side (SPEC §7).
@@ -35,7 +35,7 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 
 ## Open (need a decision)
 1. Native app implementation route after web launch: evaluate Capacitor (reuse much of the web UI) vs React Native/Expo (more native UI); decide based on V1 needs, maintenance cost, and device requirements.
-2. How Stage B gets built (Claude Code needs a paid plan; deferred; owner cannot subscribe now).
+2. Stage B implementation route: the initial scaffold and integration work is being authored through the GitHub-assisted ChatGPT workflow; Claude Code remains deferred and no paid plan is approved.
 3. AI provider/model and monthly spend cap (after Stage C data).
 4. Final price; $4.99 promo length (3 vs 6 months).
 5. Whether Edge Function free-tier invocation quotas are enough [VERIFY in Stage B].
