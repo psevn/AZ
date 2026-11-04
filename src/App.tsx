@@ -96,14 +96,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!supabase) {
+    const client = supabase;
+    if (!client) {
       setAuthLoading(false);
       return;
     }
 
     let active = true;
     const loadInitialUser = async () => {
-      const { data, error: userError } = await supabase.auth.getUser();
+      const { data, error: userError } = await client.auth.getUser();
       if (!active) return;
       if (userError && userError.name !== "AuthSessionMissingError") {
         setError(userError.message);
@@ -113,7 +114,7 @@ export default function App() {
     };
 
     void loadInitialUser();
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = client.auth.onAuthStateChange((_event, session) => {
       if (!active) return;
       if (!session) {
         setUser(null);
