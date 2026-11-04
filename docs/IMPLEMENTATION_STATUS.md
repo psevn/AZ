@@ -81,3 +81,15 @@ Migration `20261104150300_limit_client_table_grants_to_crud.sql` was applied to 
 - Security advisor: one INFO finding remains on `private.question_keys` because RLS is enabled and there are deliberately no client policies (default-deny).
 - Performance advisor: 17 INFO findings report unused indexes. The project has no meaningful production workload/data yet; these indexes are not dropped merely to silence the advisor. Reassess after representative queries and load testing.
 - These advisor INFO findings are not proof of end-to-end authorization correctness. Authenticated multi-user tests remain outstanding.
+
+## Schema validation review — 2026-11-04
+
+Read-only inspection of current constraints and storage policies found:
+
+- Ownership is reinforced by composite foreign keys for tasks/subjects, focus sessions/tasks, documents/subjects, quizzes/documents, quiz questions/quizzes, attempts/questions, and notes/documents. These prevent cross-user references even if a caller supplies another user's UUID.
+- Database checks currently constrain task status to `todo`/`doing`/`done`, priority to 1–3, positive estimated minutes, and title length 1–300; subject names are 1–120 characters. Focus sessions reject an end time earlier than the start time. Quiz mode is constrained to `standard`/`professional`.
+- Storage object policies are scoped to the private `documents` bucket and require the first path segment to match the authenticated user's UUID for select/insert/update/delete.
+- **Spec alignment item:** live `documents.status` currently allows `uploaded`, `processing`, `ready`, and `failed`, while the draft SPEC describes `completed` rather than `ready`. Do not silently change this in the database; reconcile the vocabulary in the approved SPEC and implementation before document processing is built.
+- **Account-deletion item:** relational rows have `ON DELETE CASCADE` references to `auth.users`, but Storage objects are not deleted by relational cascades. The future account-deletion backend must explicitly remove each user's objects from the `documents` bucket before/while deleting the Auth user, and verify no orphaned files remain.
+
+No additional schema migration was applied during this read-only review. These items are recorded as implementation follow-ups, not completed functionality.
