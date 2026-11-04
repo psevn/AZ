@@ -13,7 +13,7 @@ Last updated: 2026-11-04 (v0.2). Owner: PSEVN.
 - Beta access by invite code. Country blocking only as an optional extra layer.
 - Supabase project "AZ" in Mumbai (ap-south-1) for V1.
 - Process: Claude Code implements, ChatGPT reviews at end of each stage, owner relays via GitHub/files; tests must pass before the next stage.
-- Planning only until explicit approval: no code, repo creation, or purchases.
+- Approval guardrail: no paid subscriptions/purchases or new implementation scope without PSEVN's explicit approval. Supabase foundation/security migrations already applied are historical implementation work documented in IMPLEMENTATION_STATUS.md; they do not mean V1 or Stage B is complete.
 
 ## Proposed in v0.2 — pending PSEVN approval
 Technical corrections from the ChatGPT review (Claude agrees with all; none changes an approved decision):
