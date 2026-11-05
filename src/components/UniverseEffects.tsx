@@ -29,7 +29,6 @@ export default function UniverseEffects() {
     if (!canvas || !shell || !context) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const finePointer = window.matchMedia("(pointer: fine)").matches;
     let width = 0;
     let height = 0;
     let pixelRatio = 1;
