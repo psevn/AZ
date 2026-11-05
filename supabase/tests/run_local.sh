@@ -45,3 +45,4 @@ for f in "$ROOT"/supabase/proposed/*.sql; do
 done
 
 AZ_PG_PORT=$PORT python3 -I "$HERE/live_schema_tests.py"
+AZ_PG_PORT=$PORT python3 -I "$HERE/credits_tests.py"

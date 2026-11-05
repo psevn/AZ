@@ -79,3 +79,13 @@ Live verification: rolled-back runtime test as a real `authenticated` user (star
 Note: `authenticated` can call `private.start_attempt/submit_answer/finish_attempt` directly because the public wrappers are SECURITY INVOKER; this is safe because each function checks `auth.uid()` and ownership itself (tested).
 
 Remaining gaps: Storage object deletion on account deletion; credit RPCs (reserve/settle/refund/sweep) + concurrency tests; `profiles.id` vs SPEC `user_id`; SPEC says subject delete cascades but DB uses SET NULL (recommend aligning SPEC); the 5 original foundation migration files are still missing and the 145805/145802 version mismatch remains; real two-user API test still required.
+
+## Update — 2026-11-05 (evening): credit system (M3) applied live
+
+Migration `20261105123204_credit_reservation_rpcs` (applied live, SPEC §9): `reserve_credits`, `settle_credits`, `refund_credits`, `sweep_stuck_reservations` (public INVOKER wrappers over `private` SECURITY DEFINER functions, **service_role only**; anon/authenticated denied). Adds `ai_usage_log.cost_reserved/cost_actual`.
+
+Behaviour: idempotent per (user, feature, request_key); daily limit, monthly limit and global monthly cost cap checked atomically under row locks (lock order: log row → day → month → global spend); fail-closed (cap 0 or limits 0 deny; denials are logged and reserve nothing); settle moves reserved→used and estimated→actual cost; a settled request cannot be refunded; sweep refunds reservations older than `max_reserved_age_minutes`; periods are UTC.
+
+Tests (`supabase/tests/credits_tests.py`, run by `run_local.sh`): 61 checks incl. real concurrency (all workers released together through an advisory-lock gate): 30 parallel reserves with limit 5 → exactly 5; 20 parallel same-key → exactly 1; global cap under 16 parallel reserves across 2 users; parallel settles/refunds/sweeps; counters always equal the log. **Mutation check:** removing the row locks makes the concurrency test fail (7 reserved instead of 5), so the test does detect the race. Live: rolled-back runtime test passed (defaults deny, reserve/replay/settle/refund/limit, authenticated + anon blocked) and the live tables were left empty; advisors unchanged (3 intentional INFO).
+
+Not covered: no real provider yet (mock only); no Edge Function yet; load on the real Supabase connection pooler; UTC day boundary vs Qatar (UTC+3) — daily limit resets at 03:00 Qatar time, decide whether to align.

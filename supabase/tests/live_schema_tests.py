@@ -440,7 +440,7 @@ def t_cascades_and_deletion():
 
 def t_spec_conformance():
     gap("account/Storage: object deletion on account deletion is not a DB cascade", "server function + real-Storage test needed (SPEC §10)")
-    gap("credits: reserve/settle/refund/sweep RPCs and concurrency tests do not exist yet", "next slice (SPEC §9); tables and fail-closed defaults exist")
+    gap("credits: real provider calls are not wired to reserve/settle yet", "RPCs and concurrency tests exist (credits_tests.py); the Edge Function that uses them is a later slice")
     gap("profiles key is 'id' (SPEC says user_id)", "naming only; accepted unless PSEVN prefers a rename")
     gap("deleting a subject keeps tasks/documents (SET NULL) while SPEC §5.4 says cascade", "recommend aligning the SPEC to SET NULL")
     gap("notes table kept (PSEVN decision 2026-11-05), no UI yet", "P2 / Mini Notebook candidate")
