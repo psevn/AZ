@@ -200,6 +200,88 @@ This means the timetable and resumable Academic Setup require a carefully design
 
 No database changes were made during this audit.
 
+## 8A. Proposed additive database design (reviewed 2026-11-05)
+
+This is the recommended V1 shape based on the live schema. It is a design proposal, not an executed migration.
+
+### Keep and extend existing tables
+
+**profiles**
+- Keep existing identity, display name, language, plan, and deletion fields.
+- Add `timezone` (IANA timezone name, nullable until detected/confirmed).
+- Add `academic_setup_status` with controlled values: `not_started`, `in_progress`, `skipped`, `completed`.
+- Add `academic_setup_step` for resumable progress, nullable.
+- Add `academic_setup_completed_at` and optionally `academic_setup_skipped_at`.
+- Update setup fields only for the authenticated profile owner.
+
+**subjects**
+- Keep `id`, `user_id`, `name`, `color`, `exam_date`, and `created_at`.
+- Add nullable `term_id`, `course_code`, `instructor`, `description`, and `archived_at`.
+- Keep `exam_date` for backward compatibility in V1; don't remove or rename it while the current UI uses it.
+- Archive by setting `archived_at`; default subject pickers hide archived subjects but history remains accessible.
+- Avoid hard deletion in normal UI. If a user explicitly deletes a subject, preserve existing FK behavior that detaches tasks/documents rather than deleting the user's learning history.
+
+**tasks**
+- Keep the current fields and semantics: `subject_id`, `title`, `due_at`, `priority`, `est_minutes`, `status`, and `note`.
+- Treat `due_at` as the actual deadline timestamp; display in the profile timezone.
+- Do not add recurrence, subtasks, labels, or arbitrary custom properties to the first schema migration.
+- If richer descriptions are needed, first decide whether existing `note` can serve that purpose rather than creating duplicate fields.
+
+### New tables
+
+**academic_terms**
+- `id` UUID primary key.
+- `user_id` UUID owner.
+- `name` required.
+- `start_date`, `end_date` optional dates.
+- `is_active` boolean; at most one active term per user.
+- `created_at` timestamp.
+- Unique composite key `(id, user_id)` to support owner-safe relationships.
+- Validate end_date is not before start_date.
+- Keep old terms for history; switching active term must not erase subjects or tasks.
+
+**class_meetings**
+- `id` UUID primary key.
+- `user_id` UUID owner.
+- `subject_id` UUID required.
+- `weekday` smallint using ISO numbering (1 Monday … 7 Sunday).
+- `starts_at_local`, `ends_at_local` as TIME WITHOUT TIME ZONE because a recurring lecture is a local wall-clock event, not one UTC instant.
+- `timezone` IANA timezone name, stored per meeting or inherited from the profile at creation and then persisted.
+- `location` and `meeting_type` optional (lecture, lab, tutorial, other).
+- `valid_from`, `valid_until` optional dates to support term-specific weeks.
+- `created_at`.
+- Validate weekday 1–7 and end time after start time. If overnight meetings are ever required, define that behavior explicitly rather than silently allowing it.
+- Use a composite foreign key `(subject_id, user_id)` to `subjects(id, user_id)` so a meeting cannot reference another user's subject.
+- Index by `(user_id, weekday, starts_at_local)` and `(subject_id, user_id)`.
+
+### Relationships and security
+
+- `academic_terms` 1-to-many `subjects` (term optional).
+- `subjects` 1-to-many `class_meetings`.
+- Existing `subjects` 1-to-many `tasks` remains.
+- Existing tasks-to-focus-sessions and subjects-to-documents relationships remain intact.
+- Enable RLS on both new tables. Policies for SELECT/INSERT/UPDATE/DELETE must scope `user_id = auth.uid()` in USING and WITH CHECK as applicable.
+- Use composite owner-aware foreign keys wherever a child row references a user's parent row. RLS is not a replacement for relational ownership constraints.
+- Add indexes only for real query paths; avoid redundant indexes already covered by existing ones.
+- Keep all migrations additive and reversible where practical. Do not drop or repurpose existing columns during V1.
+- Subject archival must not cascade-delete tasks, documents, or focus history.
+
+### Decisions deliberately deferred
+
+- **Study availability:** Keep out of the first migration. It becomes useful when AZ is ready to suggest time blocks; collecting it before that adds onboarding friction without immediate value.
+- **Multiple assessments per subject:** Current `subjects.exam_date` supports one date per subject. Revisit a dedicated `assessments` table if students need multiple exams/quizzes/projects per subject in the initial calendar. Do not overload task rows with hidden semantics without a clear UI.
+- **Task recurrence / subtasks / labels:** defer until the core schedule and task experience is stable.
+- **Semester imports / university integrations:** later.
+
+### Migration order
+
+1. Confirm exact current constraints and client usage; capture a schema backup / migration baseline.
+2. Add `academic_terms` and `class_meetings` with owner-safe constraints and RLS.
+3. Add nullable metadata and setup-progress columns to existing tables.
+4. Add indexes and validation constraints.
+5. Test two separate users to prove cross-user references and reads/writes are blocked.
+6. Update the frontend in small steps; keep existing task and subject flows working throughout.
+
 ## 9. V1 priority and release boundary
 
 ### V1 foundation — required
