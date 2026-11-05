@@ -745,3 +745,64 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 @media (max-width:680px) {
   .primary-nav-item .workspace-nav button { min-height: 26px; font-size: 8px; padding-inline: 3px; }
 }
+
+
+/* Pointer-reactive atmosphere — progressive enhancement for fine-pointer devices */
+.pointer-field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(560px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(103,219,243,.13), transparent 68%),
+    radial-gradient(360px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(101,1,210,.075), transparent 72%);
+  mix-blend-mode: screen;
+  transition: opacity 260ms ease;
+}
+.app-shell.has-pointer .pointer-field { opacity: 1; }
+.home-universe-visual {
+  transform: translate3d(var(--scene-shift-x, 0px), var(--scene-shift-y, 0px), 0);
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+.home-hero {
+  transform-style: preserve-3d;
+}
+.home-progress-panel,
+.home-next-panel,
+.content-panel,
+.task-row,
+.workspace-rail {
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .home-progress-panel:hover,
+  .home-next-panel:hover,
+  .content-panel:hover {
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+    box-shadow: var(--elevation-2);
+  }
+  .task-row:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 25%, var(--line));
+  }
+  .workspace-nav button:hover,
+  .primary-nav button:hover {
+    transform: translateX(-2px);
+  }
+  [dir="ltr"] .workspace-nav button:hover,
+  [dir="ltr"] .primary-nav button:hover {
+    transform: translateX(2px);
+  }
+}
+.theme-light .pointer-field {
+  mix-blend-mode: multiply;
+  background:
+    radial-gradient(560px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(4,86,192,.10), transparent 68%),
+    radial-gradient(360px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(101,1,210,.055), transparent 72%);
+}
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .pointer-field { display: none; }
+  .home-universe-visual { transform: none; transition: none; }
+}
