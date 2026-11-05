@@ -1,5 +1,20 @@
 :root {
-  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  --az-font-sans: "Segoe UI", Tahoma, Arial, sans-serif;
+  --az-space-1: 4px;
+  --az-space-2: 8px;
+  --az-space-3: 12px;
+  --az-space-4: 16px;
+  --az-space-5: 24px;
+  --az-space-6: 32px;
+  --az-space-7: 48px;
+  --az-radius-sm: 10px;
+  --az-radius-md: 14px;
+  --az-radius-lg: 20px;
+  --az-radius-xl: 26px;
+  --az-motion-fast: 140ms;
+  --az-motion-base: 220ms;
+  --az-motion-slow: 360ms;
+  font-family: var(--az-font-sans);
   color: #F1F5FF;
   background: #070A14;
   font-synthesis: none;
@@ -24,6 +39,19 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   --accent-ink: #061326;
   --field: rgba(7, 13, 27, .82);
   --brand-gradient: linear-gradient(115deg, #92F9FD 0%, #67DBF3 28%, #0456C0 65%, #6501D2 100%);
+  /* Semantic surfaces, text, borders and elevation — shared by every AZ screen. */
+  --surface-1: rgba(14, 23, 42, .78);
+  --surface-2: rgba(17, 26, 43, .92);
+  --surface-3: rgba(22, 34, 55, .96);
+  --text-strong: #F1F5FF;
+  --text-soft: #98A6BD;
+  --border-soft: rgba(160, 190, 255, .14);
+  --border-strong: rgba(160, 190, 255, .28);
+  --focus-ring: color-mix(in srgb, var(--accent) 78%, white);
+  --elevation-1: 0 8px 24px rgba(0, 0, 0, .12);
+  --elevation-2: 0 18px 50px rgba(0, 0, 0, .18);
+  --elevation-3: 0 28px 90px rgba(0, 0, 0, .28);
+  --content-max: 1320px;
   min-height: 100vh;
   color: var(--text);
   background:
@@ -61,6 +89,17 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   --bg: #F3F6FC; --panel: rgba(255,255,255,.82); --panel-solid: #FFFFFF;
   --text: #101B32; --muted: #64738C; --line: rgba(20,45,85,.13);
   --accent: #0456C0; --accent-ink: #FFFFFF; --field: rgba(237,242,250,.9);
+  --surface-1: rgba(255,255,255,.82);
+  --surface-2: rgba(255,255,255,.94);
+  --surface-3: #FFFFFF;
+  --text-strong: #101B32;
+  --text-soft: #64738C;
+  --border-soft: rgba(20,45,85,.13);
+  --border-strong: rgba(20,45,85,.24);
+  --focus-ring: #0456C0;
+  --elevation-1: 0 8px 24px rgba(27,55,95,.07);
+  --elevation-2: 0 18px 50px rgba(27,55,95,.09);
+  --elevation-3: 0 28px 80px rgba(27,55,95,.14);
   background: radial-gradient(ellipse at 18% 42%, rgba(103,219,243,.20), transparent 36%), radial-gradient(ellipse at 80% 75%, rgba(101,1,210,.10), transparent 35%), var(--bg);
 }
 .ambient {
@@ -417,3 +456,69 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 }
 .theme-light .study-ring { border-color: rgba(4,86,192,.28); }
 .theme-light .study-next { background: rgba(4,86,192,.055); border-color: rgba(4,86,192,.16); }
+
+
+/* AZ DESIGN SYSTEM FOUNDATION — 2026-11-05
+   Shared interaction, accessibility and logical-direction primitives.
+   Screen-specific visual refinements can migrate to these tokens incrementally. */
+.app-shell {
+  --panel: var(--surface-1);
+  --panel-solid: var(--surface-2);
+  --text: var(--text-strong);
+  --muted: var(--text-soft);
+  --line: var(--border-soft);
+  color-scheme: dark;
+}
+.theme-light.app-shell { color-scheme: light; }
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+:where(button, a) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.workspace-nav button.active {
+  box-shadow: inset-inline-start 3px 0 0 var(--accent);
+}
+
+@media (pointer: coarse) {
+  .icon-button,
+  .quiet-button,
+  .workspace-nav button,
+  .filter-bar button,
+  .small-action,
+  .delete-action,
+  .text-action,
+  .switch-mode button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .app-shell::before,
+  .app-shell::after,
+  .ambient,
+  .universe-monogram,
+  .universe-orbit,
+  .universe-node,
+  .panel-progress,
+  .panel-spark,
+  .home-planet,
+  .home-orbit,
+  .study-ring {
+    animation: none !important;
+  }
+}
