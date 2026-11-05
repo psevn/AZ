@@ -1,421 +1,247 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 
 type Language = "ar" | "en";
-type Subject = {
-  id: string;
-  name: string;
-  color: string | null;
-  created_at: string;
+type Page = "home" | "planning" | "focus" | "study";
+type Subject = { id: string; name: string; color: string | null; created_at: string };
+type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; created_at: string };
+
+const labels = {
+  ar: { eyebrow:"مساحتك الأكاديمية", headline:"خطّط بوضوح. ادرس بتركيز.", intro:"مكان واحد يجمع خطتك ومذاكرتك وتقدّمك.", email:"البريد الإلكتروني", password:"كلمة المرور", signIn:"تسجيل الدخول", signUp:"إنشاء حساب", create:"ابدأ حسابك", have:"عندك حساب؟", none:"ما عندك حساب؟", signOut:"تسجيل الخروج", language:"English", loading:"لحظة...", config:"نحتاج إعداد الاتصال بـ Supabase", configText:"انسخ .env.example إلى .env.local وأضف رابط المشروع ومفتاح Publishable. لا تستخدم service_role في المتصفح.", checkEmail:"أرسلنا لك رسالة تأكيد. افتح بريدك ثم ارجع لتسجيل الدخول.", welcome:"تم تسجيل الدخول بنجاح.", home:"الرئيسية", planning:"التخطيط", focus:"التركيز", study:"المذاكرة", today:"مساحة اليوم", todayText:"خطوة صغيرة ومنتظمة تصنع تقدماً كبيراً.", tasks:"المهام", completed:"مكتملة", subjects:"المواد الدراسية", subjectName:"اسم المادة", addSubject:"إضافة مادة", addTask:"إضافة مهمة", taskTitle:"عنوان المهمة", chooseSubject:"المادة", noSubject:"بدون مادة", due:"تاريخ الإنجاز", minutes:"المدة بالدقائق", priority:"الأولوية", high:"عالية", medium:"متوسطة", low:"منخفضة", todo:"لم تبدأ", doing:"قيد التنفيذ", done:"مكتملة", all:"الكل", todayFilter:"اليوم", upcoming:"القادمة", overdue:"المتأخرة", start:"ابدأ التركيز", stop:"إنهاء الجلسة", focusTitle:"وقت تركيزك", focusText:"اختر مهمة وابدأ جلسة تركيز.", studyTitle:"مساحة المذاكرة", studyText:"هنا ستعمل مع ملفاتك وأسئلتك ومراجعتك.", studyNext:"الخطوة التالية: رفع ملفات PDF واستخراج محتواها وبناء أدوات الدراسة.", empty:"لا توجد مهام هنا بعد.", emptySubjects:"لا توجد مواد بعد.", remove:"حذف", startTask:"ابدأ", finishTask:"أنجزت", reopen:"إعادة فتح", saved:"تم حفظ جلسة التركيز.", noDue:"بدون موعد", footer:"AZ — خطّط، ادرس، تطوّر." },
+  en: { eyebrow:"Your academic space", headline:"Plan clearly. Study with focus.", intro:"One place for your plan, study sessions, and progress.", email:"Email address", password:"Password", signIn:"Sign in", signUp:"Create account", create:"Create your account", have:"Already have an account?", none:"New to AZ?", signOut:"Sign out", language:"العربية", loading:"Loading...", config:"Connect AZ to Supabase", configText:"Copy .env.example to .env.local and add your project URL and Publishable key. Never use a service_role key in the browser.", checkEmail:"We sent a confirmation email. Confirm it, then return to sign in.", welcome:"You're signed in.", home:"Home", planning:"Planning", focus:"Focus", study:"Study", today:"Your day", todayText:"Small, consistent steps create meaningful progress.", tasks:"Tasks", completed:"Completed", subjects:"Subjects", subjectName:"Subject name", addSubject:"Add subject", addTask:"Add task", taskTitle:"Task title", chooseSubject:"Subject", noSubject:"No subject", due:"Due date", minutes:"Duration in minutes", priority:"Priority", high:"High", medium:"Medium", low:"Low", todo:"To do", doing:"In progress", done:"Done", all:"All", todayFilter:"Today", upcoming:"Upcoming", overdue:"Overdue", start:"Start focus", stop:"End session", focusTitle:"Focus time", focusText:"Choose a task and start a focus session.", studyTitle:"Study workspace", studyText:"Your files, questions, and review will live here.", studyNext:"Next: PDF uploads, text extraction, and AI-powered study tools.", empty:"Nothing here yet. Add your first task.", emptySubjects:"No subjects yet.", remove:"Delete", startTask:"Start", finishTask:"Complete", reopen:"Reopen", saved:"Focus session saved.", noDue:"No due date", footer:"AZ — Plan, study, evolve." }
 };
 
-const copy = {
-  ar: {
-    eyebrow: "مساحتك الأكاديمية",
-    headline: "خطّط بوضوح. ادرس بتركيز.",
-    intro: "مكان واحد يجمع خطتك ومذاكرتك وتقدّمك.",
-    email: "البريد الإلكتروني",
-    password: "كلمة المرور",
-    signIn: "تسجيل الدخول",
-    signUp: "إنشاء حساب",
-    createAccount: "ابدأ حسابك",
-    haveAccount: "عندك حساب؟",
-    noAccount: "ما عندك حساب؟",
-    signOut: "تسجيل الخروج",
-    subjects: "المواد الدراسية",
-    subjectsHint: "ابدأ بإضافة مادة واحدة، ثم نبني عليها خطتك.",
-    subjectName: "اسم المادة",
-    addSubject: "إضافة مادة",
-    empty: "ما أضفت أي مادة حتى الآن.",
-    loading: "لحظة...",
-    configTitle: "نحتاج إعداد الاتصال بـ Supabase",
-    configBody: "انسخ .env.example إلى .env.local وأضف رابط المشروع ومفتاح Publishable من لوحة Supabase. لا تستخدم service_role في المتصفح.",
-    checkEmail: "أرسلنا لك رسالة تأكيد. افتح بريدك ثم ارجع لتسجيل الدخول.",
-    welcome: "تم تسجيل الدخول بنجاح.",
-    genericError: "صار خطأ. حاول مرة ثانية.",
-    footer: "نسخة تأسيسية — نضيف الميزات على مراحل.",
-    language: "English",
-  },
-  en: {
-    eyebrow: "Your academic space",
-    headline: "Plan clearly. Study with focus.",
-    intro: "One place for your plan, study sessions, and progress.",
-    email: "Email address",
-    password: "Password",
-    signIn: "Sign in",
-    signUp: "Create account",
-    createAccount: "Create your account",
-    haveAccount: "Already have an account?",
-    noAccount: "New to AZ?",
-    signOut: "Sign out",
-    subjects: "Your subjects",
-    subjectsHint: "Add one subject to get started. Your plan will grow from here.",
-    subjectName: "Subject name",
-    addSubject: "Add subject",
-    empty: "No subjects yet.",
-    loading: "Loading...",
-    configTitle: "Connect AZ to Supabase",
-    configBody: "Copy .env.example to .env.local and add your project URL and Publishable key from Supabase. Never use a service_role key in the browser.",
-    checkEmail: "We sent a confirmation email. Confirm it, then return to sign in.",
-    welcome: "You're signed in.",
-    genericError: "Something went wrong. Please try again.",
-    footer: "Foundation build — features arrive in stages.",
-    language: "العربية",
-  },
-} as const;
+function clock(seconds: number) {
+  const h = Math.floor(seconds / 3600).toString().padStart(2,"0");
+  const m = Math.floor(seconds % 3600 / 60).toString().padStart(2,"0");
+  const s = (seconds % 60).toString().padStart(2,"0");
+  return h + ":" + m + ":" + s;
+}
+
+function Universe() {
+  return <div className="universe-stage" aria-hidden="true">
+    <div className="universe-halo halo-a"/><div className="universe-halo halo-b"/><div className="universe-grid"/>
+    <div className="universe-orbit orbit-a"/><div className="universe-orbit orbit-b"/><div className="universe-orbit orbit-c"/>
+    <span className="universe-node node-a"/><span className="universe-node node-b"/><span className="universe-node node-c"/>
+    <div className="universe-monogram"><img src="/az-mark.svg" alt=""/></div>
+    <div className="orbit-caption caption-plan"><i/> PLAN</div><div className="orbit-caption caption-study"><i/> STUDY</div><div className="orbit-caption caption-grow"><i/> GROW</div>
+  </div>;
+}
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>("ar");
-  const [isDark, setIsDark] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [subjectName, setSubjectName] = useState("");
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [subjectsLoading, setSubjectsLoading] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [lang,setLang] = useState<Language>("ar");
+  const [dark,setDark] = useState(true);
+  const [user,setUser] = useState<User|null>(null);
+  const [authLoading,setAuthLoading] = useState(true);
+  const [mode,setMode] = useState<"signin"|"signup">("signin");
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [page,setPage] = useState<Page>("home");
+  const [subjects,setSubjects] = useState<Subject[]>([]);
+  const [tasks,setTasks] = useState<Task[]>([]);
+  const [subjectName,setSubjectName] = useState("");
+  const [title,setTitle] = useState("");
+  const [subjectId,setSubjectId] = useState("");
+  const [due,setDue] = useState("");
+  const [minutes,setMinutes] = useState("45");
+  const [priority,setPriority] = useState("2");
+  const [filter,setFilter] = useState<"all"|"todo"|"doing"|"done">("all");
+  const [scope,setScope] = useState<"today"|"upcoming"|"overdue">("today");
+  const [focusTask,setFocusTask] = useState("");
+  const [started,setStarted] = useState<number|null>(null);
+  const [elapsed,setElapsed] = useState(0);
+  const [busy,setBusy] = useState(false);
+  const [loading,setLoading] = useState(false);
+  const [message,setMessage] = useState("");
+  const [error,setError] = useState("");
+  const t = labels[lang];
+  const ar = lang === "ar";
 
-  const t = copy[language];
-  const isArabic = language === "ar";
-
-  const refreshVerifiedUser = useCallback(async () => {
+  async function refreshUser() {
     if (!supabase) return;
-    const { data, error: userError } = await supabase.auth.getUser();
-    if (userError) {
-      setError(userError.message);
-      setUser(null);
-      return;
-    }
+    const {data,error:e} = await supabase.auth.getUser();
+    if (e) setError(e.message);
     setUser(data.user);
-  }, []);
+  }
 
   useEffect(() => {
-    const client = supabase;
-    if (!client) {
-      setAuthLoading(false);
-      return;
-    }
-
+    if (!supabase) { setAuthLoading(false); return; }
     let active = true;
-    const loadInitialUser = async () => {
-      const { data, error: userError } = await client.auth.getUser();
+    const client = supabase;
+    async function initial() {
+      const {data,error:e} = await client.auth.getUser();
       if (!active) return;
-      if (userError && userError.name !== "AuthSessionMissingError") {
-        setError(userError.message);
-      }
-      setUser(data.user);
-      setAuthLoading(false);
-    };
-
-    void loadInitialUser();
-    const { data } = client.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      if (!session) {
-        setUser(null);
-        return;
-      }
-      window.setTimeout(() => {
-        if (active) void refreshVerifiedUser();
-      }, 0);
-    });
-
-    return () => {
-      active = false;
-      data.subscription.unsubscribe();
-    };
-  }, [refreshVerifiedUser]);
-
-  const loadSubjects = useCallback(async () => {
-    if (!supabase || !user) return;
-    setSubjectsLoading(true);
-    const { data, error: queryError } = await supabase
-      .from("subjects")
-      .select("id, name, color, created_at")
-      .order("created_at", { ascending: true });
-    if (queryError) {
-      setError(queryError.message);
-    } else {
-      setSubjects((data ?? []) as Subject[]);
+      if (e && e.name !== "AuthSessionMissingError") setError(e.message);
+      setUser(data.user); setAuthLoading(false);
     }
-    setSubjectsLoading(false);
-  }, [user]);
+    void initial();
+    const {data} = client.auth.onAuthStateChange((_event,session) => {
+      if (!active) return;
+      if (!session) setUser(null);
+      else window.setTimeout(() => { if (active) void refreshUser(); },0);
+    });
+    return () => { active = false; data.subscription.unsubscribe(); };
+  },[]);
+
+  async function loadData() {
+    if (!supabase || !user) return;
+    setLoading(true);
+    const [s,q] = await Promise.all([
+      supabase.from("subjects").select("id,name,color,created_at").order("created_at"),
+      supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,created_at").order("created_at",{ascending:false})
+    ]);
+    if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
+    if (q.error) setError(q.error.message); else setTasks((q.data||[]) as Task[]);
+    setLoading(false);
+  }
+  useEffect(() => { if (user) void loadData(); else { setSubjects([]); setTasks([]); } },[user]);
 
   useEffect(() => {
-    if (user) void loadSubjects();
-    else setSubjects([]);
-  }, [user, loadSubjects]);
+    if (started === null) return;
+    const tick = () => setElapsed(Math.floor((Date.now()-started)/1000));
+    tick();
+    const id = window.setInterval(tick,1000);
+    return () => window.clearInterval(id);
+  },[started]);
 
-  async function handleAuth(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!supabase) return;
-    setBusy(true);
-    setError("");
-    setMessage("");
+  const today = new Date().toLocaleDateString("en-CA");
+  const visible = useMemo(() => tasks.filter(task => {
+    if (filter !== "all" && task.status !== filter) return false;
+    if (!task.due_at) return scope === "today";
+    const date = new Date(task.due_at).toLocaleDateString("en-CA");
+    if (scope === "today") return date === today;
+    if (scope === "upcoming") return date > today && task.status !== "done";
+    return date < today && task.status !== "done";
+  }),[tasks,filter,scope,today]);
+  const subjectFor = (id:string|null) => subjects.find(s=>s.id===id)?.name || t.noSubject;
 
-    const result =
-      mode === "signup"
-        ? await supabase.auth.signUp({ email: email.trim(), password })
-        : await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-          });
-
-    if (result.error) {
-      setError(result.error.message);
-    } else if (mode === "signup" && !result.data.session) {
-      setMessage(t.checkEmail);
-      setMode("signin");
-    } else {
-      setMessage(t.welcome);
-      await refreshVerifiedUser();
-    }
+  async function auth(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!supabase) return;
+    setBusy(true); setError(""); setMessage("");
+    const result = mode === "signup"
+      ? await supabase.auth.signUp({email:email.trim(),password})
+      : await supabase.auth.signInWithPassword({email:email.trim(),password});
+    if (result.error) setError(result.error.message);
+    else if (mode === "signup" && !result.data.session) { setMessage(t.checkEmail); setMode("signin"); }
+    else { setMessage(t.welcome); await refreshUser(); }
     setBusy(false);
   }
-
-  async function handleSignOut() {
+  async function signOut() {
     if (!supabase) return;
-    setBusy(true);
-    const { error: signOutError } = await supabase.auth.signOut();
-    if (signOutError) setError(signOutError.message);
-    else {
-      setUser(null);
-      setSubjects([]);
-      setMessage("");
-    }
+    setBusy(true); const {error:e} = await supabase.auth.signOut();
+    if (e) setError(e.message); else { setUser(null); setTasks([]); setSubjects([]); }
     setBusy(false);
   }
-
-  async function handleAddSubject(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!supabase || !user || !subjectName.trim()) return;
+  async function addSubject(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!supabase || !user || !subjectName.trim()) return;
     setBusy(true);
-    setError("");
-    const { error: insertError } = await supabase.from("subjects").insert({
-      name: subjectName.trim(),
-      user_id: user.id,
+    const {error:e} = await supabase.from("subjects").insert({name:subjectName.trim(),user_id:user.id});
+    if (e) setError(e.message); else { setSubjectName(""); await loadData(); }
+    setBusy(false);
+  }
+  async function addTask(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!supabase || !user || !title.trim()) return;
+    setBusy(true); setError("");
+    const {error:e} = await supabase.from("tasks").insert({
+      user_id:user.id, subject_id:subjectId||null, title:title.trim(),
+      due_at:due ? new Date(due+"T23:59:00").toISOString() : null,
+      priority:Number(priority), est_minutes:Math.max(5,Number(minutes)||45), status:"todo"
     });
-    if (insertError) {
-      setError(insertError.message);
-    } else {
-      setSubjectName("");
-      await loadSubjects();
-    }
+    if (e) setError(e.message);
+    else { setTitle(""); setDue(""); setMinutes("45"); setPriority("2"); await loadData(); }
     setBusy(false);
   }
+  async function changeTask(task:Task,status:Task["status"]) {
+    if (!supabase) return;
+    const {error:e} = await supabase.from("tasks").update({status}).eq("id",task.id);
+    if (e) setError(e.message); else await loadData();
+  }
+  async function removeTask(task:Task) {
+    if (!supabase) return;
+    const {error:e} = await supabase.from("tasks").delete().eq("id",task.id);
+    if (e) setError(e.message); else await loadData();
+  }
+  async function stopFocus() {
+    if (!supabase || !user || started===null) return;
+    setBusy(true);
+    const {error:e} = await supabase.from("focus_sessions").insert({
+      user_id:user.id,task_id:focusTask||null,
+      started_at:new Date(started).toISOString(),ended_at:new Date().toISOString()
+    });
+    if (e) setError(e.message); else setMessage(t.saved);
+    setStarted(null); setElapsed(0); setBusy(false);
+  }
 
-  return (
-    <main
-      className={`app-shell ${isDark ? "theme-dark" : "theme-light"}`}
-      dir={isArabic ? "rtl" : "ltr"}
-      lang={language}
-    >
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="AZ home">
-          <img className="brand-logo" src="/az-mark.svg" alt="" />
-        </a>
-        <div className="top-actions">
-          <button className="quiet-button" onClick={() => setLanguage(isArabic ? "en" : "ar")}>
-            {t.language}
-          </button>
-          <button className="icon-button" onClick={() => setIsDark((value) => !value)} aria-label="Toggle theme">
-            {isDark ? "☼" : "☾"}
-          </button>
-          {user && (
-            <button className="quiet-button signout-button" onClick={handleSignOut} disabled={busy}>
-              {t.signOut}
-            </button>
-          )}
+  const nav:Page[] = ["home","planning","focus","study"];
+  return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
+    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
+    <header className="topbar">
+      <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
+      <div className="top-actions">
+        <button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button>
+        <button className="icon-button" onClick={()=>setDark(v=>!v)} aria-label="Toggle theme">{dark?"☼":"☾"}</button>
+        {user && <button className="quiet-button signout-button" onClick={signOut} disabled={busy}>{t.signOut}</button>}
+      </div>
+    </header>
+    <section className="main-content">
+      {!supabaseConfigReady ? <div className="auth-layout">
+        <div className="hero-copy"><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{t.headline}</h1><p>{t.intro}</p><Universe/></div>
+        <section className="setup-card"><h2>{t.config}</h2><p>{t.configText}</p><code>.env.local</code></section>
+      </div> : authLoading ? <div className="loading-state">{t.loading}</div> : !user ? <div className="auth-layout">
+        <div className="hero-copy"><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{t.headline}</h1><p>{t.intro}</p><Universe/></div>
+        <section className="auth-card">
+          <div className="auth-tabs"><button className={mode==="signin"?"active":""} onClick={()=>setMode("signin")} type="button">{t.signIn}</button><button className={mode==="signup"?"active":""} onClick={()=>setMode("signup")} type="button">{t.signUp}</button></div>
+          <h2>{mode==="signup"?t.create:t.signIn}</h2>
+          <form onSubmit={auth}>
+            <label><span>{t.email}</span><input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label>
+            <label><span>{t.password}</span><input type="password" autoComplete={mode==="signup"?"new-password":"current-password"} minLength={6} value={password} onChange={e=>setPassword(e.target.value)} required/></label>
+            <button className="primary-button full-button" disabled={busy}>{busy?t.loading:mode==="signup"?t.create:t.signIn}<span>↗</span></button>
+          </form>
+          <p className="switch-mode">{mode==="signin"?t.none:t.have}<button type="button" onClick={()=>setMode(mode==="signin"?"signup":"signin")}>{mode==="signin"?t.signUp:t.signIn}</button></p>
+        </section>
+      </div> : <div className="az-workspace">
+        <aside className="workspace-rail">
+          <div className="rail-label">AZ / ACADEMIC OS</div>
+          <nav className="workspace-nav">{nav.map((item,i)=><button key={item} className={page===item?"active":""} onClick={()=>{setPage(item);setMessage("");}}><span className="nav-index">0{i+1}</span><span>{t[item]}</span><i/></button>)}</nav>
+          <div className="rail-bottom"><span className="rail-orbit"/>PLAN · STUDY · GROW</div>
+        </aside>
+        <div className="workspace-main">
+          <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{page==="home"?t.today:t[page]}</h1><p>{page==="home"?t.todayText:page==="focus"?t.focusText:page==="study"?t.studyText:t.planning}</p></div><div className="workspace-meta"><span className="status-dot"/>{user.email}</div></div>
+          {page==="home" && <div className="home-view">
+            <section className="cosmic-welcome"><div><span className="eyebrow">YOUR ACADEMIC UNIVERSE</span><h2>{ar?"كل إنجاز يبدأ بخطوة.":"Every breakthrough starts with a step."}</h2><p>{ar?"رتّب أولوياتك، وابدأ من حيث أنت.":"Set your priorities and begin where you are."}</p><button className="primary-button" onClick={()=>setPage("planning")}>{t.planning} ↗</button></div><div className="home-orbit-art"><div className="home-orbit one"/><div className="home-orbit two"/><div className="home-orbit three"/><div className="home-planet"><img src="/az-mark.svg" alt=""/></div><span className="home-star star-one"/><span className="home-star star-two"/><span className="home-star star-three"/></div></section>
+            <div className="stats-grid"><article className="stat-card"><span>{t.tasks}</span><strong>{String(tasks.length).padStart(2,"0")}</strong><small>{ar?"إجمالي المهام":"total tasks"}</small></article><article className="stat-card"><span>{t.completed}</span><strong>{String(tasks.filter(x=>x.status==="done").length).padStart(2,"0")}</strong><small>{ar?"إنجازاتك":"your progress"}</small></article><article className="stat-card"><span>{t.subjects}</span><strong>{String(subjects.length).padStart(2,"0")}</strong><small>{ar?"مساحات تعلّمك":"learning spaces"}</small></article></div>
+            <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">NEXT IN YOUR ORBIT</span><h2>{t.tasks}</h2></div><button className="text-action" onClick={()=>setPage("planning")}>{t.planning} ↗</button></div>{tasks.filter(x=>x.status!=="done").slice(0,4).length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p></div>:<div className="task-list">{tasks.filter(x=>x.status!=="done").slice(0,4).map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.est_minutes||45} min</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":"done")}>{task.status==="todo"?t.startTask:t.finishTask}</button></article>)}</div>}</section>
+          </div>}
+          {page==="planning" && <div className="planning-view">
+            <div className="planning-grid">
+              <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">BUILD YOUR ROUTE</span><h2>{t.addTask}</h2></div><span className="panel-symbol">＋</span></div>
+                <form className="task-form" onSubmit={addTask}>
+                  <label><span>{t.taskTitle}</span><input value={title} onChange={e=>setTitle(e.target.value)} maxLength={180} required/></label>
+                  <label><span>{t.chooseSubject}</span><select value={subjectId} onChange={e=>setSubjectId(e.target.value)}><option value="">{t.noSubject}</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+                  <div className="form-two"><label><span>{t.due}</span><input type="date" value={due} onChange={e=>setDue(e.target.value)}/></label><label><span>{t.minutes}</span><input type="number" min="5" max="600" step="5" value={minutes} onChange={e=>setMinutes(e.target.value)}/></label></div>
+                  <label><span>{t.priority}</span><select value={priority} onChange={e=>setPriority(e.target.value)}><option value="3">{t.high}</option><option value="2">{t.medium}</option><option value="1">{t.low}</option></select></label>
+                  <button className="primary-button full-button" disabled={busy||!title.trim()}>{busy?t.loading:t.addTask}<span>↗</span></button>
+                </form>
+              </section>
+              <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">YOUR LEARNING AREAS</span><h2>{t.subjects}</h2></div><span className="count-pill">{subjects.length.toString().padStart(2,"0")}</span></div>
+                <form className="subject-form" onSubmit={addSubject}><input value={subjectName} onChange={e=>setSubjectName(e.target.value)} placeholder={t.subjectName} maxLength={120} required/><button className="primary-button" disabled={busy||!subjectName.trim()}>＋</button></form>
+                {subjects.length===0?<p className="muted">{t.emptySubjects}</p>:<div className="subject-list">{subjects.map((s,i)=><article className="subject-row" key={s.id}><span className="subject-index">{String(i+1).padStart(2,"0")}</span><span className="subject-color"/><strong>{s.name}</strong></article>)}</div>}
+              </section>
+            </div>
+            <section className="content-panel task-board"><div className="panel-heading"><div><span className="eyebrow">MISSION CONTROL</span><h2>{t.planning}</h2></div><span className="count-pill">{tasks.length.toString().padStart(2,"0")}</span></div>
+              <div className="filter-bar">{(["today","upcoming","overdue"] as const).map(x=><button key={x} className={scope===x?"active":""} onClick={()=>setScope(x)}>{t[x==="today"?"todayFilter":x]}</button>)}<span className="filter-spacer"/>{(["all","todo","doing","done"] as const).map(x=><button key={x} className={filter===x?"active subtle":"subtle"} onClick={()=>setFilter(x)}>{t[x]}</button>)}</div>
+              {loading?<p className="muted">{t.loading}</p>:visible.length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p></div>:<div className="task-list">{visible.map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.due_at?new Date(task.due_at).toLocaleDateString(ar?"ar-QA":"en-US"):t.noDue}</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":task.status==="doing"?"done":"todo")}>{task.status==="todo"?t.startTask:task.status==="doing"?t.finishTask:t.reopen}</button><button className="delete-action" onClick={()=>void removeTask(task)} aria-label={t.remove}>×</button></article>)}</div>}
+            </section>
+          </div>}
+          {page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">DEEP WORK SESSION</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>FOCUS ELAPSED</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
+          {page==="study" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">KNOWLEDGE SYSTEM / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
         </div>
-      </header>
-
-      <section className="main-content">
-        {!supabaseConfigReady ? (
-          <div className="auth-layout">
-            <div className="hero-copy">
-              <span className="eyebrow"><span className="eyebrow-pulse" />{t.eyebrow}</span>
-              <h1>{t.headline}</h1>
-              <p>{t.intro}</p>
-              <div className="hero-promise">
-                <span className="promise-line" />
-                <span>{isArabic ? "عالم واحد — من أول خطة إلى آخر إنجاز" : "One universe — from your first plan to every achievement"}</span>
-              </div>
-              <div className="universe-stage" aria-hidden="true">
-                <div className="universe-halo halo-a" />
-                <div className="universe-halo halo-b" />
-                <div className="universe-grid" />
-                <div className="universe-orbit orbit-a" />
-                <div className="universe-orbit orbit-b" />
-                <div className="universe-orbit orbit-c" />
-                <span className="universe-node node-a" />
-                <span className="universe-node node-b" />
-                <span className="universe-node node-c" />
-                <div className="universe-monogram"><img src="/az-mark.svg" alt="" /></div>
-                <div className="orbit-caption caption-plan"><i /> PLAN</div>
-                <div className="orbit-caption caption-study"><i /> STUDY</div>
-                <div className="orbit-caption caption-grow"><i /> GROW</div>
-                <div className="float-panel panel-progress"><span className="float-kicker">YOUR JOURNEY</span><strong>01 <small> / 04</small></strong><span className="progress-track"><i /></span><span className="float-foot">PLAN · STUDY · PRACTICE</span></div>
-                <div className="float-panel panel-spark"><span className="spark-icon">✳</span><span>Keep moving<br/><b>forward.</b></span></div>
-                <span className="stage-coordinate coordinate-a">25° 17′ N</span>
-                <span className="stage-coordinate coordinate-b">AZ / 001</span>
-              </div>
-            </div>
-            <section className="setup-card">
-              <span className="eyebrow">{t.eyebrow}</span>
-              <h2>{t.configTitle}</h2>
-              <p>{t.configBody}</p>
-              <code>.env.local</code>
-            </section>
-          </div>
-        ) : authLoading ? (
-          <div className="loading-state">{t.loading}</div>
-        ) : user ? (
-          <div className="workspace">
-            <div className="welcome-panel">
-              <div>
-                <span className="eyebrow">{t.eyebrow}</span>
-                <h1>{t.headline}</h1>
-                <p>{t.intro}</p>
-              </div>
-              <div className="user-chip">
-                <span className="status-dot" />
-                <span>{user.email}</span>
-              </div>
-            </div>
-            <section className="subjects-panel">
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">01 / FOUNDATION</span>
-                  <h2>{t.subjects}</h2>
-                  <p>{t.subjectsHint}</p>
-                </div>
-                <span className="count-pill">{subjects.length.toString().padStart(2, "0")}</span>
-              </div>
-              <form className="subject-form" onSubmit={handleAddSubject}>
-                <input
-                  value={subjectName}
-                  onChange={(event) => setSubjectName(event.target.value)}
-                  placeholder={t.subjectName}
-                  maxLength={120}
-                  required
-                />
-                <button className="primary-button" disabled={busy || !subjectName.trim()}>
-                  {busy ? t.loading : t.addSubject}
-                </button>
-              </form>
-              {subjectsLoading ? (
-                <p className="muted">{t.loading}</p>
-              ) : subjects.length === 0 ? (
-                <div className="empty-state">
-                  <span className="empty-symbol">＋</span>
-                  <p>{t.empty}</p>
-                </div>
-              ) : (
-                <div className="subject-list">
-                  {subjects.map((subject, index) => (
-                    <article className="subject-row" key={subject.id}>
-                      <span className="subject-index">{String(index + 1).padStart(2, "0")}</span>
-                      <span className="subject-color" />
-                      <strong>{subject.name}</strong>
-                      <span className="subject-arrow">↗</span>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-        ) : (
-          <div className="auth-layout">
-            <div className="hero-copy">
-              <span className="eyebrow"><span className="eyebrow-pulse" />{t.eyebrow}</span>
-              <h1>{t.headline}</h1>
-              <p>{t.intro}</p>
-              <div className="hero-promise">
-                <span className="promise-line" />
-                <span>{isArabic ? "عالم واحد — من أول خطة إلى آخر إنجاز" : "One universe — from your first plan to every achievement"}</span>
-              </div>
-              <div className="universe-stage" aria-hidden="true">
-                <div className="universe-halo halo-a" />
-                <div className="universe-halo halo-b" />
-                <div className="universe-grid" />
-                <div className="universe-orbit orbit-a" />
-                <div className="universe-orbit orbit-b" />
-                <div className="universe-orbit orbit-c" />
-                <span className="universe-node node-a" />
-                <span className="universe-node node-b" />
-                <span className="universe-node node-c" />
-                <div className="universe-monogram"><img src="/az-mark.svg" alt="" /></div>
-                <div className="orbit-caption caption-plan"><i /> PLAN</div>
-                <div className="orbit-caption caption-study"><i /> STUDY</div>
-                <div className="orbit-caption caption-grow"><i /> GROW</div>
-                <div className="float-panel panel-progress"><span className="float-kicker">YOUR JOURNEY</span><strong>01 <small> / 04</small></strong><span className="progress-track"><i /></span><span className="float-foot">PLAN · STUDY · PRACTICE</span></div>
-                <div className="float-panel panel-spark"><span className="spark-icon">✳</span><span>Keep moving<br/><b>forward.</b></span></div>
-                <span className="stage-coordinate coordinate-a">25° 17′ N</span>
-                <span className="stage-coordinate coordinate-b">AZ / 001</span>
-              </div>
-            </div>
-            <section className="auth-card">
-              <div className="auth-tabs">
-                <button className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")} type="button">
-                  {t.signIn}
-                </button>
-                <button className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")} type="button">
-                  {t.signUp}
-                </button>
-              </div>
-              <h2>{mode === "signup" ? t.createAccount : t.signIn}</h2>
-              <form onSubmit={handleAuth}>
-                <label>
-                  <span>{t.email}</span>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  <span>{t.password}</span>
-                  <input
-                    type="password"
-                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    minLength={6}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                  />
-                </label>
-                <button className="primary-button full-button" disabled={busy}>
-                  {busy ? t.loading : mode === "signup" ? t.createAccount : t.signIn}
-                  <span aria-hidden="true">↗</span>
-                </button>
-              </form>
-              <p className="switch-mode">
-                {mode === "signin" ? t.noAccount : t.haveAccount}
-                <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} type="button">
-                  {mode === "signin" ? t.signUp : t.signIn}
-                </button>
-              </p>
-            </section>
-          </div>
-        )}
-
-        {message && <p className="feedback success-feedback" role="status">{message}</p>}
-        {error && <p className="feedback error-feedback" role="alert">{error || t.genericError}</p>}
-      </section>
-
-      <footer className="footer">
-        <span>© 2026 AZ</span>
-        <span>{t.footer}</span>
-      </footer>
-    </main>
-  );
+      </div>}
+      {message && <p className="feedback success-feedback" role="status">{message}</p>}
+      {error && <p className="feedback error-feedback" role="alert">{error}</p>}
+    </section>
+    <footer className="footer"><span>© 2026 AZ</span><span>{t.footer}</span></footer>
+  </main>;
 }
