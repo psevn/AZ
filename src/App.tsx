@@ -121,7 +121,7 @@ export default function App() {
     event.preventDefault(); if (!supabase) return;
     setBusy(true); setError(""); setMessage("");
     const result = mode === "signup"
-      ? await supabase.auth.signUp({email:email.trim(),password})
+      ? await supabase.auth.signUp({email:email.trim(),password,options:{emailRedirectTo:window.location.origin}})
       : await supabase.auth.signInWithPassword({email:email.trim(),password});
     if (result.error) setError(result.error.message);
     else if (mode === "signup" && !result.data.session) { setMessage(t.checkEmail); setMode("signin"); }
