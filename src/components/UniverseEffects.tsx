@@ -75,6 +75,12 @@ export default function UniverseEffects() {
         lens.style.setProperty("--water-y", pointerY + "px");
         shell.classList.add("water-active");
       }
+      if (pointerInside && lastRippleX < 0) {
+        addRipple(pointerX, pointerY, 0.8);
+        lastRippleX = pointerX;
+        lastRippleY = pointerY;
+        return;
+      }
       const dx = pointerX - lastRippleX;
       const dy = pointerY - lastRippleY;
       const distance = Math.hypot(dx, dy);
@@ -82,7 +88,7 @@ export default function UniverseEffects() {
         const steps = Math.min(3, Math.floor(distance / 13));
         for (let i = 1; i <= steps; i++) {
           const amount = i / steps;
-          addRipple(lastRippleX < 0 ? pointerX : lastRippleX + dx * amount, lastRippleY < 0 ? pointerY : lastRippleY + dy * amount, 0.55 + Math.random() * 0.25);
+          addRipple(lastRippleX + dx * amount, lastRippleY + dy * amount, 0.55 + Math.random() * 0.25);
         }
         lastRippleX = pointerX;
         lastRippleY = pointerY;
