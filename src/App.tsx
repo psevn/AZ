@@ -90,6 +90,12 @@ export default function App() {
       shell.style.setProperty("--pointer-y", (y * 100).toFixed(2) + "%");
       shell.style.setProperty("--scene-shift-x", ((x - 0.5) * -14).toFixed(1) + "px");
       shell.style.setProperty("--scene-shift-y", ((y - 0.5) * -10).toFixed(1) + "px");
+      shell.style.setProperty("--scene-far-x", ((x - 0.5) * -5).toFixed(1) + "px");
+      shell.style.setProperty("--scene-far-y", ((y - 0.5) * -4).toFixed(1) + "px");
+      shell.style.setProperty("--scene-mid-x", ((x - 0.5) * -10).toFixed(1) + "px");
+      shell.style.setProperty("--scene-mid-y", ((y - 0.5) * -7).toFixed(1) + "px");
+      shell.style.setProperty("--scene-near-x", ((x - 0.5) * -17).toFixed(1) + "px");
+      shell.style.setProperty("--scene-near-y", ((y - 0.5) * -12).toFixed(1) + "px");
       shell.classList.add("has-pointer");
     };
     const onPointerLeave = () => {
@@ -107,6 +113,12 @@ export default function App() {
       shell.style.removeProperty("--pointer-y");
       shell.style.removeProperty("--scene-shift-x");
       shell.style.removeProperty("--scene-shift-y");
+      shell.style.removeProperty("--scene-far-x");
+      shell.style.removeProperty("--scene-far-y");
+      shell.style.removeProperty("--scene-mid-x");
+      shell.style.removeProperty("--scene-mid-y");
+      shell.style.removeProperty("--scene-near-x");
+      shell.style.removeProperty("--scene-near-y");
     };
   },[]);
 
