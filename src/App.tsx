@@ -219,8 +219,8 @@ export default function App() {
       <div className="ambient ambient-two" />
       <header className="topbar">
         <a className="brand" href="/" aria-label="AZ home">
-          <span className="brand-mark">A</span>
-          <span>AZ</span>
+          <img className="brand-logo" src="/az-mark.svg" alt="" />
+          <span className="brand-word">AZ</span>
         </a>
         <div className="top-actions">
           <button className="quiet-button" onClick={() => setLanguage(isArabic ? "en" : "ar")}>
@@ -305,16 +305,31 @@ export default function App() {
         ) : (
           <div className="auth-layout">
             <div className="hero-copy">
-              <span className="eyebrow">{t.eyebrow}</span>
+              <span className="eyebrow"><span className="eyebrow-pulse" />{t.eyebrow}</span>
               <h1>{t.headline}</h1>
               <p>{t.intro}</p>
-              <div className="hero-orbit" aria-hidden="true">
-                <div className="orbit-ring ring-one" />
-                <div className="orbit-ring ring-two" />
-                <div className="orbit-core">AZ</div>
-                <span className="orbit-label label-plan">PLAN</span>
-                <span className="orbit-label label-study">STUDY</span>
-                <span className="orbit-label label-grow">GROW</span>
+              <div className="hero-promise">
+                <span className="promise-line" />
+                <span>{isArabic ? "عالم واحد — من أول خطة إلى آخر إنجاز" : "One universe — from your first plan to every achievement"}</span>
+              </div>
+              <div className="universe-stage" aria-hidden="true">
+                <div className="universe-halo halo-a" />
+                <div className="universe-halo halo-b" />
+                <div className="universe-grid" />
+                <div className="universe-orbit orbit-a" />
+                <div className="universe-orbit orbit-b" />
+                <div className="universe-orbit orbit-c" />
+                <span className="universe-node node-a" />
+                <span className="universe-node node-b" />
+                <span className="universe-node node-c" />
+                <div className="universe-monogram"><img src="/az-mark.svg" alt="" /></div>
+                <div className="orbit-caption caption-plan"><i /> PLAN</div>
+                <div className="orbit-caption caption-study"><i /> STUDY</div>
+                <div className="orbit-caption caption-grow"><i /> GROW</div>
+                <div className="float-panel panel-progress"><span className="float-kicker">YOUR JOURNEY</span><strong>01 <small> / 04</small></strong><span className="progress-track"><i /></span><span className="float-foot">PLAN · STUDY · PRACTICE</span></div>
+                <div className="float-panel panel-spark"><span className="spark-icon">✳</span><span>Keep moving<br/><b>forward.</b></span></div>
+                <span className="stage-coordinate coordinate-a">25° 17′ N</span>
+                <span className="stage-coordinate coordinate-b">AZ / 001</span>
               </div>
             </div>
             <section className="auth-card">
