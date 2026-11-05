@@ -210,13 +210,11 @@ This is the recommended V1 shape based on the live schema. It is a design propos
 
 ### Keep and extend existing tables
 
-**profiles**
-- Keep existing identity, display name, language, plan, and deletion fields.
-- Add `timezone` (IANA timezone name, nullable until detected/confirmed).
-- Add `academic_setup_status` with controlled values: `not_started`, `in_progress`, `skipped`, `completed`.
-- Add `academic_setup_step` for resumable progress, nullable.
-- Add `academic_setup_completed_at` and optionally `academic_setup_skipped_at`.
-- Update setup fields only for the authenticated profile owner.
+**academic_setup** (separate one-row-per-user table)
+- Keep the existing restricted `profiles` update grants unchanged.
+- Store setup `status`, `current_step`, optional IANA `timezone`, `completed_at`, `skipped_at`, and `updated_at`.
+- The user can resume or skip setup without granting browser clients additional profile-column privileges.
+- Enforce one row per user with `user_id` as the primary key and owner-scoped RLS.
 
 **subjects**
 - Keep `id`, `user_id`, `name`, `color`, `exam_date`, and `created_at`.
@@ -232,6 +230,9 @@ This is the recommended V1 shape based on the live schema. It is a design propos
 - If richer descriptions are needed, first decide whether existing `note` can serve that purpose rather than creating duplicate fields.
 
 ### New tables
+
+**academic_setup**
+- One row per user for resumable setup state. Kept separate from `profiles` because current profile update grants intentionally allow only `display_name` and `language` from browser clients.
 
 **academic_terms**
 - `id` UUID primary key.
@@ -340,3 +341,10 @@ This is the recommended V1 shape based on the live schema. It is a design propos
 8. Run build, migration checks, RLS checks, and manual Arabic / English responsive tests.
 
 **No schema migration or destructive data change is authorized by this specification alone.**
+
+
+## 12. Initial SQL migration artifact
+
+The first additive migration has been prepared at `supabase/migrations/20261105160000_add_academic_planning_foundation.sql`.
+
+It creates `academic_terms`, `class_meetings`, and `academic_setup`; adds nullable subject metadata and term linkage; adds owner-scoped RLS and authenticated CRUD grants for these user-managed tables; and preserves the existing task / document / focus-session relationships. The migration is committed to GitHub but has **not** been applied to Supabase. Review and test it before execution.
