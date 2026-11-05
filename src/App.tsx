@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
+import UniverseEffects from "./components/UniverseEffects";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
@@ -78,58 +79,6 @@ export default function App() {
       // Keep the selected language for the current session if storage is unavailable.
     }
   },[lang]);
-
-  // Progressive pointer enhancement: CSS variables only, no React re-render per mouse move.
-  useEffect(() => {
-    const finePointer = window.matchMedia("(pointer: fine)").matches;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!finePointer || reducedMotion) return;
-    const shell = document.querySelector<HTMLElement>(".app-shell");
-    if (!shell) return;
-    const onPointerMove = (event: PointerEvent) => {
-      const x = event.clientX / window.innerWidth;
-      const y = event.clientY / window.innerHeight;
-      shell.style.setProperty("--pointer-x", (x * 100).toFixed(2) + "%");
-      shell.style.setProperty("--pointer-y", (y * 100).toFixed(2) + "%");
-      shell.style.setProperty("--scene-shift-x", ((x - 0.5) * -14).toFixed(1) + "px");
-      shell.style.setProperty("--scene-shift-y", ((y - 0.5) * -10).toFixed(1) + "px");
-      shell.style.setProperty("--scene-far-x", ((x - 0.5) * -5).toFixed(1) + "px");
-      shell.style.setProperty("--scene-far-y", ((y - 0.5) * -4).toFixed(1) + "px");
-      shell.style.setProperty("--scene-mid-x", ((x - 0.5) * -10).toFixed(1) + "px");
-      shell.style.setProperty("--scene-mid-y", ((y - 0.5) * -7).toFixed(1) + "px");
-      shell.style.setProperty("--scene-near-x", ((x - 0.5) * -17).toFixed(1) + "px");
-      shell.style.setProperty("--scene-near-y", ((y - 0.5) * -12).toFixed(1) + "px");
-      shell.classList.add("has-pointer");
-    };
-    const onPointerLeave = () => {
-      shell.classList.remove("has-pointer");
-      shell.style.setProperty("--scene-shift-x", "0px");
-      shell.style.setProperty("--scene-shift-y", "0px");
-      shell.style.setProperty("--scene-far-x", "0px");
-      shell.style.setProperty("--scene-far-y", "0px");
-      shell.style.setProperty("--scene-mid-x", "0px");
-      shell.style.setProperty("--scene-mid-y", "0px");
-      shell.style.setProperty("--scene-near-x", "0px");
-      shell.style.setProperty("--scene-near-y", "0px");
-    };
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onPointerLeave);
-    return () => {
-      window.removeEventListener("pointermove", onPointerMove);
-      document.documentElement.removeEventListener("pointerleave", onPointerLeave);
-      shell.classList.remove("has-pointer");
-      shell.style.removeProperty("--pointer-x");
-      shell.style.removeProperty("--pointer-y");
-      shell.style.removeProperty("--scene-shift-x");
-      shell.style.removeProperty("--scene-shift-y");
-      shell.style.removeProperty("--scene-far-x");
-      shell.style.removeProperty("--scene-far-y");
-      shell.style.removeProperty("--scene-mid-x");
-      shell.style.removeProperty("--scene-mid-y");
-      shell.style.removeProperty("--scene-near-x");
-      shell.style.removeProperty("--scene-near-y");
-    };
-  },[]);
 
   async function refreshUser() {
     if (!supabase) return;
@@ -278,7 +227,7 @@ export default function App() {
   const workspaceNav:Page[] = ["workspace","notebook","focus","arena"];
   const sectionNav:Section[] = ["home","planning","az","community","me"];
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/><div className="pointer-field" aria-hidden="true"/>
+    <div className="ambient ambient-one"/><div className="ambient ambient-two"/><UniverseEffects />
     <header className="topbar">
       <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
       <div className="top-actions">
