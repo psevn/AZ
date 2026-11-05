@@ -220,7 +220,6 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="/" aria-label="AZ home">
           <img className="brand-logo" src="/az-mark.svg" alt="" />
-          <span className="brand-word">AZ</span>
         </a>
         <div className="top-actions">
           <button className="quiet-button" onClick={() => setLanguage(isArabic ? "en" : "ar")}>
