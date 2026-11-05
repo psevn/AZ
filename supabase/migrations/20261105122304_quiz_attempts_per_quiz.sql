@@ -1,4 +1,4 @@
--- M2 (PROPOSED): per-quiz attempts with a score (SPEC §5.4), replacing the per-question
+-- M2 (APPLIED live 2026-11-05): per-quiz attempts with a score (SPEC §5.4), replacing the per-question
 -- quiz_attempts model. Approved by PSEVN 2026-11-05 ("fix the gaps").
 --   quiz_attempts  : one row per attempt at a quiz (started_at, finished_at, score)
 --   attempt_answers: one row per answered question, unique per (attempt, question)

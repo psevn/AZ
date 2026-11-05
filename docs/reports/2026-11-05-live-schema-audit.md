@@ -61,3 +61,21 @@ Fix (proposed, tested locally, **not applied**): `supabase/proposed/202611050000
 2. Storage uploads: keep direct client upload (simpler; limits enforced only by bucket config) or move to server-signed uploads per SPEC (safer, enables page/size/dedup checks)? Recommendation: server-signed uploads.
 3. Approve additive schema migrations for the gaps above, in slices, each tested locally first.
 4. Keep or drop the `notes` table.
+
+---
+## Update — 2026-11-05 (afternoon): gaps closed after PSEVN's approvals
+
+PSEVN approved: (1) submit_answer fix, (2) server-signed storage uploads, (3) fix schema gaps with migrations, (4) keep and develop the `notes` table (P2 / Mini Notebook candidate).
+
+Applied to the live project in order (tested first on the local replica: **201 passed, 0 failed, 6 informational gaps**):
+| Version | Migration | What |
+|---|---|---|
+| 20261105073535 | fix_submit_answer_ambiguous_created_at | grading RPC bug |
+| 20261105122212 | add_spec_columns_tables_and_lock_storage | SPEC columns, 7 new tables (credits/spend/pages/summaries), fail-closed defaults (0 credits, 0 cap), column-limited `ai_usage_log` reads, client storage policies dropped, bucket limit 20 MB |
+| 20261105122304 | quiz_attempts_per_quiz | per-quiz attempts + `attempt_answers`; RPCs `start_attempt`, `submit_answer(attempt, question, choice)`, `finish_attempt` |
+
+Live verification: rolled-back runtime test as a real `authenticated` user (start, correct grading, duplicate blocked, score 100, forged attempt blocked, `request_key` unreadable, self-upgrade to `pro` blocked, other user blocked, storage invisible); afterwards 0 users/attempts/documents remain. Security advisors: only 3 INFO items (`question_keys`, `app_config`, `spend_counters` have RLS and no policy) — intentional server-only tables.
+
+Note: `authenticated` can call `private.start_attempt/submit_answer/finish_attempt` directly because the public wrappers are SECURITY INVOKER; this is safe because each function checks `auth.uid()` and ownership itself (tested).
+
+Remaining gaps: Storage object deletion on account deletion; credit RPCs (reserve/settle/refund/sweep) + concurrency tests; `profiles.id` vs SPEC `user_id`; SPEC says subject delete cascades but DB uses SET NULL (recommend aligning SPEC); the 5 original foundation migration files are still missing and the 145805/145802 version mismatch remains; real two-user API test still required.

@@ -1,4 +1,4 @@
--- M1 (PROPOSED): close the additive gaps against SPEC v0.2 and lock storage to server-only.
+-- M1 (APPLIED live 2026-11-05): close the additive gaps against SPEC v0.2 and lock storage to server-only.
 -- Approved by PSEVN 2026-11-05: "fix the gaps" and "uploads via the server".
 -- Everything here is additive except: the 4 client policies on storage.objects are dropped,
 -- ai_usage_log.model becomes nullable, client SELECT on ai_usage_log is narrowed to safe columns,

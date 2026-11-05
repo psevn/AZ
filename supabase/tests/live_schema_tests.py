@@ -19,7 +19,8 @@ BASE = ["psql", "-X", "-q", "-t", "-A", "-F", "|", "-v", "VERBOSITY=verbose", "-
 A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 KIND = dict(subjects=1, tasks=2, focus_sessions=3, documents=4, notes=5, quizzes=6,
-            quiz_questions=7, quiz_attempts=8, ai_usage_log=9)
+            quiz_questions=7, quiz_attempts=8, ai_usage_log=9, attempt_answers=10,
+            document_pages=11, summaries=12)
 
 results = []  # (name, status, detail)
 
@@ -81,9 +82,10 @@ def seed():
            f"insert into auth.users (id, email, raw_user_meta_data) values "
            f"('{A}','a@test','{{\"display_name\":\"A\"}}'), ('{B}','b@test',null);"]
     for u in (A, B):
-        s, t, f, d, n, q, qq, at, lg = (rid(u, k) for k in
+        s, t, f, d, n, q, qq, at, lg, aa, dp, sm = (rid(u, k) for k in
                                         ("subjects", "tasks", "focus_sessions", "documents", "notes", "quizzes",
-                                         "quiz_questions", "quiz_attempts", "ai_usage_log"))
+                                         "quiz_questions", "quiz_attempts", "ai_usage_log", "attempt_answers",
+                                         "document_pages", "summaries"))
         sql += [
             f"insert into subjects (id,user_id,name) values ('{s}','{u}','subj');",
             f"insert into tasks (id,user_id,subject_id,title) values ('{t}','{u}','{s}','task');",
@@ -93,8 +95,12 @@ def seed():
             f"insert into quizzes (id,user_id,document_id) values ('{q}','{u}','{d}');",
             f"insert into quiz_questions (id,user_id,quiz_id,prompt,choices) values ('{qq}','{u}','{q}','q?','[\"x\",\"y\",\"z\"]');",
             f"insert into private.question_keys (question_id,user_id,correct_index,explanation) values ('{qq}','{u}',1,'because');",
-            f"insert into quiz_attempts (id,user_id,question_id,chosen_index,is_correct) values ('{at}','{u}','{qq}',0,false);",
-            f"insert into ai_usage_log (id,user_id,feature,model) values ('{lg}','{u}','quiz','m');",
+            f"insert into quiz_attempts (id,user_id,quiz_id) values ('{at}','{u}','{q}');",
+            f"insert into attempt_answers (id,user_id,attempt_id,question_id,chosen_index,is_correct) values ('{aa}','{u}','{at}','{qq}',0,false);",
+            f"insert into ai_usage_log (id,user_id,feature,model,request_key) values ('{lg}','{u}','quiz','m','seed-key');",
+            f"insert into document_pages (id,user_id,document_id,page_no,text) values ('{dp}','{u}','{d}',1,'p1');",
+            f"insert into summaries (id,user_id,document_id,content) values ('{sm}','{u}','{d}','sum');",
+            f"insert into usage_counters (user_id,period_type,period_start,credits_used) values ('{u}','day',current_date,0);",
         ]
     r = run(" ".join(sql))
     if not r.ok:
@@ -104,9 +110,11 @@ def seed():
 
 OWNER_COL = {"profiles": "id", "subjects": "user_id", "tasks": "user_id", "focus_sessions": "user_id",
              "notes": "user_id", "documents": "user_id", "quizzes": "user_id", "quiz_questions": "user_id",
-             "quiz_attempts": "user_id", "ai_usage_log": "user_id"}
+             "quiz_attempts": "user_id", "ai_usage_log": "user_id", "attempt_answers": "user_id",
+             "document_pages": "user_id", "summaries": "user_id"}
 WRITABLE = ["subjects", "tasks", "focus_sessions", "notes"]
-READ_ONLY = ["documents", "quizzes", "quiz_questions", "quiz_attempts", "ai_usage_log"]
+READ_ONLY = ["documents", "quizzes", "quiz_questions", "quiz_attempts", "ai_usage_log", "attempt_answers",
+             "document_pages", "summaries"]
 SET_COL = {"subjects": "name = 'hacked'", "tasks": "title = 'hacked'",
            "focus_sessions": "ended_at = now()", "notes": "body = 'hacked'"}
 
@@ -145,7 +153,14 @@ def t_write_isolation():
     expect("write: owner cannot insert quizzes directly", "42501",
            f"insert into quizzes (user_id) values ('{A}')", "authenticated", A)
     expect("write: owner cannot insert ai_usage_log directly", "42501",
-           f"insert into ai_usage_log (user_id,feature,model) values ('{A}','x','m')", "authenticated", A)
+           f"insert into ai_usage_log (user_id,feature,model,request_key) values ('{A}','x','m','k')", "authenticated", A)
+    for tbl in ("document_pages", "summaries", "attempt_answers"):
+        expect(f"write: owner cannot insert {tbl} directly", "42501",
+               f"insert into {tbl} (user_id) values ('{A}')", "authenticated", A)
+    expect("write: owner cannot insert usage_counters directly", "42501",
+           f"insert into usage_counters (user_id,period_type,period_start) values ('{A}','day',current_date)", "authenticated", A)
+    expect("write: owner cannot raise own credits_used", "42501",
+           f"update usage_counters set credits_used = 0 where user_id = '{A}'", "authenticated", A)
     expect("write: B cannot insert a subject owned by A (RLS)", "42501",
            f"insert into subjects (user_id,name) values ('{A}','x')", "authenticated", B)
     expect("write: B cannot re-assign own subject to A (WITH CHECK)", "42501",
@@ -166,7 +181,11 @@ def t_composite_fk():
         "document -> A's subject": f"insert into documents (user_id,subject_id,title,storage_path) values ('{B}','{rid(A, 'subjects')}','t','{B}/p.pdf')",
         "quiz -> A's document": f"insert into quizzes (user_id,document_id) values ('{B}','{rid(A, 'documents')}')",
         "question -> A's quiz": f"insert into quiz_questions (user_id,quiz_id,prompt,choices) values ('{B}','{rid(A, 'quizzes')}','x','[]')",
-        "attempt -> A's question": f"insert into quiz_attempts (user_id,question_id,chosen_index,is_correct) values ('{B}','{rid(A, 'quiz_questions')}',0,false)",
+        "attempt -> A's quiz": f"insert into quiz_attempts (user_id,quiz_id) values ('{B}','{rid(A, 'quizzes')}')",
+        "attempt answer -> A's attempt": f"insert into attempt_answers (user_id,attempt_id,question_id,chosen_index,is_correct) values ('{B}','{rid(A, 'quiz_attempts')}','{rid(B, 'quiz_questions')}',0,false)",
+        "attempt answer -> A's question": f"insert into attempt_answers (user_id,attempt_id,question_id,chosen_index,is_correct) values ('{B}','{rid(B, 'quiz_attempts')}','{rid(A, 'quiz_questions')}',0,false)",
+        "document page -> A's document": f"insert into document_pages (user_id,document_id,page_no) values ('{B}','{rid(A, 'documents')}',9)",
+        "summary -> A's document": f"insert into summaries (user_id,document_id,content) values ('{B}','{rid(A, 'documents')}','x')",
         "answer key -> A's question": f"insert into private.question_keys (question_id,user_id,correct_index) values ('{rid(A, 'quiz_questions')}','{B}',0)",
         "moving A's task to user B": f"update tasks set user_id = '{B}' where id = '{rid(A, 'tasks')}'",
     }
@@ -186,7 +205,21 @@ def t_anon_and_server_only():
     expect("anon: select on private.question_keys denied", "42501", "select * from private.question_keys", "anon")
     expect("anon: insert subject denied", "42501", f"insert into subjects (user_id,name) values ('{A}','x')", "anon")
     expect("anon: cannot run submit_answer", "42501",
-           f"select * from public.submit_answer('{rid(A, 'quiz_questions')}'::uuid, 1::smallint)", "anon")
+           f"select * from public.submit_answer('{rid(A, 'quiz_attempts')}'::uuid, '{rid(A, 'quiz_questions')}'::uuid, 1::smallint)", "anon")
+    expect("anon: cannot run start_attempt", "42501", f"select * from public.start_attempt('{rid(A, 'quizzes')}'::uuid)", "anon")
+    expect("anon: cannot run finish_attempt", "42501", f"select * from public.finish_attempt('{rid(A, 'quiz_attempts')}'::uuid)", "anon")
+    # The public wrappers are SECURITY INVOKER, so `authenticated` must be able to reach the private
+    # functions (same pattern as the original RPC). That is safe only because they check auth.uid() themselves:
+    expect("private fn: B calling private.start_attempt on A's quiz -> not found (P0002)", "P0002",
+           f"select * from private.start_attempt('{rid(A, 'quizzes')}'::uuid)", "authenticated", B)
+    expect("private fn: B calling private.finish_attempt on A's attempt -> not found (P0002)", "P0002",
+           f"select * from private.finish_attempt('{rid(A, 'quiz_attempts')}'::uuid)", "authenticated", B)
+    expect("private fn: anon cannot call private.start_attempt", "42501",
+           f"select * from private.start_attempt('{rid(A, 'quizzes')}'::uuid)", "anon")
+    for t in ("spend_counters", "app_config"):
+        expect(f"server-only: authenticated cannot read {t}", "42501", f"select * from {t}", "authenticated", A)
+    expect("server-only: authenticated cannot write usage_limits", "42501", "update usage_limits set daily_credits = 999", "authenticated", A)
+    expect("server-only: authenticated cannot write credit_costs", "42501", "insert into credit_costs values ('x', 0)", "authenticated", A)
     expect("server-only: even the OWNER cannot select private.question_keys", "42501",
            "select * from private.question_keys", "authenticated", A)
     expect("server-only: owner cannot insert private.question_keys", "42501",
@@ -200,37 +233,87 @@ def t_anon_and_server_only():
 
 def t_quiz_security():
     seed()
+    for t in ("quiz_questions", "attempt_answers"):
+        pass
     cols = run("select column_name from information_schema.columns where table_schema='public' and table_name='quiz_questions'")
-    names = {r[0] for r in cols.rows}
-    leak = names & {"correct_index", "correct_option", "explanation", "answer", "is_correct"}
+    leak = {r[0] for r in cols.rows} & {"correct_index", "correct_option", "explanation", "answer", "is_correct"}
     check("quiz: quiz_questions has no answer columns", not leak, f"leak={leak}")
-    q = rid(A, "quiz_questions")
-    r = run(f"select is_correct, correct_index, explanation from public.submit_answer('{q}'::uuid, 1::smallint)", "authenticated", A)
-    check("quiz: correct answer graded server-side, key revealed only after submit",
-          r.ok and r.rows and r.rows[0][:3] == ["t", "1", "because"], f"{r.rows} {r.err[:100]}")
-    r = run(f"select is_correct from public.submit_answer('{q}'::uuid, 0::smallint)", "authenticated", A)
-    check("quiz: wrong answer graded false", r.ok and r.rows and r.rows[0][0] == "f", f"{r.rows} {r.err[:100]}")
-    expect("quiz: B cannot answer A's question (not found, P0002)", "P0002",
-           f"select * from public.submit_answer('{q}'::uuid, 1::smallint)", "authenticated", B)
-    expect("quiz: unauthenticated call rejected (28000)", "28000",
-           f"select * from public.submit_answer('{q}'::uuid, 1::smallint)", "authenticated")
-    expect("quiz: index out of range rejected (22023)", "22023",
-           f"select * from public.submit_answer('{q}'::uuid, 9::smallint)", "authenticated", A)
-    expect("quiz: negative index rejected (22023)", "22023",
-           f"select * from public.submit_answer('{q}'::uuid, (-1)::smallint)", "authenticated", A)
-    n = count(f"select 1 from quiz_attempts where question_id = '{q}'", "authenticated", A)
-    check("quiz: attempts recorded only through the RPC (seed 1 + 2 valid calls = 3)", n == 3, f"n={n}")
-    check("quiz: B's attempts untouched by A's calls",
-          count(f"select 1 from quiz_attempts where user_id = '{B}'") == 1)
-    expect("quiz: client cannot forge an attempt", "42501",
-           f"insert into quiz_attempts (user_id,question_id,chosen_index,is_correct) values ('{A}','{q}',1,true)", "authenticated", A)
-    expect("quiz: client cannot flip is_correct", "42501",
-           f"update quiz_attempts set is_correct = true where id = '{rid(A, 'quiz_attempts')}'", "authenticated", A)
-    r1 = run(f"select 1 from public.submit_answer('{q}'::uuid, 1::smallint)", "authenticated", A)
-    if r1.ok:
-        gap("quiz: the same question can be submitted unlimited times and always reveals the answer",
-            "no attempt/session model; SPEC §5.4 expects quiz_attempts (per quiz, with score) + attempt_answers")
+    old = count("select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where p.proname='submit_answer' and p.pronargs=2")
+    check("quiz: old 2-arg submit_answer is gone", old == 0, f"old={old}")
+    q, qz = rid(A, "quiz_questions"), rid(A, "quizzes")
 
+    def start(user, quiz):
+        r = run(f"select attempt_id from public.start_attempt('{quiz}'::uuid)", "authenticated", user)
+        return r, (r.scalar() if r.ok else None)
+
+    r, att = start(A, qz)
+    check("attempt: owner can start an attempt (positive control)", r.ok and att, r.err[:150])
+    expect("attempt: B cannot start an attempt on A's quiz (P0002)", "P0002",
+           f"select * from public.start_attempt('{qz}'::uuid)", "authenticated", B)
+    expect("attempt: unauthenticated start rejected (28000)", "28000",
+           f"select * from public.start_attempt('{qz}'::uuid)", "authenticated")
+    expect("attempt: null quiz rejected (22023)", "22023", "select * from public.start_attempt(null)", "authenticated", A)
+
+    sub = lambda a, qq, i, u=A: run(f"select is_correct, correct_index, explanation from public.submit_answer('{a}'::uuid,'{qq}'::uuid,{i}::smallint)", "authenticated", u)
+    r = sub(att, q, 1)
+    check("quiz: correct answer graded server-side, key revealed only after submit",
+          r.ok and r.rows and r.rows[0][:3] == ["t", "1", "because"], f"{r.rows} {r.err[:120]}")
+    expect("quiz: same question twice in one attempt rejected (23505)", "23505",
+           f"select * from public.submit_answer('{att}'::uuid,'{q}'::uuid,0::smallint)", "authenticated", A)
+    check("quiz: duplicate attempt did not change the stored answer",
+          run(f"select is_correct from attempt_answers where attempt_id='{att}' and question_id='{q}'").scalar() == "t")
+    expect("quiz: B cannot answer inside A's attempt (P0002)", "P0002",
+           f"select * from public.submit_answer('{att}'::uuid,'{q}'::uuid,1::smallint)", "authenticated", B)
+    expect("quiz: question from another quiz of the same user rejected (P0002)", "P0002",
+           f"select * from public.submit_answer('{att}'::uuid,'{rid(B, 'quiz_questions')}'::uuid,1::smallint)", "authenticated", A)
+    expect("quiz: unauthenticated submit rejected (28000)", "28000",
+           f"select * from public.submit_answer('{att}'::uuid,'{q}'::uuid,1::smallint)", "authenticated")
+
+    # second attempt: wrong answer, range checks
+    r, att2 = start(A, qz)
+    r = sub(att2, q, 0)
+    check("quiz: wrong answer graded false", r.ok and r.rows and r.rows[0][0] == "f", f"{r.rows} {r.err[:120]}")
+    r, att3 = start(A, qz)
+    expect("quiz: index out of range rejected (22023)", "22023",
+           f"select * from public.submit_answer('{att3}'::uuid,'{q}'::uuid,9::smallint)", "authenticated", A)
+    expect("quiz: negative index rejected (22023)", "22023",
+           f"select * from public.submit_answer('{att3}'::uuid,'{q}'::uuid,(-1)::smallint)", "authenticated", A)
+    check("quiz: rejected inputs stored nothing",
+          count(f"select 1 from attempt_answers where attempt_id='{att3}'") == 0)
+
+    # finish: score, idempotency, locked afterwards
+    r = run(f"select score, correct_count, total_questions from public.finish_attempt('{att}'::uuid)", "authenticated", A)
+    check("finish: 1 of 1 correct -> score 100", r.ok and r.rows and r.rows[0][:3] == ["100.00", "1", "1"] or (r.ok and r.rows and r.rows[0][:3] == ["100", "1", "1"]), f"{r.rows} {r.err[:120]}")
+    r = run(f"select score, correct_count from public.finish_attempt('{att2}'::uuid)", "authenticated", A)
+    check("finish: wrong answer -> score 0", r.ok and r.rows and float(r.rows[0][0]) == 0 and r.rows[0][1] == "0", f"{r.rows} {r.err[:120]}")
+    r = run(f"select score from public.finish_attempt('{att3}'::uuid)", "authenticated", A)
+    check("finish: unanswered question counts as wrong (score 0)", r.ok and r.rows and float(r.rows[0][0]) == 0, f"{r.rows} {r.err[:120]}")
+    f1 = run(f"select finished_at from quiz_attempts where id='{att}'").scalar()
+    r = run(f"select score, finished_at from public.finish_attempt('{att}'::uuid)", "authenticated", A)
+    check("finish: calling twice is idempotent (same score, same finished_at)",
+          r.ok and float(r.rows[0][0]) == 100 and r.rows[0][1].replace("+00", "") == f1.replace("+00", ""), f"{r.rows} vs {f1}")
+    expect("finish: submitting to a finished attempt rejected (55000)", "55000",
+           f"select * from public.submit_answer('{att}'::uuid,'{q}'::uuid,1::smallint)", "authenticated", A)
+    expect("finish: B cannot finish A's attempt (P0002)", "P0002",
+           f"select * from public.finish_attempt('{att2}'::uuid)", "authenticated", B)
+    expect("finish: unauthenticated rejected (28000)", "28000",
+           f"select * from public.finish_attempt('{att2}'::uuid)", "authenticated")
+    check("attempt: B sees none of A's attempts or answers",
+          count("select 1 from quiz_attempts where user_id = '%s'" % A, "authenticated", B) == 0
+          and count("select 1 from attempt_answers where user_id = '%s'" % A, "authenticated", B) == 0)
+    check("attempt: A sees own attempts (seed 1 + 3 started) and answers (seed 1 + 2)",
+          count("select 1 from quiz_attempts", "authenticated", A) == 4
+          and count("select 1 from attempt_answers", "authenticated", A) == 3)
+    expect("attempt: client cannot forge an attempt row", "42501",
+           f"insert into quiz_attempts (user_id,quiz_id,score) values ('{A}','{qz}',100)", "authenticated", A)
+    expect("attempt: client cannot edit own score", "42501",
+           f"update quiz_attempts set score = 100 where id = '{att3}'", "authenticated", A)
+    expect("attempt: client cannot forge an answer", "42501",
+           f"insert into attempt_answers (user_id,attempt_id,question_id,chosen_index,is_correct) values ('{A}','{att3}','{q}',1,true)", "authenticated", A)
+    expect("attempt: client cannot flip is_correct", "42501",
+           f"update attempt_answers set is_correct = true where user_id = '{A}'", "authenticated", A)
+    expect("attempt: score range constraint (23514)", "23514",
+           f"update quiz_attempts set score = 101 where id = '{att3}'", "service_role")
 
 def t_profiles_and_trigger():
     seed()
@@ -245,6 +328,10 @@ def t_profiles_and_trigger():
     expect("profiles: client cannot insert a profile", "42501", f"insert into profiles (id) values ('{A}')", "authenticated", A)
     expect("profiles: client cannot delete a profile", "42501", f"delete from profiles where id = '{A}'", "authenticated", A)
 
+    expect("profiles: owner cannot self-upgrade plan to pro", "42501", f"update profiles set plan = 'pro' where id = '{A}'", "authenticated", A)
+    expect("profiles: owner cannot set deletion_requested_at directly", "42501", f"update profiles set deletion_requested_at = now() where id = '{A}'", "authenticated", A)
+    check("profiles: new users default to plan 'free'", run(f"select plan from profiles where id = '{A}'").scalar() == "free")
+    check("profiles: owner can still read own plan", run("select plan from profiles", "authenticated", A).scalar() == "free")
 
 def t_constraints():
     seed()
@@ -268,24 +355,58 @@ def t_constraints():
     check("rls: private.question_keys has zero policies (default deny)",
           count("select 1 from pg_policies where schemaname='private'") == 0)
 
+    expect("constraint: document kind outside list rejected (23514)", "23514",
+           f"update documents set kind = 'meme' where id = '{rid(A, 'documents')}'", "service_role")
+    run(f"update documents set sha256 = 'abc' where id = '{rid(A, 'documents')}'", "service_role")
+    expect("constraint: same sha256 for the same user rejected (23505)", "23505",
+           f"insert into documents (user_id,title,storage_path,sha256) values ('{A}','d2','{A}/d2.pdf','abc')", "service_role")
+    r = run(f"insert into documents (user_id,title,storage_path,sha256) values ('{B}','d2','{B}/d2.pdf','abc')", "service_role")
+    check("constraint: same sha256 for a DIFFERENT user is allowed", r.ok, r.err)
+    expect("constraint: profiles.plan outside list rejected (23514)", "23514",
+           f"update profiles set plan = 'gold' where id = '{A}'", "service_role")
+    expect("constraint: ai_usage_log (user, feature, request_key) is unique (23505)", "23505",
+           f"insert into ai_usage_log (user_id,feature,request_key) values ('{A}','quiz','seed-key')", "service_role")
+    expect("constraint: ai_usage_log status outside list rejected (23514)", "23514",
+           f"update ai_usage_log set status = 'weird' where user_id = '{A}'", "service_role")
+    expect("constraint: tasks.note longer than 5000 rejected (23514)", "23514",
+           f"update tasks set note = repeat('x', 5001) where id = '{rid(A, 'tasks')}'", "service_role")
+    expect("constraint: document_pages page_no must be >= 1 (23514)", "23514",
+           f"update document_pages set page_no = 0 where user_id = '{A}'", "service_role")
+    expect("constraint: usage_counters cannot go negative (23514)", "23514",
+           f"update usage_counters set credits_used = -1 where user_id = '{A}'", "service_role")
+    lim = run("select plan||':'||daily_credits||':'||monthly_credits from usage_limits order by plan").rows
+    check("config: fail-closed defaults (free/pro = 0 credits)", lim == [["free:0:0"], ["pro:0:0"]], str(lim))
+    cfg = run("select key||'='||value::text from app_config order by key").rows
+    check("config: global spend cap defaults to 0 (AI off)", ["global_monthly_cost_cap=0"] in cfg, str(cfg))
+    bl = run("select file_size_limit from storage.buckets where id='documents'").scalar()
+    check("storage: bucket limit is 20 MB (SPEC start value)", bl == "20971520", str(bl))
+
+    # ai_usage_log: column-limited client read
+    ok = run("select id, feature, status, credits_charged from ai_usage_log", "authenticated", A)
+    check("ai_usage_log: owner can read the safe columns (RLS works with column grants)", ok.ok and len(ok.rows) == 1, ok.err[:150])
+    for c in ("request_key", "model", "provider", "error", "result_ref", "credits_reserved", "prompt_version"):
+        expect(f"ai_usage_log: owner cannot read column {c}", "42501", f"select {c} from ai_usage_log", "authenticated", A)
+    expect("ai_usage_log: select * denied for clients (forces explicit safe columns)", "42501", "select * from ai_usage_log", "authenticated", A)
+    check("ai_usage_log: B sees none of A's log rows",
+          count(f"select 1 from ai_usage_log where user_id = '{A}'", "authenticated", B) == 0)
 
 def t_storage_policies():
     seed()
-    r = run(f"insert into storage.objects (bucket_id,name) values ('documents','{A}/f.pdf')", "authenticated", A)
-    check("storage: owner can add an object under own folder (positive control)", r.ok, r.err)
+    run(f"insert into storage.objects (bucket_id,name) values ('documents','{A}/f.pdf')")  # as server
+    expect("storage: owner can no longer upload directly (server-only)", "42501",
+           f"insert into storage.objects (bucket_id,name) values ('documents','{A}/g.pdf')", "authenticated", A)
+    check("storage: owner cannot list own objects directly (server-signed access only)",
+          count(f"select 1 from storage.objects where name = '{A}/f.pdf'", "authenticated", A) == 0)
+    check("storage: owner cannot update/delete own objects directly",
+          affected(f"update storage.objects set name = name where name = '{A}/f.pdf'", "authenticated", A) == 0
+          and affected(f"delete from storage.objects where name = '{A}/f.pdf'", "authenticated", A) == 0)
+    check("storage: B cannot see A's object", count(f"select 1 from storage.objects where name = '{A}/f.pdf'", "authenticated", B) == 0)
     expect("storage: B cannot add an object under A's folder", "42501",
            f"insert into storage.objects (bucket_id,name) values ('documents','{A}/evil.pdf')", "authenticated", B)
-    expect("storage: A cannot add an object under B's folder", "42501",
-           f"insert into storage.objects (bucket_id,name) values ('documents','{B}/evil.pdf')", "authenticated", A)
-    check("storage: B cannot see A's object",
-          count(f"select 1 from storage.objects where name = '{A}/f.pdf'", "authenticated", B) == 0)
-    check("storage: B cannot update/delete A's object",
-          affected(f"update storage.objects set name = name where name = '{A}/f.pdf'", "authenticated", B) == 0
-          and affected(f"delete from storage.objects where name = '{A}/f.pdf'", "authenticated", B) == 0)
     expect("storage: anon has no access", "42501", "select * from storage.objects", "anon")
-    # NOTE: this validates the policy logic on a stub. Storage API behaviour (size/MIME limits,
-    # signed URLs) must be tested against a real Supabase project with real users.
-
+    check("storage: no client policies remain for the documents bucket",
+          count("select 1 from pg_policies where schemaname='storage' and policyname like 'documents_%'") == 0)
+    # NOTE: stub-level. Signed upload/download and real size/MIME limits need a real Supabase test.
 
 def t_cascades_and_deletion():
     seed()
@@ -297,9 +418,9 @@ def t_cascades_and_deletion():
     seed()
     run(f"delete from documents where id = '{rid(A, 'documents')}'")
     left = {t: count(f"select 1 from {t} where user_id = '{A}'")
-            for t in ("notes", "quizzes", "quiz_questions", "quiz_attempts")}
+            for t in ("notes", "quizzes", "quiz_questions", "quiz_attempts", "attempt_answers", "document_pages", "summaries")}
     left["question_keys"] = count(f"select 1 from private.question_keys where user_id = '{A}'")
-    check("cascade: deleting a document removes notes, quizzes, questions, attempts and answer keys",
+    check("cascade: deleting a document removes notes, quizzes, questions, attempts, answers, pages, summaries and answer keys",
           all(v == 0 for v in left.values()), str(left))
     seed()
     before_b = {t: count(f"select 1 from {t} where {oc} = '{B}'") for t, oc in OWNER_COL.items()}
@@ -312,37 +433,17 @@ def t_cascades_and_deletion():
     check("account deletion (DB part): zero rows left for the deleted user in every table",
           all(v == 0 for v in after_a.values()), str(after_a))
     check("account deletion (DB part): the other user's data is unchanged", before_b == after_b, f"{before_b} vs {after_b}")
+    check("account deletion (DB part): usage counters also removed",
+          count(f"select 1 from usage_counters where user_id = '{A}'") == 0 and count(f"select 1 from usage_counters where user_id = '{B}'") == 1)
     gap("account deletion: Storage objects are not removed by relational cascades",
         "needs an explicit server-side function + test against real Storage (SPEC §10)")
 
-
 def t_spec_conformance():
-    have = {r[0] for r in run("select table_name from information_schema.tables where table_schema='public'").rows}
-    need = ["document_pages", "summaries", "usage_counters", "spend_counters", "usage_limits", "credit_costs", "app_config"]
-    missing = [t for t in need if t not in have]
-    if missing:
-        gap("SPEC §5.4/§9 tables missing", ", ".join(missing))
-
-    def cols(t):
-        return {r[0] for r in run(f"select column_name from information_schema.columns where table_schema='public' and table_name='{t}'").rows}
-
-    for table, wanted in {
-        "ai_usage_log": ["request_key", "status", "credits_reserved", "credits_charged", "result_ref", "prompt_version"],
-        "documents": ["sha256", "page_count", "kind", "failed_reason", "attempts", "locked_at", "processed_at"],
-        "subjects": ["exam_date"], "tasks": ["note"],
-    }.items():
-        miss = [c for c in wanted if c not in cols(table)]
-        if miss:
-            gap(f"SPEC columns missing on {table}", ", ".join(miss))
-    pol = count("select 1 from pg_policies where schemaname='storage' and cmd in ('INSERT','UPDATE','DELETE') and policyname like 'documents_%'")
-    if pol:
-        gap("storage: clients can upload/overwrite/delete their own objects directly", f"{pol} write policies; SPEC §5.2 says server-only via signed URLs, so server-side page/size/dedup checks can be bypassed")
-    gap("storage: bucket size limit is 50 MB", "SPEC start value is 20 MB (configurable); decide and align")
-    if "notes" in have:
-        gap("notes table exists", "Mini Notebook is outside V1 scope; do not build UI until approved")
-    gap("profiles key is 'id' (SPEC says user_id) and has no plan / deletion_requested_at", "naming + needed for plan limits and account deletion")
-    gap("deleting a subject keeps tasks/documents (SET NULL) while SPEC §5.4 says cascade", "live behaviour is arguably safer; align the SPEC or the DB")
-
+    gap("account/Storage: object deletion on account deletion is not a DB cascade", "server function + real-Storage test needed (SPEC §10)")
+    gap("credits: reserve/settle/refund/sweep RPCs and concurrency tests do not exist yet", "next slice (SPEC §9); tables and fail-closed defaults exist")
+    gap("profiles key is 'id' (SPEC says user_id)", "naming only; accepted unless PSEVN prefers a rename")
+    gap("deleting a subject keeps tasks/documents (SET NULL) while SPEC §5.4 says cascade", "recommend aligning the SPEC to SET NULL")
+    gap("notes table kept (PSEVN decision 2026-11-05), no UI yet", "P2 / Mini Notebook candidate")
 
 def main():
     for fn in (t_read_isolation, t_write_isolation, t_composite_fk, t_anon_and_server_only, t_quiz_security,
