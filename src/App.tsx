@@ -102,6 +102,12 @@ export default function App() {
       shell.classList.remove("has-pointer");
       shell.style.setProperty("--scene-shift-x", "0px");
       shell.style.setProperty("--scene-shift-y", "0px");
+      shell.style.setProperty("--scene-far-x", "0px");
+      shell.style.setProperty("--scene-far-y", "0px");
+      shell.style.setProperty("--scene-mid-x", "0px");
+      shell.style.setProperty("--scene-mid-y", "0px");
+      shell.style.setProperty("--scene-near-x", "0px");
+      shell.style.setProperty("--scene-near-y", "0px");
     };
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", onPointerLeave);
