@@ -32,7 +32,14 @@ function Universe() {
 }
 
 export default function App() {
-  const [lang,setLang] = useState<Language>("ar");
+  const [lang,setLang] = useState<Language>(() => {
+    try {
+      const saved = window.localStorage.getItem("az-language");
+      return saved === "en" || saved === "ar" ? saved : "ar";
+    } catch {
+      return "ar";
+    }
+  });
   const [dark,setDark] = useState(true);
   const [user,setUser] = useState<User|null>(null);
   const [authLoading,setAuthLoading] = useState(true);
@@ -60,6 +67,14 @@ export default function App() {
   const [error,setError] = useState("");
   const t = labels[lang];
   const ar = lang === "ar";
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("az-language",lang);
+    } catch {
+      // Keep the selected language for the current session if storage is unavailable.
+    }
+  },[lang]);
 
   async function refreshUser() {
     if (!supabase) return;
