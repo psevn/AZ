@@ -1,7 +1,7 @@
 :root {
   font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-  color: #f4f2ed;
-  background: #10131d;
+  color: #F1F5FF;
+  background: #070A14;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -14,15 +14,23 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .55; }
 
 .app-shell {
-  --bg: #10131d;
-  --panel: rgba(25, 30, 43, .82);
-  --panel-solid: #191e2b;
-  --text: #f4f2ed;
-  --muted: #9da4b5;
-  --line: rgba(255,255,255,.1);
-  --accent: #c8f169;
-  --accent-ink: #19210c;
-  --field: #111621;
+  --bg: #070A14;
+  --panel: rgba(17, 26, 43, .82);
+  --panel-solid: #111A2B;
+  --text: #F1F5FF;
+  --muted: #98A6BD;
+  --line: rgba(160, 190, 255, .12);
+  --accent: #67DBF3;
+  --accent-ink: #061326;
+  --field: #0B1020;
+  --brand-gradient: linear-gradient(
+    115deg,
+    #92F9FD 0%,
+    #67DBF3 28%,
+    #0456C0 65%,
+    #6501D2 100%
+  );
+
   min-height: 100vh;
   color: var(--text);
   background: var(--bg);
@@ -32,20 +40,39 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   flex-direction: column;
   isolation: isolate;
 }
+
 .theme-light {
-  --bg: #f2f3ef;
-  --panel: rgba(255,255,255,.84);
-  --panel-solid: #fff;
-  --text: #1c2330;
-  --muted: #687181;
-  --line: rgba(25,35,48,.12);
-  --accent: #8dbd32;
-  --accent-ink: #152006;
-  --field: #f5f6f2;
+  --bg: #F3F6FC;
+  --panel: rgba(255, 255, 255, .88);
+  --panel-solid: #FFFFFF;
+  --text: #101B32;
+  --muted: #64738C;
+  --line: rgba(20, 45, 85, .12);
+  --accent: #0456C0;
+  --accent-ink: #FFFFFF;
+  --field: #EDF2FA;
 }
-.ambient { position: absolute; width: 440px; height: 440px; border-radius: 50%; filter: blur(100px); opacity: .13; z-index: -1; pointer-events: none; }
-.ambient-one { background: #b9ee55; top: 5%; inset-inline-start: -220px; }
-.ambient-two { background: #6278d8; bottom: -260px; inset-inline-end: 5%; }
+
+.ambient {
+  position: absolute;
+  width: 440px;
+  height: 440px;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: .13;
+  z-index: -1;
+  pointer-events: none;
+}
+.ambient-one {
+  background: #67DBF3;
+  top: 5%;
+  inset-inline-start: -220px;
+}
+.ambient-two {
+  background: #6501D2;
+  bottom: -260px;
+  inset-inline-end: 5%;
+}
 .topbar { width: min(1180px, calc(100% - 48px)); margin: 0 auto; height: 88px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--text); text-decoration: none; font-size: 20px; font-weight: 700; letter-spacing: .12em; }
 .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--accent-ink); background: var(--accent); font-size: 18px; letter-spacing: 0; }
@@ -63,7 +90,7 @@ h1 { max-width: 650px; margin: 18px 0 14px; font-size: clamp(40px, 5.5vw, 68px);
 .orbit-ring { position: absolute; border: 1px solid var(--line); border-radius: 50%; transform: rotate(-24deg); }
 .ring-one { width: 300px; height: 120px; top: 52px; left: 0; }
 .ring-two { width: 220px; height: 170px; top: 28px; left: 40px; transform: rotate(35deg); }
-.orbit-core { position: absolute; width: 74px; height: 74px; border-radius: 24px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-size: 22px; font-weight: 700; left: 112px; top: 76px; box-shadow: 0 0 70px rgba(200,241,105,.18); }
+.orbit-core { position: absolute; width: 74px; height: 74px; border-radius: 24px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-size: 22px; font-weight: 700; left: 112px; top: 76px; box-shadow: 0 0 70px rgba(4,86,192,.28), 0 0 32px rgba(103,219,243,.18); }
 .orbit-label { position: absolute; color: var(--muted); font-size: 9px; letter-spacing: .2em; }
 .label-plan { top: 28px; left: 30px; }.label-study { top: 156px; left: 220px; }.label-grow { top: 8px; right: 22px; }
 .auth-card, .setup-card { background: var(--panel); border: 1px solid var(--line); border-radius: 25px; padding: clamp(24px, 4vw, 38px); box-shadow: 0 24px 90px rgba(0,0,0,.12); backdrop-filter: blur(18px); }
