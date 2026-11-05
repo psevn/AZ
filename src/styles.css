@@ -891,3 +891,10 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 @media (prefers-reduced-motion:reduce) {
   .workspace-rail { transition:none; }
 }
+
+@media (max-width:760px) {
+  .workspace-rail .rail-label { display:block; }
+  .workspace-rail .rail-bottom { display:flex; }
+  .workspace-rail.is-collapsed .rail-label { display:block; }
+  .workspace-rail.is-collapsed .rail-bottom { display:flex; }
+}
