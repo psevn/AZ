@@ -76,6 +76,40 @@ export default function App() {
     }
   },[lang]);
 
+  // Progressive pointer enhancement: CSS variables only, no React re-render per mouse move.
+  useEffect(() => {
+    const finePointer = window.matchMedia("(pointer: fine)").matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!finePointer || reducedMotion) return;
+    const shell = document.querySelector<HTMLElement>(".app-shell");
+    if (!shell) return;
+    const onPointerMove = (event: PointerEvent) => {
+      const x = event.clientX / window.innerWidth;
+      const y = event.clientY / window.innerHeight;
+      shell.style.setProperty("--pointer-x", (x * 100).toFixed(2) + "%");
+      shell.style.setProperty("--pointer-y", (y * 100).toFixed(2) + "%");
+      shell.style.setProperty("--scene-shift-x", ((x - 0.5) * -14).toFixed(1) + "px");
+      shell.style.setProperty("--scene-shift-y", ((y - 0.5) * -10).toFixed(1) + "px");
+      shell.classList.add("has-pointer");
+    };
+    const onPointerLeave = () => {
+      shell.classList.remove("has-pointer");
+      shell.style.setProperty("--scene-shift-x", "0px");
+      shell.style.setProperty("--scene-shift-y", "0px");
+    };
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onPointerLeave);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      document.documentElement.removeEventListener("pointerleave", onPointerLeave);
+      shell.classList.remove("has-pointer");
+      shell.style.removeProperty("--pointer-x");
+      shell.style.removeProperty("--pointer-y");
+      shell.style.removeProperty("--scene-shift-x");
+      shell.style.removeProperty("--scene-shift-y");
+    };
+  },[]);
+
   async function refreshUser() {
     if (!supabase) return;
     const {data,error:e} = await supabase.auth.getUser();
@@ -199,7 +233,7 @@ export default function App() {
   const workspaceNav:Page[] = ["workspace","notebook","focus","arena"];
   const sectionNav:Section[] = ["home","planning","az","community","me"];
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
+    <div className="ambient ambient-one"/><div className="ambient ambient-two"/><div className="pointer-field" aria-hidden="true"/>
     <header className="topbar">
       <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
       <div className="top-actions">
