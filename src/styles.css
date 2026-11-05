@@ -749,7 +749,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 
 
 
-/* AZ cosmic motion layer: sparse comets + pointer-driven water ripples. */
+/* AZ cosmic motion layer: sparse, ambient comets. */
 .universe-effects-canvas {
   position: absolute;
   inset: 0;
@@ -773,34 +773,3 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   .universe-effects-canvas { display: none; }
 }
 
-
-/* A soft water-glass lens follows the pointer while the canvas leaves ripples behind. */
-.water-refraction-lens {
-  position: absolute;
-  z-index: 0;
-  left: var(--water-x, -300px);
-  top: var(--water-y, -300px);
-  width: 190px;
-  height: 142px;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse, rgba(155,232,255,.075), rgba(103,219,243,.025) 42%, transparent 73%);
-  border: 1px solid rgba(170,235,255,.11);
-  box-shadow: inset 0 0 24px rgba(103,219,243,.06), 0 0 24px rgba(103,219,243,.035);
-  -webkit-backdrop-filter: blur(1.2px) saturate(1.32) contrast(1.04);
-  backdrop-filter: blur(1.2px) saturate(1.32) contrast(1.04);
-  -webkit-mask-image: radial-gradient(ellipse, #000 0 18%, rgba(0,0,0,.72) 47%, transparent 75%);
-  mask-image: radial-gradient(ellipse, #000 0 18%, rgba(0,0,0,.72) 47%, transparent 75%);
-  transition: opacity 180ms ease;
-  will-change: left, top, opacity;
-}
-.app-shell.water-active .water-refraction-lens { opacity: .9; }
-.theme-light .water-refraction-lens {
-  background: radial-gradient(ellipse, rgba(4,86,192,.055), rgba(103,219,243,.025) 42%, transparent 73%);
-  border-color: rgba(4,86,192,.10);
-}
-@media (pointer: coarse), (prefers-reduced-motion: reduce) {
-  .water-refraction-lens { display: none; }
-}
