@@ -238,11 +238,41 @@ export default function App() {
 
       <section className="main-content">
         {!supabaseConfigReady ? (
-          <div className="setup-card">
-            <span className="eyebrow">{t.eyebrow}</span>
-            <h1>{t.configTitle}</h1>
-            <p>{t.configBody}</p>
-            <code>.env.local</code>
+          <div className="auth-layout">
+            <div className="hero-copy">
+              <span className="eyebrow"><span className="eyebrow-pulse" />{t.eyebrow}</span>
+              <h1>{t.headline}</h1>
+              <p>{t.intro}</p>
+              <div className="hero-promise">
+                <span className="promise-line" />
+                <span>{isArabic ? "عالم واحد — من أول خطة إلى آخر إنجاز" : "One universe — from your first plan to every achievement"}</span>
+              </div>
+              <div className="universe-stage" aria-hidden="true">
+                <div className="universe-halo halo-a" />
+                <div className="universe-halo halo-b" />
+                <div className="universe-grid" />
+                <div className="universe-orbit orbit-a" />
+                <div className="universe-orbit orbit-b" />
+                <div className="universe-orbit orbit-c" />
+                <span className="universe-node node-a" />
+                <span className="universe-node node-b" />
+                <span className="universe-node node-c" />
+                <div className="universe-monogram"><img src="/az-mark.svg" alt="" /></div>
+                <div className="orbit-caption caption-plan"><i /> PLAN</div>
+                <div className="orbit-caption caption-study"><i /> STUDY</div>
+                <div className="orbit-caption caption-grow"><i /> GROW</div>
+                <div className="float-panel panel-progress"><span className="float-kicker">YOUR JOURNEY</span><strong>01 <small> / 04</small></strong><span className="progress-track"><i /></span><span className="float-foot">PLAN · STUDY · PRACTICE</span></div>
+                <div className="float-panel panel-spark"><span className="spark-icon">✳</span><span>Keep moving<br/><b>forward.</b></span></div>
+                <span className="stage-coordinate coordinate-a">25° 17′ N</span>
+                <span className="stage-coordinate coordinate-b">AZ / 001</span>
+              </div>
+            </div>
+            <section className="setup-card">
+              <span className="eyebrow">{t.eyebrow}</span>
+              <h2>{t.configTitle}</h2>
+              <p>{t.configBody}</p>
+              <code>.env.local</code>
+            </section>
           </div>
         ) : authLoading ? (
           <div className="loading-state">{t.loading}</div>
