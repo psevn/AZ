@@ -673,3 +673,18 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 @media (prefers-reduced-motion:reduce) {
   .primary-nav button { transition:none; }
 }
+
+
+/* Keep AZ modules visually attached to the AZ primary navigation item. */
+.primary-nav-item { min-width:0; display:grid; align-content:start; gap:0; }
+.primary-nav-item > .workspace-subnav { margin-top:7px; padding:10px 0 0; border-top:1px solid var(--line); }
+.primary-nav-item .subnav-label { display:block; padding-inline:12px; }
+.primary-nav-item .workspace-nav { display:grid; grid-template-columns:minmax(0,1fr); }
+.primary-nav-item .workspace-nav button { justify-content:flex-start; }
+@media (max-width:1000px) {
+  .primary-nav-item { min-width:0; }
+  .primary-nav-item > .workspace-subnav { margin-top:5px; padding-top:8px; }
+  .primary-nav-item .subnav-label { text-align:start; padding-inline:5px; }
+  .primary-nav-item .workspace-nav { grid-template-columns:minmax(0,1fr); }
+  .primary-nav-item .workspace-nav button { justify-content:flex-start; font-size:9px; padding-inline:7px; }
+}
