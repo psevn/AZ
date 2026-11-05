@@ -482,7 +482,8 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 }
 
 .workspace-nav button.active {
-  box-shadow: inset-inline-start 3px 0 0 var(--accent);
+  box-shadow: none;
+  border-inline-start: 3px solid var(--accent);
 }
 
 @media (pointer: coarse) {
