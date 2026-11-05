@@ -212,8 +212,7 @@ export default function App() {
       </div> : <div className="az-workspace">
         <aside className="workspace-rail">
           <div className="rail-label">AZ / THE ACADEMIC UNIVERSE</div>
-          <nav className="primary-nav" aria-label={ar?"الأقسام الرئيسية":"Main sections"}>{sectionNav.map((item,i)=><button key={item} className={section===item?"active":""} onClick={()=>{setSection(item);setMessage("");}}><span className="nav-index">0{i+1}</span><span>{t[item]}</span><i/></button>)}</nav>
-          {section==="az" && <div className="workspace-subnav"><span className="subnav-label">{ar?"داخل مساحة العمل":"IN WORKSPACE"}</span><nav className="workspace-nav" aria-label={ar?"أدوات مساحة العمل":"Workspace tools"}>{workspaceNav.map((item,i)=><button key={item} className={page===item?"active":""} onClick={()=>{setPage(item);setMessage("");}}><span className="nav-index">0{i+1}</span><span>{t[item]}</span><i/></button>)}</nav></div>}
+          <nav className="primary-nav" aria-label={ar?"الأقسام الرئيسية":"Main sections"}>{sectionNav.map((item,i)=><div className="primary-nav-item" key={item}><button className={section===item?"active":""} aria-expanded={item==="az"?section==="az":undefined} onClick={()=>{setSection(item);setMessage("");}}><span className="nav-index">0{i+1}</span><span>{t[item]}</span><i/></button>{item==="az" && section==="az" && <div className="workspace-subnav"><span className="subnav-label">{ar?"داخل AZ":"AZ MODULES"}</span><nav className="workspace-nav" aria-label={ar?"أدوات AZ":"AZ modules"}>{workspaceNav.map((subItem,j)=><button key={subItem} className={page===subItem?"active":""} onClick={()=>{setPage(subItem);setMessage("");}}><span className="nav-index">0{j+1}</span><span>{t[subItem]}</span><i/></button>)}</nav></div>}</div>)}</nav>
           <div className="rail-bottom"><span className="rail-orbit"/>PLAN · STUDY · GROW</div>
         </aside>
         <div className="workspace-main">
