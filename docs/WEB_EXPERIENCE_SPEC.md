@@ -1,14 +1,14 @@
 # AZ Web Experience Specification
 
-**Status:** Exploration in progress — not a finalized implementation specification  
+**Status:** Exploration in progress — foundational visual direction approved; detailed implementation decisions remain open  
 **Scope:** AZ Web MVP  
 **Owner:** AZ product founder  
-**Last updated:** 2026-11-04  
-**Related document:** [DESIGN.md](./DESIGN.md)
+**Last updated:** 2026-11-05  
+**Related documents:** [DESIGN.md](./DESIGN.md), [AZ_DESIGN_VISION.md](../AZ_DESIGN_VISION.md)
 
 ## Purpose
 
-This document is the working research and specification space for the six detailed areas that will shape AZ's future-forward web experience.
+This document is the working research and specification space for the detailed areas that will shape AZ's future-forward web experience.
 
 The ambition is to make AZ feel exceptionally fluid, fast, agile, immersive, and carefully engineered while preserving its own identity. The goal is not to copy Apple or any other product.
 
@@ -19,6 +19,26 @@ This document intentionally separates:
 - **Implementation:** work that is ready to be built and tested.
 
 Do not treat an idea or reference as an approved requirement. Do not change product scope, architecture, or brand identity based on this document without approval.
+
+## Approved foundational direction — The Academic Universe
+
+The founder has approved **The Academic Universe** as AZ's guiding visual concept. AZ should feel like a spacious, future-forward academic world rather than a conventional dashboard.
+
+### V1 — Future-forward foundation (approved)
+- Lightweight 2D cosmic atmosphere/background.
+- Ambient lighting, restrained glow, and controlled cyan/blue/violet gradients based on the approved AZ identity.
+- Meaningful spatial depth and layered interface surfaces.
+- Purposeful, short transitions and micro-interactions.
+- A clear visual identity across Home, Planning, Focus, and AZ Workspace, with different levels of visual intensity.
+- Responsive Arabic RTL and English LTR, keyboard and touch usability, accessible contrast, and reduced-motion support.
+
+### Future — AZ Universe expansion (not V1 scope)
+- Full interactive 3D environments and advanced spatial UI.
+- Advanced pointer-reactive lighting, particles, and cursor-driven spatial effects.
+- More dynamic immersive backgrounds and deeper personalization.
+- Ultra / Balanced / Lite visual performance profiles and optional sound design.
+
+The V1 cosmic atmosphere and visual depth are approved foundations, not features to postpone. Full 3D and advanced cursor effects remain future enhancements. This approval defines visual direction only; it does not expand the product's functional MVP scope or authorize implementation of every idea in this research document.
 
 ## How to use this document
 
@@ -59,7 +79,7 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 ### Evidence and decisions
 - References: _To be collected._
 - Open questions: _To be researched._
-- Approved decisions: _None added in this section yet._
+- Approved decisions: The Academic Universe concept and the lightweight V1 visual foundation above.
 
 ---
 
@@ -87,13 +107,13 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 ### Evidence and decisions
 - References: _To be collected._
 - Open questions: _To be researched._
-- Approved decisions: _None added in this section yet._
+- Approved decisions: Short, purposeful transitions and meaningful micro-interactions are part of the V1 direction; detailed timings and curves remain open.
 
 ---
 
 ## 3. Cursor Experience
 
-**Goal:** Use pointer interaction as subtle progressive enhancement on devices that support it.
+**Goal:** Explore advanced pointer interaction as a future progressive enhancement on devices that support it.
 
 ### Areas to explore
 - Pointer-following ambient light or glow.
@@ -112,6 +132,7 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 - What is the complete touch, keyboard, and no-hover equivalent?
 
 ### Guardrails
+- Advanced cursor-reactive lighting, particles, and spatial pointer effects are post-launch ideas, not V1 requirements.
 - Never make pointer movement necessary to discover or operate a feature.
 - Do not hijack the native cursor in ways that harm usability.
 - Avoid high-frequency React state updates or expensive layout work for pointer tracking.
@@ -120,13 +141,13 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 ### Evidence and decisions
 - References: _To be collected._
 - Open questions: _To be researched._
-- Approved decisions: _Pointer-reactive behavior is an exploration direction, not yet a component-level requirement._
+- Approved decisions: Advanced pointer-reactive behavior is a future enhancement, not a V1 requirement.
 
 ---
 
 ## 4. Background & Effects
 
-**Goal:** Give AZ a subtle sense of atmosphere, depth, and spatial presence without competing with academic content.
+**Goal:** Give AZ a recognizable academic-universe atmosphere, depth, and spatial presence without competing with academic content.
 
 ### Areas to explore
 - Static and gently animated ambient gradients.
@@ -145,15 +166,17 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 - What does the experience look like with effects disabled?
 
 ### Guardrails
-- Content and controls must remain legible above all backgrounds.
+- The V1 cosmic atmosphere, ambient lighting, controlled gradients, and layered depth are approved foundations.
+- Content and controls must remain legible above all backgrounds and effects.
 - Avoid permanent high-intensity animation, excessive blur, and decorative motion during focus sessions.
 - Prefer CSS and compositing-friendly techniques where practical; profile before adopting heavier rendering approaches.
 - Effects must degrade gracefully on modest hardware and mobile devices.
+- Full 3D environments, advanced cursor-reactive effects, and particle systems remain future enhancements.
 
 ### Evidence and decisions
 - References: _To be collected._
 - Open questions: _To be researched._
-- Approved decisions: _A calm, dynamic background is an exploration direction; exact technique and scope remain open._
+- Approved decisions: Lightweight 2D cosmic atmosphere, ambient lighting, restrained gradients, and meaningful depth are part of V1.
 
 ---
 
@@ -190,7 +213,7 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 ### Evidence and decisions
 - References: _To be collected._
 - Open questions: _To be researched._
-- Approved decisions: _None added in this section yet._
+- Approved decisions: The Academic Universe is the visual direction; detailed screen layouts remain to be explored and approved.
 
 ---
 
@@ -229,7 +252,7 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 ### Evidence and decisions
 - References: _To be collected._
 - Open questions: _To be researched._
-- Approved decisions: _Performance is a first-class requirement; numerical budgets remain to be defined._
+- Approved decisions: Performance is a first-class requirement; numerical budgets remain to be defined.
 
 ---
 
@@ -248,6 +271,7 @@ Only record a decision here after it has been explicitly approved.
 | Date | Area | Decision | Reason | Status |
 |---|---|---|---|---|
 | 2026-11-04 | Overall direction | Explore a future-forward experience built around fluidity, spatial UI, cursor interaction, living backgrounds, micro-interactions, intelligent motion, and performance. | Founder-approved direction. | Approved |
+| 2026-11-05 | Visual identity | Adopt **The Academic Universe** as AZ's guiding visual concept. V1 includes a lightweight 2D cosmic atmosphere, ambient lighting, controlled AZ gradients, spatial depth, layered surfaces, and purposeful micro-interactions. Full 3D, advanced cursor-reactive lighting, particles, and deeper environmental personalization remain post-launch. | Establish a distinctive future-forward identity in V1 without compromising delivery, accessibility, or performance. | Approved |
 
 ## Readiness Checklist
 
@@ -263,7 +287,7 @@ Before a section is considered ready for implementation:
 
 ## Implementation Handoff
 
-This document is a research workspace until decisions are approved. When a section is ready:
+This document is a research workspace for detailed effects and interactions. The foundational Academic Universe direction above is approved. When a detailed section is ready:
 1. Summarize the approved decisions.
 2. Identify affected screens and reusable components.
 3. Define acceptance criteria and test cases.
