@@ -116,6 +116,11 @@ export default function App() {
     return date < today && task.status !== "done";
   }),[tasks,filter,scope,today]);
   const subjectFor = (id:string|null) => subjects.find(s=>s.id===id)?.name || t.noSubject;
+  const completedCount = tasks.filter(task=>task.status==="done").length;
+  const completionRate = tasks.length ? Math.round(completedCount/tasks.length*100) : 0;
+  const openTasks = tasks.filter(task=>task.status!=="done");
+  const todayTaskCount = openTasks.filter(task=>task.due_at && new Date(task.due_at).toLocaleDateString("en-CA")===today).length;
+  const todayLabel = new Date().toLocaleDateString(ar?"ar-QA":"en-US",{weekday:"long",month:"long",day:"numeric"});
 
   async function auth(event:FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!supabase) return;
@@ -210,9 +215,42 @@ export default function App() {
         <div className="workspace-main">
           <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{page==="home"?t.today:t[page]}</h1><p>{page==="home"?t.todayText:page==="focus"?t.focusText:page==="study"?t.studyText:t.planning}</p></div><div className="workspace-meta"><span className="status-dot"/>{user.email}</div></div>
           {page==="home" && <div className="home-view">
-            <section className="cosmic-welcome"><div><span className="eyebrow">YOUR ACADEMIC UNIVERSE</span><h2>{ar?"كل إنجاز يبدأ بخطوة.":"Every breakthrough starts with a step."}</h2><p>{ar?"رتّب أولوياتك، وابدأ من حيث أنت.":"Set your priorities and begin where you are."}</p><button className="primary-button" onClick={()=>setPage("planning")}>{t.planning} ↗</button></div><div className="home-orbit-art"><div className="home-orbit one"/><div className="home-orbit two"/><div className="home-orbit three"/><div className="home-planet"><img src="/az-mark.svg" alt=""/></div><span className="home-star star-one"/><span className="home-star star-two"/><span className="home-star star-three"/></div></section>
-            <div className="stats-grid"><article className="stat-card"><span>{t.tasks}</span><strong>{String(tasks.length).padStart(2,"0")}</strong><small>{ar?"إجمالي المهام":"total tasks"}</small></article><article className="stat-card"><span>{t.completed}</span><strong>{String(tasks.filter(x=>x.status==="done").length).padStart(2,"0")}</strong><small>{ar?"إنجازاتك":"your progress"}</small></article><article className="stat-card"><span>{t.subjects}</span><strong>{String(subjects.length).padStart(2,"0")}</strong><small>{ar?"مساحات تعلّمك":"learning spaces"}</small></article></div>
-            <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">NEXT IN YOUR ORBIT</span><h2>{t.tasks}</h2></div><button className="text-action" onClick={()=>setPage("planning")}>{t.planning} ↗</button></div>{tasks.filter(x=>x.status!=="done").slice(0,4).length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p></div>:<div className="task-list">{tasks.filter(x=>x.status!=="done").slice(0,4).map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.est_minutes||45} min</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":"done")}>{task.status==="todo"?t.startTask:t.finishTask}</button></article>)}</div>}</section>
+            <section className="home-hero">
+              <div className="home-hero-copy">
+                <span className="home-kicker"><span className="eyebrow-pulse"/>{ar?"AZ — عالمك الأكاديمي":"AZ — THE ACADEMIC UNIVERSE"}</span>
+                <p className="home-date">{todayLabel}</p>
+                <h2>{ar?"مسارك يبدأ من هنا.":"Your next chapter starts here."}</h2>
+                <p className="home-hero-description">{ar?"حوّل أهدافك إلى خطوات واضحة، وتقدّم في دراستك بإيقاعك الخاص.":"Turn your goals into clear steps, and move your learning forward at your own pace."}</p>
+                <div className="home-hero-actions">
+                  <button className="primary-button" onClick={()=>setPage("planning")}>{ar?"افتح خطتك":"Open your plan"} <span>↗</span></button>
+                  <button className="home-secondary-action" onClick={()=>setPage("focus")}><span className="play-mark">▶</span>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</button>
+                </div>
+              </div>
+              <div className="home-universe-visual" aria-hidden="true">
+                <div className="universe-nebula nebula-cyan"/><div className="universe-nebula nebula-violet"/>
+                <div className="universe-grid-plane"/>
+                <div className="home-orbit one"/><div className="home-orbit two"/><div className="home-orbit three"/>
+                <div className="home-planet"><img src="/az-mark.svg" alt=""/></div>
+                <span className="home-star star-one"/><span className="home-star star-two"/><span className="home-star star-three"/>
+                <span className="universe-label label-plan">{ar?"خطّط":"PLAN"}</span><span className="universe-label label-study">{ar?"تعلّم":"STUDY"}</span><span className="universe-label label-grow">{ar?"تطوّر":"GROW"}</span>
+                <span className="universe-coordinate coordinate-top">AZ / 01</span><span className="universe-coordinate coordinate-bottom">FROM A TO Z</span>
+              </div>
+            </section>
+            <section className="home-overview">
+              <div className="home-progress-panel">
+                <div className="home-section-heading"><div><span className="eyebrow">{ar?"إشارتك اليومية":"YOUR DAILY SIGNAL"}</span><h2>{ar?"تقدّمك":"Your progress"}</h2></div><span className="progress-orbit-icon">✧</span></div>
+                <div className="progress-summary"><div className="progress-number"><strong>{completionRate}<small>%</small></strong><span>{ar?"من إجمالي المهام مكتمل":"of all tasks completed"}</span></div><div className="progress-track home-progress-track"><i style={{width:completionRate+"%"}}/></div></div>
+                <div className="home-metrics">
+                  <div><strong>{String(tasks.length).padStart(2,"0")}</strong><span>{ar?"إجمالي المهام":"TOTAL TASKS"}</span></div>
+                  <div><strong>{String(todayTaskCount).padStart(2,"0")}</strong><span>{ar?"مهام اليوم":"DUE TODAY"}</span></div>
+                  <div><strong>{String(subjects.length).padStart(2,"0")}</strong><span>{ar?"المواد":"SUBJECTS"}</span></div>
+                </div>
+              </div>
+              <section className="home-next-panel">
+                <div className="home-section-heading"><div><span className="eyebrow">{ar?"الخطوة التالية":"NEXT IN YOUR ORBIT"}</span><h2>{ar?"تابع من هنا":"Pick up where you left off"}</h2></div><button className="text-action" onClick={()=>setPage("planning")}>{t.planning} ↗</button></div>
+                {openTasks.length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p><button className="home-empty-action" onClick={()=>setPage("planning")}>{t.addTask} ↗</button></div>:<div className="task-list">{openTasks.slice(0,4).map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.est_minutes||45} {ar?"دقيقة":"min"}</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":"done")}>{task.status==="todo"?t.startTask:t.finishTask}</button></article>)}</div>}
+              </section>
+            </section>
           </div>}
           {page==="planning" && <div className="planning-view">
             <div className="planning-grid">
