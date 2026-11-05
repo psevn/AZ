@@ -18,6 +18,29 @@ Its visual identity combines:
 
 **The Academic Universe is the guiding visual concept from V1.** It does not mean that V1 must contain a fully 3D world.
 
+
+## 1.1 Brand Architecture — Two Roles, One AZ
+
+AZ uses two complementary brand expressions. They are not competing names or interchangeable taglines; each has a distinct job.
+
+- **The Academic Universe** — the official brand-world and positioning expression. Use it in the bio, formal brand descriptions, the website's About/brand story, presentations, and explanations of what AZ is building.
+- **From A to Z** — the short, memorable marketing tagline. Use it in advertising, campaigns, social posts, video end cards, and quick brand recall moments.
+
+Recommended relationship in extended brand copy:
+
+**AZ — The Academic Universe**  
+*A universe built for learning, growth, and achievement.*  
+**From A to Z.**
+
+Usage principles:
+- Keep the official AZ monogram as the primary visual identifier; neither phrase replaces the logo.
+- Use **The Academic Universe** when communicating the larger product vision and distinctive academic world.
+- Use **From A to Z** when a short, repeatable campaign line or memorable sign-off is needed.
+- The two expressions may appear together in brand introductions, but do not force both into every placement.
+- Keep claims specific and honest: AZ supports learning and academic progress; it does not promise grades, guaranteed outcomes, or exam prediction.
+- Treat this role split as the approved brand direction; detailed copy, localization, and campaign executions remain subject to testing.
+
+
 ## 2. V1 — Future-Forward Foundation
 
 V1 must already feel like AZ and establish the Academic Universe atmosphere without compromising delivery, usability, accessibility, or performance.
