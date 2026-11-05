@@ -183,6 +183,23 @@ Requirements:
 - Never expose service-role credentials in the browser.
 - Validate time ranges, date ranges, and ownership server-side / through database constraints where appropriate.
 
+### Current database audit (read-only snapshot — 2026-11-05)
+
+The live project was inspected without changing its schema.
+
+- `public.subjects` currently has: id, user_id, name, color, created_at, and exam_date.
+- `public.tasks` currently has: id, user_id, subject_id, title, due_at, priority, est_minutes, status, created_at, and note.
+- `public.profiles` currently has: id, display_name, language, created_at, plan, and deletion_requested_at.
+- `public.focus_sessions` already links an optional task_id.
+- `public.documents` already links an optional subject_id.
+- There is currently no academic-term table, recurring class-meeting table, study-availability table, or persisted onboarding-progress field in profiles.
+- RLS is enabled on subjects and tasks. Their current ALL policies scope both USING and WITH CHECK to the authenticated user's id.
+- Existing subject exam_date and task note should be evaluated and reused before adding overlapping fields.
+
+This means the timetable and resumable Academic Setup require a carefully designed additive schema change. The current exam_date field may be sufficient for a simple single exam date per subject in the earliest slice, but a separate assessment model may be needed if multiple exams or assignments per subject are required.
+
+No database changes were made during this audit.
+
 ## 9. V1 priority and release boundary
 
 ### V1 foundation — required
