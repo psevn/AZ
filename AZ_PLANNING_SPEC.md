@@ -198,6 +198,10 @@ The live project was inspected without changing its schema.
 
 This means the timetable and resumable Academic Setup require a carefully designed additive schema change. The current exam_date field may be sufficient for a simple single exam date per subject in the earliest slice, but a separate assessment model may be needed if multiple exams or assignments per subject are required.
 
+The existing task and document subject foreign keys are composite owner-safe relationships and use `ON DELETE SET NULL (subject_id)`; focus sessions similarly preserve history by detaching a deleted task. Preserve this behavior. Existing task constraints include title length 1–300, note max 5,000 characters, priority 1–3, status todo/doing/done, and positive estimated minutes. Subjects have a 1–120 character name constraint.
+
+The live RLS policy snapshot also shows `documents` currently has a SELECT-only authenticated policy, unlike the ALL policies on subjects and tasks. This may be intentional because document writes are performed through a trusted processing path; verify the actual upload / Edge Function flow before changing it. Do not blindly add client write policies.
+
 No database changes were made during this audit.
 
 ## 8A. Proposed additive database design (reviewed 2026-11-05)
