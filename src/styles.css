@@ -626,3 +626,50 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 @media (prefers-reduced-motion:reduce) {
   .home-progress-track i { transition:none; }
 }
+
+
+/* Primary AZ navigation: Workspace, Community, Me */
+.primary-nav { display:grid; gap:7px; padding-bottom:18px; border-bottom:1px solid var(--line); }
+.primary-nav button { display:flex; align-items:center; gap:11px; width:100%; min-height:46px; padding:11px 12px; border:1px solid transparent; border-radius:12px; color:var(--muted); background:transparent; text-align:start; font-size:13px; transition:background .2s,border-color .2s,color .2s; }
+.primary-nav button:hover { color:var(--text); background:rgba(103,219,243,.05); }
+.primary-nav button.active { color:var(--text); border-color:rgba(103,219,243,.22); background:linear-gradient(105deg,rgba(103,219,243,.13),rgba(101,1,210,.08)); }
+.primary-nav button.active i { width:6px; height:6px; margin-inline-start:auto; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent); }
+.workspace-subnav { display:grid; gap:9px; padding-top:17px; }
+.subnav-label { padding:0 12px 3px; color:var(--muted); font-size:8px; letter-spacing:.16em; }
+.workspace-nav { gap:5px; }
+.workspace-nav button { min-height:42px; padding:10px 11px; font-size:12px; }
+.theme-light .primary-nav button.active { background:linear-gradient(105deg,rgba(103,219,243,.19),rgba(101,1,210,.07)); border-color:rgba(4,86,192,.16); }
+.section-placeholder,.profile-view { min-height:430px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:38px; }
+.section-placeholder h2,.profile-view h2 { margin:14px 0 8px; font-size:30px; font-weight:580; }
+.section-placeholder>p,.profile-view>p { max-width:440px; color:var(--muted); font-size:13px; line-height:1.9; }
+.section-placeholder-orbit { width:124px; height:124px; display:grid; place-items:center; margin-bottom:22px; border:1px solid rgba(103,219,243,.27); border-radius:50%; box-shadow:0 0 0 13px rgba(103,219,243,.035),0 0 65px rgba(4,86,192,.13),inset 0 0 35px rgba(101,1,210,.08); }
+.community-symbol { color:var(--accent); font-size:48px; text-shadow:0 0 28px rgba(103,219,243,.5); }
+.coming-soon-label { margin-top:18px; padding:9px 13px; border:1px solid rgba(103,219,243,.22); border-radius:30px; color:var(--accent); font-size:9px; letter-spacing:.13em; }
+.profile-avatar { width:74px; height:74px; display:grid; place-items:center; margin-bottom:20px; border:1px solid rgba(103,219,243,.35); border-radius:24px; color:#fff; background:linear-gradient(135deg,#12b9d6,#315ee8 58%,#7a39d7); box-shadow:0 0 38px rgba(4,86,192,.2); font-size:30px; font-weight:650; }
+.profile-details { width:min(100%,480px); display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:24px; text-align:start; }
+.profile-details>div { display:grid; gap:7px; padding:15px; border:1px solid var(--line); border-radius:13px; background:color-mix(in srgb,var(--panel-solid) 60%,transparent); }
+.profile-details span { color:var(--muted); font-size:9px; }
+.profile-details strong { overflow-wrap:anywhere; color:var(--text-strong); font-size:12px; font-weight:550; }
+.profile-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:20px; }
+@media (max-width:1000px) {
+  .workspace-rail { gap:12px; }
+  .primary-nav { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding-bottom:10px; }
+  .primary-nav button { justify-content:center; gap:8px; min-height:44px; padding:10px 7px; font-size:11px; }
+  .primary-nav button .nav-index { display:none; }
+  .primary-nav button.active i { display:none; }
+  .workspace-subnav { gap:5px; padding-top:4px; }
+  .subnav-label { text-align:center; }
+  .workspace-nav { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .workspace-nav button { justify-content:center; gap:6px; min-height:42px; padding:9px 5px; font-size:10px; }
+}
+@media (max-width:680px) {
+  .primary-nav button { font-size:10px; }
+  .workspace-nav button { font-size:9px; }
+  .section-placeholder,.profile-view { min-height:360px; padding:25px 18px; }
+  .profile-details { grid-template-columns:1fr; }
+  .profile-actions { width:100%; }
+  .profile-actions button { flex:1 1 auto; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .primary-nav button { transition:none; }
+}
