@@ -67,6 +67,8 @@ export default function App() {
   const [loading,setLoading] = useState(false);
   const [setupChecked,setSetupChecked] = useState(false);
   const [showAcademicSetup,setShowAcademicSetup] = useState(false);
+  const [sidebarCollapsed,setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen,setMobileNavOpen] = useState(false);
   const [message,setMessage] = useState("");
   const [error,setError] = useState("");
   const t = labels[lang];
@@ -226,9 +228,12 @@ export default function App() {
 
   const workspaceNav:Page[] = ["workspace","notebook","focus","arena"];
   const sectionNav:Section[] = ["home","planning","az","community","me"];
+  const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",community:"◎",me:"◌"};
+  const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/><UniverseEffects />
     <header className="topbar">
+      {user && <button className="mobile-nav-toggle" type="button" onClick={()=>setMobileNavOpen(v=>!v)} aria-label={mobileNavOpen?(ar?"إغلاق القائمة":"Close navigation"):(ar?"فتح القائمة":"Open navigation")} aria-expanded={mobileNavOpen}>{mobileNavOpen?"×":"☰"}</button>}
       <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
       <div className="top-actions">
         <button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button>
@@ -253,10 +258,11 @@ export default function App() {
           <p className="switch-mode">{mode==="signin"?t.none:t.have}<button type="button" onClick={()=>setMode(mode==="signin"?"signup":"signin")}>{mode==="signin"?t.signUp:t.signIn}</button></p>
         </section>
       </div> : <div className="az-workspace">
-        <aside className="workspace-rail">
-          <div className="rail-label">AZ / THE ACADEMIC UNIVERSE</div>
-          <nav className="primary-nav" aria-label={ar?"الأقسام الرئيسية":"Main sections"}>{sectionNav.map((item,i)=><div className="primary-nav-item" key={item}><button className={section===item?"active":""} aria-expanded={item==="az"?section==="az":undefined} onClick={()=>{setSection(item);setMessage("");}}><span className="nav-index">0{i+1}</span><span>{t[item]}</span><i/></button>{item==="az" && section==="az" && <div className="workspace-subnav"><span className="subnav-label">{ar?"داخل AZ":"AZ MODULES"}</span><nav className="workspace-nav" aria-label={ar?"أدوات AZ":"AZ modules"}>{workspaceNav.map((subItem,j)=><button key={subItem} className={page===subItem?"active":""} onClick={()=>{setPage(subItem);setMessage("");}}><span className="nav-index">0{j+1}</span><span>{t[subItem]}</span><i/></button>)}</nav></div>}</div>)}</nav>
-          <div className="rail-bottom"><span className="rail-orbit"/>PLAN · STUDY · GROW</div>
+        {mobileNavOpen && <button className="mobile-nav-backdrop" type="button" aria-label={ar?"إغلاق القائمة":"Close navigation"} onClick={()=>setMobileNavOpen(false)}/>}
+        <aside className={"workspace-rail"+(sidebarCollapsed?" is-collapsed":"")+(mobileNavOpen?" is-mobile-open":"")}>
+          <div className="rail-topline"><div className="rail-label">AZ / THE ACADEMIC UNIVERSE</div><button className="rail-collapse" type="button" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?(ar?"توسيع القائمة":"Expand sidebar"):(ar?"طي القائمة":"Collapse sidebar")}>{sidebarCollapsed?"⇤":"⇥"}</button></div>
+          <nav className="primary-nav" aria-label={ar?"الأقسام الرئيسية":"Main sections"}>{sectionNav.map((item,i)=><div className="primary-nav-item" key={item}><button className={section===item?"active":""} aria-expanded={item==="az"?section==="az":undefined} title={sidebarCollapsed?t[item]:undefined} onClick={()=>{setSection(item);setMessage("");setMobileNavOpen(false);}}><span className="nav-glyph" aria-hidden="true">{navGlyphs[item]}</span><span className="nav-index">0{i+1}</span><span className="nav-text">{t[item]}</span><i/></button>{item==="az" && section==="az" && <div className="workspace-subnav"><span className="subnav-label">{ar?"داخل AZ":"AZ MODULES"}</span><nav className="workspace-nav" aria-label={ar?"أدوات AZ":"AZ modules"}>{workspaceNav.map((subItem,j)=><button key={subItem} className={page===subItem?"active":""} title={sidebarCollapsed?t[subItem]:undefined} onClick={()=>{setPage(subItem);setMessage("");setMobileNavOpen(false);}}><span className="module-glyph" aria-hidden="true">{moduleGlyphs[subItem]}</span><span className="nav-index">0{j+1}</span><span className="nav-text">{t[subItem]}</span><i/></button>)}</nav></div>}</div>)}</nav>
+          <div className="rail-bottom"><span className="rail-orbit"/> <span className="rail-motto">PLAN · STUDY · GROW</span></div>
         </aside>
         <div className="workspace-main">
           <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div><div className="workspace-meta"><span className="status-dot"/>{user.email}</div></div>
