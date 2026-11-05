@@ -68,3 +68,8 @@ alter default privileges for role postgres in schema public
 create schema private;
 alter default privileges for role postgres in schema private
   grant all on tables to anon, authenticated, service_role;
+-- Supabase also grants EXECUTE on new functions to these roles by default:
+alter default privileges for role postgres in schema public
+  grant execute on functions to anon, authenticated, service_role;
+alter default privileges for role postgres in schema private
+  grant execute on functions to anon, authenticated, service_role;

@@ -1,4 +1,4 @@
--- PROPOSED (not applied to the live project). Tested on the local replica only.
+-- APPLIED to the live project on 2026-11-05 as version 20261105073535 (approved by PSEVN). Tested locally first and verified live with a rolled-back runtime test.
 --
 -- Bug found by tests/live_schema_tests.py on 2026-11-05:
 --   private.submit_answer() fails for every valid answer with

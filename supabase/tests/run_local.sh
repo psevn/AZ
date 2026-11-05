@@ -30,6 +30,12 @@ SQL
 
 "${PSQL[@]}" -d az_test -f "$HERE/local_stubs.sql"
 "${PSQL[@]}" -d az_test -f "$SNAPSHOT"
+# The snapshot is the live state as of 2026-11-05 morning. Replay what was applied after it.
+for f in "$ROOT"/supabase/migrations/20261105*.sql; do
+  [ -e "$f" ] || continue
+  echo "applying live migration $(basename "$f")"
+  "${PSQL[@]}" -d az_test -f "$f"
+done
 # SKIP_PROPOSED=1 tests the live schema exactly as it is today (no proposed fixes).
 for f in "$ROOT"/supabase/proposed/*.sql; do
   [ -e "$f" ] || continue
