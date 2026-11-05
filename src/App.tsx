@@ -40,7 +40,7 @@ export default function App() {
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [section,setSection] = useState<Section>("home");
-  const [page,setPage] = useState<Page>("home");
+  const [page,setPage] = useState<Page>("workspace");
   const [subjects,setSubjects] = useState<Subject[]>([]);
   const [tasks,setTasks] = useState<Task[]>([]);
   const [subjectName,setSubjectName] = useState("");
@@ -181,8 +181,8 @@ export default function App() {
     setStarted(null); setElapsed(0); setBusy(false);
   }
 
-  const workspaceNav:Page[] = ["home","planning","study","focus"];
-  const sectionNav:Section[] = ["workspace","community","me"];
+  const workspaceNav:Page[] = ["workspace","notebook","focus","arena"];
+  const sectionNav:Section[] = ["home","planning","az","community","me"];
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
     <header className="topbar">
