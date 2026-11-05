@@ -53,6 +53,7 @@ V1 includes:
 - Ambient lighting, restrained glow, and lively but controlled gradients.
 - Visual depth through deliberate layers and spatially clear interface surfaces.
 - Smooth, short transitions and meaningful micro-interactions.
+- Pointer-reactive ambient lighting and restrained scene parallax on fine-pointer devices, with touch and reduced-motion fallbacks.
 - A consistent elevation and surface system rather than generic cards everywhere.
 - Centralized design tokens for colors, typography, spacing, surfaces, shadows, and motion.
 - Responsive layouts for Arabic RTL and English LTR.
@@ -65,14 +66,14 @@ V1 should express the Academic Universe consistently, while each area keeps the 
 - **Focus:** minimal, quiet, and distraction-free.
 - **AZ Workspace:** focused, readable, and functional.
 
-**V1 does not require WebGL, a full 3D environment, advanced cursor-reactive effects, or interactive particle systems.** The cosmic identity, ambient light, depth, and visual polish are part of V1; advanced rendering is not.
+**V1 does not require WebGL, a full 3D environment, complex cursor-reactive particle systems, or heavy real-time rendering.** Lightweight pointer-reactive lighting, subtle parallax, and responsive hover feedback are included in the V1 experience. Advanced rendering is not.
 
 ## 3. Future — Expand the AZ Universe
 
 Post-launch enhancements may include:
 - Interactive 3D environments.
 - Advanced spatial UI and immersive transitions.
-- Mouse/pointer-reactive lighting and particles.
+- Advanced mouse/pointer-reactive particle systems and multi-layer spatial interactions.
 - More dynamic cosmic environments and depth effects.
 - Ultra / Balanced / Lite performance profiles.
 - Student-selectable environments and visual effects.
