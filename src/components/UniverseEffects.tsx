@@ -11,7 +11,7 @@ function makeComet(width: number, height: number, initial = false): Comet {
   return {
     x: initial ? Math.random() * width : fromLeft ? -80 : width + 80,
     y: initial ? Math.random() * height : Math.random() * height * 0.82,
-    vx: Math.cos(angle) * speed * (fromLeft ? 1 : -1) * direction,
+    vx: Math.cos(angle) * speed * (fromLeft ? 1 : -1),
     vy: Math.sin(angle) * speed * direction,
     length: 48 + Math.random() * 78,
     width: 1 + Math.random() * 1.1,
@@ -28,6 +28,7 @@ export default function UniverseEffects() {
     const shell = canvas?.parentElement;
     const context = canvas?.getContext("2d", { alpha: true });
     if (!canvas || !shell || !context) return;
+    const lens = shell.querySelector<HTMLElement>(".water-refraction-lens");
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const finePointer = window.matchMedia("(pointer: fine)").matches;
@@ -69,6 +70,11 @@ export default function UniverseEffects() {
       pointerX = event.clientX - rect.left;
       pointerY = event.clientY - rect.top;
       pointerInside = pointerX >= 0 && pointerY >= 0 && pointerX <= width && pointerY <= height;
+      if (pointerInside && lens) {
+        lens.style.setProperty("--water-x", pointerX + "px");
+        lens.style.setProperty("--water-y", pointerY + "px");
+        shell.classList.add("water-active");
+      }
       const dx = pointerX - lastRippleX;
       const dy = pointerY - lastRippleY;
       const distance = Math.hypot(dx, dy);
@@ -84,6 +90,7 @@ export default function UniverseEffects() {
     };
     const onPointerLeave = () => {
       pointerInside = false;
+      shell.classList.remove("water-active");
       lastRippleX = -1000;
       lastRippleY = -1000;
     };
@@ -218,9 +225,10 @@ export default function UniverseEffects() {
       window.removeEventListener("pointermove", onPointerMove);
       shell.removeEventListener("pointerleave", onPointerLeave);
       ripples.length = 0;
+      shell.classList.remove("water-active");
       context.clearRect(0, 0, width, height);
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="universe-effects-canvas" aria-hidden="true" />;
+  return <><canvas ref={canvasRef} className="universe-effects-canvas" aria-hidden="true" /><div className="water-refraction-lens" aria-hidden="true" /></>;
 }
