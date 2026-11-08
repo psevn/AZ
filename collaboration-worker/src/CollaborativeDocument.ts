@@ -69,7 +69,9 @@ export class CollaborativeDocument {
           throw new Error("DOCUMENT_MISMATCH");
         }
         const saved = await state.storage.get<Uint8Array>("yjs-state");
-        return saved || new Y.Doc();
+        const document = new Y.Doc();
+        if (saved) Y.applyUpdate(document, saved);
+        return document;
       },
       async onStoreDocument({ document, documentName }) {
         if (documentName !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
