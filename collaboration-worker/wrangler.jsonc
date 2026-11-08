@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "az-collaboration",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "DOCUMENTS", "class_name": "CollaborativeDocument" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["CollaborativeDocument"] }
+  ],
+  "vars": {
+    "APP_ORIGIN": "https://az.ezord.com"
+  }
+}
