@@ -108,6 +108,7 @@ export default function ProjectCollaborativeEditor({
     };
 
     const resolveTicket = async (): Promise<string> => {
+      lastError = "";
       try {
         const { data, error: sessionError } = await client.auth.getSession();
         if (sessionError || !data.session?.access_token) throw new Error("AUTH_REQUIRED");
@@ -147,7 +148,6 @@ export default function ProjectCollaborativeEditor({
       name: documentId,
       document: documentState,
       token: resolveTicket,
-      flushDelay: 250,
       onStatus: ({ status }) => {
         if (disposed) return;
         setConnectionStatus(status);
@@ -224,6 +224,7 @@ export default function ProjectCollaborativeEditor({
         dir: "auto",
         lang,
         "aria-label": ar ? "مستند المشروع المشترك" : "Shared project document",
+        "data-placeholder": ar ? "ابدأ الكتابة هنا..." : "Start writing here...",
       },
     },
   }, [provider, documentState, userName, userColor, lang]);
