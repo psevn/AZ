@@ -52,6 +52,9 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
   const [taskDue, setTaskDue] = useState("");
   const [priority, setPriority] = useState("2");
   const [currentUserRole, setCurrentUserRole] = useState<"lead" | "member">("member");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+  const [creatingInvite, setCreatingInvite] = useState(false);
   const ar = lang === "ar";
 
   const copy = {
@@ -61,6 +64,11 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     tasks: ar ? "المهام" : "Tasks",
     activity: ar ? "النشاط" : "Activity",
     team: ar ? "الفريق" : "TEAM",
+    inviteEmail: ar ? "بريد العضو (اختياري)" : "Teammate email (optional)",
+    inviteAction: ar ? "إنشاء رابط دعوة" : "Create invite link",
+    creatingInvite: ar ? "جارٍ إنشاء الدعوة..." : "Creating invitation...",
+    inviteReady: ar ? "انسخ الرابط وأرسله لعضو الفريق." : "Copy this link and send it to your teammate.",
+    copyInvite: ar ? "نسخ الرابط" : "Copy link",
     progress: ar ? "الإنجاز" : "PROGRESS",
     due: ar ? "موعد التسليم" : "DEADLINE",
     noDue: ar ? "لم يحدد موعد" : "No deadline",
@@ -209,6 +217,36 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     else await refresh();
   }
 
+  async function createInvitation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!client || currentUserRole !== "lead" || creatingInvite) return;
+    setCreatingInvite(true);
+    setError("");
+    setInviteLink("");
+    const { data, error: inviteError } = await client.functions.invoke("project-invitations", {
+      body: { action: "create", projectId, invitedEmail: inviteEmail.trim() || null },
+    });
+    if (inviteError || !data?.token) {
+      setError(inviteError?.message || (ar ? "تعذر إنشاء رابط الدعوة." : "Could not create the invitation link."));
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.set("projectInvite", data.token);
+      setInviteLink(url.toString());
+      setInviteEmail("");
+    }
+    setCreatingInvite(false);
+  }
+
+  async function copyInvitation() {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setError("");
+    } catch {
+      setError(ar ? "تعذر النسخ تلقائياً؛ انسخ الرابط من الحقل." : "Automatic copy failed; copy the link from the field.");
+    }
+  }
+
   function eventLabel(event: Activity) {
     const title = typeof event.payload?.title === "string" ? event.payload.title : "";
     const labels: Record<string, string> = {
@@ -267,6 +305,15 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
               <strong>{members.length.toString().padStart(2, "0")}</strong>
               <p>{members.length <= 1 ? copy.emptyMembers : ar ? "فريق المشروع" : "Project team"}</p>
             </section>
+            {currentUserRole === "lead" && <section className="content-panel project-invite-panel">
+              <span className="eyebrow">{ar ? "أضف فريقك" : "GROW YOUR TEAM"}</span>
+              <h3>{ar ? "دعوة عضو جديد" : "Invite a teammate"}</h3>
+              <form className="projects-create-form" onSubmit={createInvitation}>
+                <label><span>{copy.inviteEmail}</span><input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} maxLength={320} placeholder="name@example.com" /></label>
+                <button className="primary-button full-button" type="submit" disabled={creatingInvite}>{creatingInvite ? copy.creatingInvite : copy.inviteAction}<span>↗</span></button>
+              </form>
+              {inviteLink && <div className="project-invite-link"><p>{copy.inviteReady}</p><input readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} /><button className="small-action" type="button" onClick={() => void copyInvitation()}>{copy.copyInvite}</button></div>}
+            </section>}
           </div>
           <section className="content-panel project-recent-panel">
             <div className="panel-heading"><div><span className="eyebrow">{copy.activity}</span><h3>{ar ? "آخر المستجدات" : "Latest updates"}</h3></div><button className="text-action" type="button" onClick={() => setTab("activity")}>{ar ? "عرض الكل" : "View all"} ↗</button></div>
