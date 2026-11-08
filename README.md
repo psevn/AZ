@@ -49,6 +49,12 @@ AZ is a web-first academic workspace. This repository starts with the Stage B fo
 
 The primary current visual/product reference is [AZ Promo V5 — Web Design Reference](docs/design/AZ-PROMO-V5-WEB-DESIGN-REFERENCE.md). It documents the dark futuristic unified workspace, navigation, Today dashboard, Library, PDF/AI study workspace, motion principles, and V1 scope guardrails.
 
+## Approved V1 addition — AZ Projects
+
+AZ Projects is approved as a V1 collaboration capability. The MVP scope, user journeys, security requirements, and proposed architecture are documented in [AZ Projects — MVP Product & Technical Specification](docs/product/AZ-PROJECTS-MVP.md).
+
+This is an approved product direction, not an implemented feature yet. The original QR attendance/live-gathering concept remains out of scope.
+
 ## Not complete yet
 
 - Invite-code gating.
