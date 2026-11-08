@@ -46,6 +46,18 @@ function Universe() {
   </div>;
 }
 
+function FocusClock({ started }: { started: number | null }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (started === null) { setElapsed(0); return; }
+    const tick = () => setElapsed(Math.floor((Date.now() - started) / 1000));
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [started]);
+  return <FocusClock started={started}/>;
+}
+
 export default function App() {
   const [lang,setLang] = useState<Language>(() => {
     try {
@@ -76,7 +88,6 @@ export default function App() {
   const [scope,setScope] = useState<"today"|"upcoming"|"overdue">("today");
   const [focusTask,setFocusTask] = useState("");
   const [started,setStarted] = useState<number|null>(null);
-  const [elapsed,setElapsed] = useState(0);
   const [busy,setBusy] = useState(false);
   const [loading,setLoading] = useState(false);
   const [setupChecked,setSetupChecked] = useState(false);
@@ -182,14 +193,6 @@ export default function App() {
     return () => { active = false; };
   },[user]);
 
-  useEffect(() => {
-    if (started === null) return;
-    const tick = () => setElapsed(Math.floor((Date.now()-started)/1000));
-    tick();
-    const id = window.setInterval(tick,1000);
-    return () => window.clearInterval(id);
-  },[started]);
-
   const today = new Date().toLocaleDateString("en-CA");
   const visible = useMemo(() => tasks.filter(task => {
     if (filter !== "all" && task.status !== filter) return false;
@@ -200,10 +203,10 @@ export default function App() {
     return date < today && task.status !== "done";
   }),[tasks,filter,scope,today]);
   const subjectFor = (id:string|null) => subjects.find(s=>s.id===id)?.name || t.noSubject;
-  const completedCount = tasks.filter(task=>task.status==="done").length;
+  const completedCount = useMemo(() => tasks.filter(task=>task.status==="done").length,[tasks]);
   const completionRate = tasks.length ? Math.round(completedCount/tasks.length*100) : 0;
-  const openTasks = tasks.filter(task=>task.status!=="done");
-  const todayTaskCount = openTasks.filter(task=>task.due_at && new Date(task.due_at).toLocaleDateString("en-CA")===today).length;
+  const openTasks = useMemo(() => tasks.filter(task=>task.status!=="done"),[tasks]);
+  const todayTaskCount = useMemo(() => openTasks.filter(task=>task.due_at && new Date(task.due_at).toLocaleDateString("en-CA")===today).length,[openTasks,today]);
   const todayLabel = new Date().toLocaleDateString(ar?"ar-QA":"en-US",{weekday:"long",month:"long",day:"numeric"});
 
   async function auth(event:FormEvent<HTMLFormElement>) {
@@ -260,7 +263,7 @@ export default function App() {
       started_at:new Date(started).toISOString(),ended_at:new Date().toISOString()
     });
     if (e) setError(e.message); else setMessage(t.saved);
-    setStarted(null); setElapsed(0); setBusy(false);
+    setStarted(null); setBusy(false);
   }
 
   const workspaceNav:Page[] = ["workspace","notebook","focus","arena"];
@@ -372,7 +375,7 @@ export default function App() {
           </div>}
           {section==="planning" && <Suspense fallback={<PageSkeleton label={t.loading} />}><ProjectPlanningFeed client={supabase} lang={lang} onOpenProject={setSelectedProjectId} /></Suspense>}
           {section==="projects" && <Suspense fallback={<PageSkeleton label={t.loading} />}>{selectedProjectId ? <ProjectWorkspace client={supabase} lang={lang} projectId={selectedProjectId} userId={user.id} onBack={()=>setSelectedProjectId(null)} /> : <ProjectsHome client={supabase} lang={lang} subjects={subjects} onOpenProject={setSelectedProjectId} />}</Suspense>}
-          {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">DEEP WORK SESSION</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>FOCUS ELAPSED</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
+          {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">DEEP WORK SESSION</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>FOCUS ELAPSED</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">KNOWLEDGE SYSTEM / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / NOTEBOOK</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}\n          {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / ARENA</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">COMING SOON</span></section>}\n          {section==="community" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / COMMUNITY</span><h2>{t.communityTitle}</h2><p>{t.communityText}</p><span className="coming-soon-label">{ar?"قريبًا":"COMING IN A LATER PHASE"}</span></section>}
           {section==="me" && <section className="profile-view content-panel"><div className="profile-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</div><span className="eyebrow">AZ / PERSONAL SPACE</span><h2>{t.meTitle}</h2><p>{t.meText}</p><div className="profile-details"><div><span>{t.account}</span><strong>{user.email}</strong></div><div><span>{t.appearance}</span><strong>{dark?(ar?"داكن":"Dark"):(ar?"فاتح":"Light")}</strong></div></div><div className="profile-actions"><button className="quiet-button" onClick={()=>setDark(v=>!v)}>{ar?"تغيير المظهر":"Change appearance"}</button><button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button><button className="quiet-button" onClick={()=>setShowAcademicSetup(true)}>{ar?"إعداد المساحة الأكاديمية":"Academic setup"}</button><button className="primary-button" onClick={signOut} disabled={busy}>{t.signOut}</button></div></section>}
