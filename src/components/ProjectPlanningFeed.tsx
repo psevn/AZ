@@ -40,7 +40,7 @@ export default function ProjectPlanningFeed({ client, lang, compact = false }: P
       setError(queryError.message);
     } else {
       setError("");
-      setItems((data || []) as PlanningItem[]);
+      setItems(((data || []) as PlanningItem[]).filter((item) => item.item_type !== "personal_task"));
     }
     setLoading(false);
   }, [client]);
