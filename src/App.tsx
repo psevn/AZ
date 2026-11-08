@@ -99,6 +99,18 @@ export default function App() {
     }
   };
 
+  const navigatePage = (next: Page) => {
+    if (next === page) return;
+    const viewDocument = document as Document & {
+      startViewTransition?: (callback: () => void) => { finished: Promise<void> };
+    };
+    if (viewDocument.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      viewDocument.startViewTransition(() => flushSync(() => setPage(next)));
+    } else {
+      setPage(next);
+    }
+  };
+
   useEffect(() => {
     try {
       window.localStorage.setItem("az-language",lang);
