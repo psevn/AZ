@@ -1,4 +1,5 @@
 import { Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
+import { DurableObject } from "cloudflare:workers";
 import { encodeYjsDocument, restoreYjsDocument } from "./yjsPersistence";
 
 interface TicketClaims {
@@ -42,15 +43,17 @@ async function verifyTicket(token: string, secret: string): Promise<TicketClaims
   return claims;
 }
 
-export class CollaborativeDocument {
+export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
   private readonly hocuspocus: Hocuspocus;
   private documentId = "";
 
   constructor(
-    state: DurableObjectState,
-    env: Env,
+    ctx: DurableObjectState,
+    env: Cloudflare.Env,
   ) {
+    super(ctx, env);
     const room = this;
+    const storage = this.ctx.storage;
     this.hocuspocus = new Hocuspocus({
       quiet: true,
       debounce: 1000,
@@ -71,14 +74,14 @@ export class CollaborativeDocument {
           // The UUID check is repeated here so the room cannot load another doc.
           throw new Error("DOCUMENT_MISMATCH");
         }
-        const saved = await state.storage.get<Uint8Array>("yjs-state");
+        const saved = await storage.get<Uint8Array>("yjs-state");
         return restoreYjsDocument(saved);
       },
       async onStoreDocument({ document, documentName }) {
         if (documentName !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
         const update = encodeYjsDocument(document);
-        await state.storage.put("yjs-state", update);
-        await state.storage.put("saved-at", new Date().toISOString());
+        await storage.put("yjs-state", update);
+        await storage.put("saved-at", new Date().toISOString());
       },
       async beforeHandleMessage({ context }) {
         assertLiveContext(context);
