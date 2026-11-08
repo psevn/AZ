@@ -116,13 +116,17 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
     };
     const connection = this.hocuspocus.handleConnection(socket, request);
 
-    server.addEventListener("message", async (event) => {
+    server.addEventListener("message", (event) => {
       const data = event.data;
+      if (data instanceof Blob) {
+        void data.arrayBuffer().then((buffer) => {
+          connection.handleMessage(new Uint8Array(buffer));
+        });
+        return;
+      }
       const bytes = typeof data === "string"
         ? new TextEncoder().encode(data)
-        : data instanceof Blob
-          ? new Uint8Array(await data.arrayBuffer())
-          : new Uint8Array(data as ArrayBuffer);
+        : new Uint8Array(data as ArrayBuffer);
       connection.handleMessage(bytes);
     });
 
