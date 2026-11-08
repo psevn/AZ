@@ -77,7 +77,7 @@ export default function ProjectPlanningFeed({ client, lang, compact = false, onO
     : (ar ? "بدون موعد" : "No date");
 
   if (loading) {
-    return <section className="project-planning-feed"><p className="muted">{ar ? "جارٍ تحميل عناصر المشاريع..." : "Loading project items..."}</p></section>;
+    return <section className="project-planning-feed"><div className="page-skeleton" role="status" aria-label={ar ? "جارٍ تحميل عناصر المشاريع" : "Loading project items"}><span className="skeleton-line skeleton-line-wide" /><span className="skeleton-line" /><span className="skeleton-line skeleton-line-short" /></div></section>;
   }
 
   return (
