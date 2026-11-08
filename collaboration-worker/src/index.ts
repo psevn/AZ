@@ -123,7 +123,7 @@ export default {
     }
 
     if (url.pathname === "/ticket" && request.method === "POST") {
-      if (origin && env.APP_ORIGIN && origin !== env.APP_ORIGIN) return json({ error: "ORIGIN_DENIED" }, 403);
+      if (origin && origin !== allowedOrigin) return json({ error: "ORIGIN_DENIED" }, 403);
       const response = await createTicket(request, env);
       const headers = new Headers(response.headers);
       for (const [key, value] of Object.entries(corsHeaders)) if (value) headers.set(key, value);
