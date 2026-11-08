@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { flushSync } from "react-dom";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import UniverseEffects from "./components/UniverseEffects";
@@ -92,7 +93,7 @@ export default function App() {
       startViewTransition?: (callback: () => void) => { finished: Promise<void> };
     };
     if (viewDocument.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      viewDocument.startViewTransition(() => setSection(next));
+      viewDocument.startViewTransition(() => flushSync(() => setSection(next)));
     } else {
       setSection(next);
     }
