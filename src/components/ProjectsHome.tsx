@@ -179,7 +179,7 @@ export default function ProjectsHome({ client, lang, subjects, onOpenProject }: 
             <div><span className="eyebrow">{copy.yourProjects}</span><h2>{ar ? "مساحات العمل" : "Project spaces"}</h2></div>
             <span className="count-pill">{projects.length.toString().padStart(2, "0")}</span>
           </div>
-          {loading ? <p className="muted">{copy.loading}</p> : error && projects.length === 0 ? (
+          {loading ? <div className="page-skeleton" role="status" aria-label={copy.loading}><span className="skeleton-line skeleton-line-wide" /><span className="skeleton-line" /><span className="skeleton-line skeleton-line-short" /></div> : error && projects.length === 0 ? (
             <div className="project-feed-empty"><span>!</span><p>{copy.loadError}</p></div>
           ) : projects.length === 0 ? (
             <div className="projects-empty-state">
