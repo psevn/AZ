@@ -273,7 +273,7 @@ export default function App() {
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/><UniverseEffects />
-    {(!user || section !== "home") && <header className="topbar">
+    {!user && <header className="topbar">
       <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
       <div className="top-actions">
         <button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button>
@@ -312,7 +312,7 @@ export default function App() {
           <button type="button" className={(section==="community"||section==="me"||moreMenuOpen)?"active":""} aria-expanded={moreMenuOpen} onClick={()=>setMoreMenuOpen(v=>!v)}><span className="nav-glyph" aria-hidden="true">•••</span><span>{ar?"المزيد":"More"}</span></button>
         </nav>
         <div className="workspace-main">
-          <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="az"?t.az:section==="projects"?t.projects:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="projects"?t.projectsTitle:section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="projects"?t.projectsText:section==="community"?t.communityText:t.meText}</p></div>{section !== "home" && <div className="workspace-meta"><span className="status-dot"/>{user.email}</div>}</div>
+          <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="az"?t.az:section==="projects"?t.projects:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="projects"?t.projectsTitle:section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="projects"?t.projectsText:section==="community"?t.communityText:t.meText}</p></div></div>
           {section==="home" && <div className="home-view">
             <section className="home-hero">
               <div className="home-hero-copy">
