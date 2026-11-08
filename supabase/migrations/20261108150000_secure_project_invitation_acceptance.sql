@@ -30,6 +30,17 @@ begin
   end if;
 
   if v_invitation.accepted_at is not null then
+    -- Make retries safe (React StrictMode, refresh, or a lost HTTP response):
+    -- the same authenticated member may repeat acceptance without consuming
+    -- the invitation a second time.
+    if exists (
+      select 1
+        from public.project_members
+       where project_id = v_invitation.project_id
+         and user_id = p_user_id
+    ) then
+      return v_invitation.project_id;
+    end if;
     raise exception 'INVITATION_ALREADY_USED' using errcode = 'P0001';
   end if;
 
@@ -59,6 +70,14 @@ begin
   update public.project_invitations
      set accepted_at = now()
    where id = v_invitation.id;
+
+  insert into public.project_activity (project_id, actor_id, event_type, payload)
+  values (
+    v_invitation.project_id,
+    p_user_id,
+    'member_joined',
+    jsonb_build_object('user_id', p_user_id)
+  );
 
   return v_invitation.project_id;
 end;
