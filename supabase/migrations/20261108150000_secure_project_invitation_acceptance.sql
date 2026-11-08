@@ -1,3 +1,28 @@
+-- Invitation creation writes a member_invited audit event. Keep the
+-- database allow-list aligned with the Edge Function's event vocabulary.
+alter table public.project_activity
+  drop constraint if exists project_activity_event_type_check;
+
+alter table public.project_activity
+  add constraint project_activity_event_type_check
+  check (event_type = any (array[
+    'project_created',
+    'member_joined',
+    'member_invited',
+    'member_removed',
+    'task_created',
+    'task_assigned',
+    'task_reassigned',
+    'task_status_changed',
+    'task_completed',
+    'document_created',
+    'document_edited',
+    'deadline_changed',
+    'project_completed',
+    'project_archived',
+    'attachment_uploaded'
+  ]::text[]));
+
 -- Secure, single-use project invitation acceptance.
 -- Invitation tokens are generated and hashed by the project-invitations Edge Function.
 -- Only service_role may execute this RPC; browser clients cannot choose an arbitrary user id.
