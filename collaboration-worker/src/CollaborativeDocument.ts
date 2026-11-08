@@ -47,7 +47,7 @@ export class CollaborativeDocument {
   private documentId = "";
 
   constructor(
-    private readonly state: DurableObjectState,
+    state: DurableObjectState,
     env: Env,
   ) {
     const room = this;
@@ -127,7 +127,6 @@ export class CollaborativeDocument {
 
     server.addEventListener("error", () => {
       connection.handleClose();
-      this.sockets.delete(server);
     });
 
     return new Response(null, { status: 101, webSocket: client });
