@@ -106,10 +106,12 @@ export class CollaborativeDocument {
     const server = pair[1];
     server.accept();
 
-    const connection = this.hocuspocus.handleConnection(
-      server as unknown as WebSocketLike,
-      request,
-    );
+    const socket: WebSocketLike = {
+      send: (data) => server.send(data),
+      close: (code, reason) => server.close(code, reason),
+      get readyState() { return server.readyState; },
+    };
+    const connection = this.hocuspocus.handleConnection(socket, request);
 
     server.addEventListener("message", async (event) => {
       const data = event.data;
