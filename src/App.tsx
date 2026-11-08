@@ -9,8 +9,8 @@ const ProjectPlanningFeed = lazy(() => import("./components/ProjectPlanningFeed"
 const ProjectsHome = lazy(() => import("./components/ProjectsHome"));
 const ProjectWorkspace = lazy(() => import("./components/ProjectWorkspace"));
 
-function PageSkeleton() {
-  return <div className="page-skeleton" role="status" aria-label="Loading">
+function PageSkeleton({ label = "Loading" }: { label?: string }) {
+  return <div className="page-skeleton" role="status" aria-label={label}>
     <span className="skeleton-line skeleton-line-wide" />
     <span className="skeleton-line" />
     <span className="skeleton-line skeleton-line-short" />
@@ -269,7 +269,7 @@ export default function App() {
       {!supabaseConfigReady ? <div className="auth-layout">
         <div className="hero-copy"><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{t.headline}</h1><p>{t.intro}</p><Universe/></div>
         <section className="setup-card"><h2>{t.config}</h2><p>{t.configText}</p><code>.env.local</code></section>
-      </div> : authLoading ? <PageSkeleton /> : !user ? <div className="auth-layout">
+      </div> : authLoading ? <PageSkeleton label={t.loading} /> : !user ? <div className="auth-layout">
         <div className="hero-copy"><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{t.headline}</h1><p>{t.intro}</p><Universe/></div>
         <section className="auth-card">
           <div className="auth-tabs"><button className={mode==="signin"?"active":""} onClick={()=>setMode("signin")} type="button">{t.signIn}</button><button className={mode==="signup"?"active":""} onClick={()=>setMode("signup")} type="button">{t.signUp}</button></div>
@@ -335,7 +335,7 @@ export default function App() {
               </section>
             </section>
           </div>}
-          {section==="home" && <Suspense fallback={<PageSkeleton />}><ProjectPlanningFeed client={supabase} lang={lang} compact onOpenProject={setSelectedProjectId} /></Suspense>}
+          {section==="home" && <Suspense fallback={<PageSkeleton label={t.loading} />}><ProjectPlanningFeed client={supabase} lang={lang} compact onOpenProject={setSelectedProjectId} /></Suspense>}
           {section==="planning" && <div className="planning-view">
             <div className="planning-grid">
               <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">BUILD YOUR ROUTE</span><h2>{t.addTask}</h2></div><span className="panel-symbol">＋</span></div>
@@ -354,18 +354,18 @@ export default function App() {
             </div>
             <section className="content-panel task-board"><div className="panel-heading"><div><span className="eyebrow">MISSION CONTROL</span><h2>{t.planning}</h2></div><span className="count-pill">{tasks.length.toString().padStart(2,"0")}</span></div>
               <div className="filter-bar">{(["today","upcoming","overdue"] as const).map(x=><button key={x} className={scope===x?"active":""} onClick={()=>setScope(x)}>{t[x==="today"?"todayFilter":x]}</button>)}<span className="filter-spacer"/>{(["all","todo","doing","done"] as const).map(x=><button key={x} className={filter===x?"active subtle":"subtle"} onClick={()=>setFilter(x)}>{t[x]}</button>)}</div>
-              {loading?<PageSkeleton />:visible.length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p></div>:<div className="task-list">{visible.map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.due_at?new Date(task.due_at).toLocaleDateString(ar?"ar-QA":"en-US"):t.noDue}</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":task.status==="doing"?"done":"todo")}>{task.status==="todo"?t.startTask:task.status==="doing"?t.finishTask:t.reopen}</button><button className="delete-action" onClick={()=>void removeTask(task)} aria-label={t.remove}>×</button></article>)}</div>}
+              {loading?<PageSkeleton label={t.loading} />:visible.length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p></div>:<div className="task-list">{visible.map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.due_at?new Date(task.due_at).toLocaleDateString(ar?"ar-QA":"en-US"):t.noDue}</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":task.status==="doing"?"done":"todo")}>{task.status==="todo"?t.startTask:task.status==="doing"?t.finishTask:t.reopen}</button><button className="delete-action" onClick={()=>void removeTask(task)} aria-label={t.remove}>×</button></article>)}</div>}
             </section>
           </div>}
-          {section==="planning" && <Suspense fallback={<PageSkeleton />}><ProjectPlanningFeed client={supabase} lang={lang} onOpenProject={setSelectedProjectId} /></Suspense>}
-          {section==="projects" && <Suspense fallback={<PageSkeleton />}>{selectedProjectId ? <ProjectWorkspace client={supabase} lang={lang} projectId={selectedProjectId} userId={user.id} onBack={()=>setSelectedProjectId(null)} /> : <ProjectsHome client={supabase} lang={lang} subjects={subjects} onOpenProject={setSelectedProjectId} />}</Suspense>}
+          {section==="planning" && <Suspense fallback={<PageSkeleton label={t.loading} />}><ProjectPlanningFeed client={supabase} lang={lang} onOpenProject={setSelectedProjectId} /></Suspense>}
+          {section==="projects" && <Suspense fallback={<PageSkeleton label={t.loading} />}>{selectedProjectId ? <ProjectWorkspace client={supabase} lang={lang} projectId={selectedProjectId} userId={user.id} onBack={()=>setSelectedProjectId(null)} /> : <ProjectsHome client={supabase} lang={lang} subjects={subjects} onOpenProject={setSelectedProjectId} />}</Suspense>}
           {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">DEEP WORK SESSION</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>FOCUS ELAPSED</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">KNOWLEDGE SYSTEM / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / NOTEBOOK</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}\n          {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / ARENA</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">COMING SOON</span></section>}\n          {section==="community" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / COMMUNITY</span><h2>{t.communityTitle}</h2><p>{t.communityText}</p><span className="coming-soon-label">{ar?"قريبًا":"COMING IN A LATER PHASE"}</span></section>}
           {section==="me" && <section className="profile-view content-panel"><div className="profile-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</div><span className="eyebrow">AZ / PERSONAL SPACE</span><h2>{t.meTitle}</h2><p>{t.meText}</p><div className="profile-details"><div><span>{t.account}</span><strong>{user.email}</strong></div><div><span>{t.appearance}</span><strong>{dark?(ar?"داكن":"Dark"):(ar?"فاتح":"Light")}</strong></div></div><div className="profile-actions"><button className="quiet-button" onClick={()=>setDark(v=>!v)}>{ar?"تغيير المظهر":"Change appearance"}</button><button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button><button className="quiet-button" onClick={()=>setShowAcademicSetup(true)}>{ar?"إعداد المساحة الأكاديمية":"Academic setup"}</button><button className="primary-button" onClick={signOut} disabled={busy}>{t.signOut}</button></div></section>}
         </div>
       </div>}
-      {showAcademicSetup && setupChecked && !loading && user && <Suspense fallback={<PageSkeleton />}><AcademicSetup userId={user.id} lang={lang} existingSubjects={subjects} onComplete={()=>{setShowAcademicSetup(false); void loadData();}} /></Suspense>}
+      {showAcademicSetup && setupChecked && !loading && user && <Suspense fallback={<PageSkeleton label={t.loading} />}><AcademicSetup userId={user.id} lang={lang} existingSubjects={subjects} onComplete={()=>{setShowAcademicSetup(false); void loadData();}} /></Suspense>}
       {message && <p className="feedback success-feedback" role="status">{message}</p>}
       {error && <p className="feedback error-feedback" role="alert">{error}</p>}
     </section>
