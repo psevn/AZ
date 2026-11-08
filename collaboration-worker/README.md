@@ -7,7 +7,7 @@ This package is intentionally isolated from the AZ web app. It is not deployed a
 - `POST /ticket`: validates a Supabase access token, resolves the primary project document, checks current project membership under the user's RLS permissions, and issues a short-lived signed collaboration ticket.
 - `GET /collab/:documentId` (WebSocket upgrade): routes one document UUID to one Durable Object.
 - `CollaborativeDocument`: bridges Cloudflare WebSockets to Hocuspocus v4 and persists Yjs binary state in Durable Object storage.
-- Tests run through Cloudflare's Workers Vitest integration; current coverage includes Worker health/routing, Durable Object instantiation, Yjs binary round-trip, and CRDT merge convergence.
+- Tests run through Cloudflare's Workers Vitest integration with shared storage and a single worker to support Durable Object WebSockets. Coverage includes Worker health/routing, Durable Object instantiation, Yjs binary round-trip, CRDT merge convergence, and a new two-provider test for live text sync, awareness presence, and recovery after forced Durable Object eviction. The new end-to-end test is authored but has not yet passed CI.
 
 The browser must pass the returned ticket through the Hocuspocus provider's `token` option. The Supabase access token itself is never placed in the WebSocket URL.
 
