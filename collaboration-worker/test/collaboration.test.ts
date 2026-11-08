@@ -1,4 +1,5 @@
 import { HocuspocusProvider } from "@hocuspocus/provider";
+import { evictDurableObject } from "cloudflare:test";
 import { env, exports } from "cloudflare:workers";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
@@ -185,11 +186,46 @@ describe("AZ collaboration WebSocket transport", () => {
         check();
       });
       expect(secondDoc.getText("content").toString()).toBe("AZ real-time collaboration");
+
+      first.provider.setAwarenessField("user", { name: "First member" });
+      await new Promise<void>((resolve, reject) => {
+        const check = () => {
+          const remoteUser = [...(second.provider.awareness?.getStates().values() || [])]
+            .some((state) => (state.user as { name?: string } | undefined)?.name === "First member");
+          if (remoteUser) {
+            second.provider.awareness?.off("change", check);
+            clearTimeout(timeout);
+            resolve();
+          }
+        };
+        const timeout = setTimeout(() => {
+          second.provider.awareness?.off("change", check);
+          reject(new Error("The second client did not receive the first client's presence state"));
+        }, 5_000);
+        second.provider.awareness?.on("change", check);
+        check();
+      });
+
+      // Hocuspocus persists after its configured debounce window.
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
     } finally {
       first.provider.destroy();
       second.provider.destroy();
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const durableObjectId = env.DOCUMENTS.idFromName(documentId);
+    await evictDurableObject(env.DOCUMENTS.get(durableObjectId), { webSockets: "close" });
+
+    const restoredDoc = new Y.Doc();
+    const restored = await waitForSync(createProvider(restoredDoc));
+    try {
+      expect(restoredDoc.getText("content").toString()).toBe("AZ real-time collaboration");
+    } finally {
+      restored.provider.destroy();
       firstDoc.destroy();
       secondDoc.destroy();
+      restoredDoc.destroy();
     }
   }, 20_000);
 });
