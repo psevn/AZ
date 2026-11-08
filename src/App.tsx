@@ -94,7 +94,7 @@ export default function App() {
     if (viewDocument.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       viewDocument.startViewTransition(() => setSection(next));
     } else {
-      navigateSection(next);
+      setSection(next);
     }
   };
 
