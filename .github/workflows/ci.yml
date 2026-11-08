@@ -47,5 +47,5 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Type-check collaboration worker
         run: npm run typecheck
-      - name: Test Yjs persistence
+      - name: Test Yjs persistence and two-client WebSocket collaboration
         run: npm test
