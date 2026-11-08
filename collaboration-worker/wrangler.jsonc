@@ -13,6 +13,6 @@
     { "tag": "v1", "new_sqlite_classes": ["CollaborativeDocument"] }
   ],
   "vars": {
-    "APP_ORIGIN": "https://az.ezord.com"
+    "APP_ORIGIN": "http://localhost:5173"
   }
 }
