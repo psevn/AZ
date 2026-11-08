@@ -82,6 +82,11 @@ export default function UniverseEffects() {
     };
 
     const animate = (time: number) => {
+      if (document.hidden) {
+        frame = 0;
+        previousTime = 0;
+        return;
+      }
       const delta = Math.min(0.04, previousTime ? (time - previousTime) / 1000 : 0.016);
       previousTime = time;
       context.clearRect(0, 0, width, height);
@@ -103,12 +108,22 @@ export default function UniverseEffects() {
       frame = window.requestAnimationFrame(animate);
     };
 
-    if (!reducedMotion) frame = window.requestAnimationFrame(animate);
-    else {
-      context.clearRect(0, 0, width, height);
-    }
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+        previousTime = 0;
+      } else if (!reducedMotion && frame === 0) {
+        frame = window.requestAnimationFrame(animate);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    if (!reducedMotion && !document.hidden) frame = window.requestAnimationFrame(animate);
+    else context.clearRect(0, 0, width, height);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.cancelAnimationFrame(frame);
       observer.disconnect();
       context.clearRect(0, 0, width, height);
