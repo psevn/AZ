@@ -304,3 +304,17 @@ The MVP is not done until:
 3. Whether the first release includes a second editable document or keeps one primary report plus attachments.
 4. Whether AI status summaries ship in the first public beta or initially use a deterministic report until the AI provider is selected.
 5. Document checkpoint frequency and retention limits.
+
+## Project document structure — confirmed product decision
+
+Every newly created project has one **primary shared document** as its default central workspace. It is created automatically with the project and is the first/default document members open to collaborate on. The primary document is not merely one item in a generic file list.
+
+The project lead may optionally add additional documents and files when needed (for example, supporting documents, research sections, references, PDFs, Word files, presentations, and attachments). These additions complement the primary shared document; they do not replace it or make the project feel like a collection of disconnected files.
+
+Product behavior:
+- One primary shared document per project in the initial release.
+- The primary document is collaboratively editable by authorized project members with real-time synchronization, persistence, and reconnect recovery.
+- Additional documents/files are optional and managed within the project by the lead, subject to project permissions.
+- Keep the primary document visually prominent and one click away from the project overview and assigned tasks.
+- Do not imply full Microsoft Word feature parity. Support practical DOCX import/export where validated; keep the native collaborative document as the canonical working copy.
+- Future support for multiple structured subdocuments can evolve from this foundation without changing the primary-document-first experience.
