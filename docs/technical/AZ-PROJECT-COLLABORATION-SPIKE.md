@@ -75,12 +75,12 @@ An isolated Worker proof-of-concept scaffold now exists under `collaboration-wor
 - `POST /ticket` validates the Supabase access token, resolves the primary project document, checks project membership with the caller's JWT/RLS, and issues a 15-minute HMAC-signed ticket.
 - `GET /collab/:documentId` routes the document to a Durable Object.
 - The Durable Object bridges Cloudflare WebSockets to Hocuspocus v4 and stores encoded Yjs state in Durable Object storage; restored binary state is applied into a fresh Y.Doc on load.
-- Cloudflare's Workers Vitest integration now covers Worker health/routing and Durable Object instantiation; Yjs tests cover binary round-trip persistence and concurrent update convergence at the CRDT layer.
+- Cloudflare's Workers Vitest integration covers Worker health/routing and Durable Object instantiation; Yjs tests cover binary round-trip persistence and concurrent update convergence at the CRDT layer. A new transport integration test now attempts to connect two independent Hocuspocus providers through a loopback WebSocket bridge into the Worker/DO route and assert end-to-end edit propagation. This new test is authored but not yet executed.
 - Wrangler declares required secret names and generates Worker binding types before TypeScript checks; no secret values are committed.
 - The browser's Supabase access token is sent only to the ticket endpoint; the WebSocket provider receives the scoped ticket instead.
 - A separate CI type-check job was added for this package.
 
-**Not yet verified:** npm dependency installation, TypeScript compilation, actual test execution, provider-to-provider WebSocket convergence, persistence after DO eviction/restart, reconnect recovery, Supabase RLS compatibility, and active-session revocation. The current Worker smoke test instantiates a Durable Object but does not exercise its WebSocket or persistence hooks. No deployment has occurred. The current session expiry is a 15-minute upper bound; it is not immediate revocation. The current adapter uses standard WebSockets, not the Hibernation API.
+**Not yet verified:** npm dependency installation, TypeScript compilation, actual test execution, provider-to-provider WebSocket convergence (the new integration test still needs a CI run), persistence after DO eviction/restart, reconnect recovery, Supabase RLS compatibility, and active-session revocation. The current Worker smoke test instantiates a Durable Object but does not exercise its WebSocket or persistence hooks. No deployment has occurred. The current session expiry is a 15-minute upper bound; it is not immediate revocation. The current adapter uses standard WebSockets, not the Hibernation API.
 
 The scaffold must not be integrated into the production editor until the acceptance tests above pass. The AZ frontend dependencies and lockfile have intentionally not been changed yet.
 
