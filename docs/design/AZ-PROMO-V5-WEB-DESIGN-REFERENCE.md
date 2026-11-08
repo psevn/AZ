@@ -207,3 +207,19 @@ The navigation model must adapt to the device rather than compressing the deskto
 - The five-item mobile bar is a navigation simplification, not a reduction in AZ functionality; secondary areas remain accessible through **More**.
 
 **Approval:** Explicitly approved by the user on 2026-11-08. Treat this navigation model as the source of truth unless the user changes it.
+
+
+## 12. Spatial composition — remove the dashboard ceiling
+
+**User direction, confirmed 2026-11-08:** the web interface must not feel boxed in by a conventional dashboard made from stacked, self-contained rectangular cards. Keep clear information hierarchy, but remove the visual ceiling created by repeated card containers.
+
+Implementation principles:
+- Treat the workspace as one continuous environment, not a stack of dashboard tiles.
+- Use open compositions, generous negative space, ambient light fields, subtle separators, and depth cues to connect related content.
+- Reserve strong bordered cards for genuinely independent tasks, forms, dialogs, or focused work surfaces; do not wrap every section in a card by default.
+- Home's hero should feel expansive and spatial. Progress and next-action areas should read as connected zones on one canvas, not two boxed widgets.
+- The sidebar should read as navigation within the environment, not another floating card.
+- Preserve legibility, clear actions, and responsive behavior. This is not permission to make the interface vague, sparse, or difficult to scan.
+- Maintain the AZ monogram and cyan → blue → violet identity. Use glow and motion selectively; no heavy always-on effects.
+
+This direction supersedes the earlier tendency toward repeated bordered panels while retaining the AZ_promo_v5 visual identity and the approved responsive navigation model.
