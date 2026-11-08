@@ -339,3 +339,16 @@ The first frontend slice is now present in this branch:
 **Not yet implemented or verified:** secure invitations and member onboarding, the live Tiptap/Yjs collaborative editor, durable document update storage/recovery, active collaborator cursors/presence, file attachments, the AZ Project Assistant, and the submission checklist. The primary document screen is currently an explicit editor-in-progress placeholder, not a functioning collaborative editor.
 
 **Verification boundary:** database migrations and rollback-only SQL trigger checks have been run. End-to-end browser tests with real authenticated users, cross-user RLS tests, and the frontend `npm run build` have not yet been completed. Do not treat this progress note as a beta-ready feature declaration.
+
+
+## P0 implementation update — invitation flow (2026-11-08)
+
+A first invitation implementation slice is now present on `fix/az-projects-collaboration-p0`:
+
+- The lead-only Edge Function creates 256-bit random invitation tokens, stores only SHA-256 hashes, optionally binds an invite to an email, expires links after seven days, and applies a per-creator daily issuance limit.
+- The acceptance RPC locks the invitation row, checks expiry and email binding, adds the authenticated user as a Member, marks the invitation as consumed, and records a member-joined activity event in one transaction.
+- The Edge Function verifies the caller's Supabase session and uses the service-role key only server-side. Invitation rows remain inaccessible to browser roles.
+- The project overview has lead-only invite controls, and the app can accept an invitation token after sign-in.
+- The migration also removes anonymous grants from project tables and keeps invitation-table access server-side.
+
+**Not deployed or verified yet:** the new migration has not been applied to the connected Supabase database, and the Edge Function has not been deployed. The frontend invite flow therefore must not be treated as live until those steps and authenticated two-user tests pass. The collaboration editor remains a separate P0 item; this invitation work does not make document editing collaborative.
