@@ -1507,3 +1507,22 @@ button:not(:disabled):active,
 @media (prefers-reduced-motion: reduce) {
   .home-task-skeleton i { animation: none; }
 }
+
+
+@media (pointer: coarse) {
+  .mobile-more-menu button,
+  .project-tabs button,
+  .project-back-button,
+  .project-open-document,
+  .home-secondary-action,
+  .home-empty-action,
+  .primary-nav button {
+    min-height: 44px;
+  }
+  :where(input, select) {
+    min-height: 44px;
+  }
+  :where(textarea) {
+    min-height: 88px;
+  }
+}
