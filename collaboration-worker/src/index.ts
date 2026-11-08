@@ -28,7 +28,7 @@ async function signTicket(claims: TicketClaims, secret: string): Promise<string>
   return payload + "." + base64Url(signature);
 }
 
-async function supabaseGet(env: Env, path: string, accessToken: string): Promise<Response> {
+async function supabaseGet(env: Cloudflare.Env, path: string, accessToken: string): Promise<Response> {
   return fetch(env.SUPABASE_URL.replace(/\/$/, "") + path, {
     headers: {
       apikey: env.SUPABASE_ANON_KEY,
@@ -38,7 +38,7 @@ async function supabaseGet(env: Env, path: string, accessToken: string): Promise
   });
 }
 
-async function createTicket(request: Request, env: Env): Promise<Response> {
+async function createTicket(request: Request, env: Cloudflare.Env): Promise<Response> {
   const authorization = request.headers.get("authorization") || "";
   const accessToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
   if (!accessToken) return json({ error: "AUTH_REQUIRED" }, 401);
@@ -95,7 +95,7 @@ async function createTicket(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Cloudflare.Env): Promise<Response> {
     const url = new URL(request.url);
     const origin = request.headers.get("origin");
     const allowedOrigin = env.APP_ORIGIN || "http://localhost:5173";
