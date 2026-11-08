@@ -1,10 +1,6 @@
 import { Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
 import { encodeYjsDocument, restoreYjsDocument } from "./yjsPersistence";
 
-interface Env {
-  COLLAB_TICKET_SECRET: string;
-}
-
 interface TicketClaims {
   sub: string;
   documentId: string;
