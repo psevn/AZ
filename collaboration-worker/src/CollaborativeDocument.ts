@@ -92,7 +92,7 @@ export class CollaborativeDocument {
       return new Response("WebSocket upgrade required", { status: 426 });
     }
 
-    const pathMatch = new URL(request.url).pathname.match(/^\\/collab\\/([0-9a-f-]{36})$/i);
+    const pathMatch = new URL(request.url).pathname.match(/^\/collab\/([0-9a-f-]{36})$/i);
     if (!pathMatch) return new Response("Invalid document route", { status: 400 });
     this.documentId = pathMatch[1].toLowerCase();
 
