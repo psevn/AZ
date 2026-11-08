@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: 22
       - name: Install collaboration worker dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --legacy-peer-deps
       - name: Type-check collaboration worker
         run: npm run typecheck
       - name: Test Yjs persistence and two-client WebSocket collaboration
