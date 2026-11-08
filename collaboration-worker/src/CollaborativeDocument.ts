@@ -46,13 +46,14 @@ export class CollaborativeDocument {
     private readonly state: DurableObjectState,
     private readonly env: Env,
   ) {
+    const room = this;
     this.hocuspocus = new Hocuspocus({
       quiet: true,
       debounce: 1000,
       maxDebounce: 5000,
       async onAuthenticate({ token, documentName }) {
         const claims = await verifyTicket(token, env.COLLAB_TICKET_SECRET);
-        if (claims.documentId !== documentName) throw new Error("DOCUMENT_MISMATCH");
+        if (claims.documentId !== documentName || claims.documentId !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
         return {
           userId: claims.sub,
           projectId: claims.projectId,
@@ -61,7 +62,7 @@ export class CollaborativeDocument {
         };
       },
       async onLoadDocument({ documentName }) {
-        if (documentName !== this.documentId) {
+        if (documentName !== room.documentId) {
           // The worker routes one stable document UUID to one Durable Object.
           // The UUID check is repeated here so the room cannot load another doc.
           throw new Error("DOCUMENT_MISMATCH");
@@ -70,13 +71,14 @@ export class CollaborativeDocument {
         return saved || new Y.Doc();
       },
       async onStoreDocument({ document, documentName }) {
-        if (documentName !== this.documentId) throw new Error("DOCUMENT_MISMATCH");
+        if (documentName !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
         const update = Y.encodeStateAsUpdate(document);
         await state.storage.put("yjs-state", update);
         await state.storage.put("saved-at", new Date().toISOString());
       },
       async beforeHandleMessage({ context }) {
         if (!context?.userId || !context?.projectId) throw new Error("AUTH_REQUIRED");
+        if (context.ticketExpiresAt < Math.floor(Date.now() / 1000)) throw new Error("TICKET_EXPIRED");
       },
     });
   }
@@ -84,7 +86,7 @@ export class CollaborativeDocument {
   async fetch(request: Request): Promise<Response> {
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       if (new URL(request.url).pathname.endsWith("/health")) {
-        return Response.json({ status: "ready", document: this.state.id.toString() });
+        return Response.json({ status: "ready", document: this.documentId || "unbound" });
       }
       return new Response("WebSocket upgrade required", { status: 426 });
     }
