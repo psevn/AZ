@@ -18,9 +18,10 @@ type Props = {
   client: SupabaseClient | null;
   lang: Language;
   compact?: boolean;
+  onOpenProject: (projectId: string) => void;
 };
 
-export default function ProjectPlanningFeed({ client, lang, compact = false }: Props) {
+export default function ProjectPlanningFeed({ client, lang, compact = false, onOpenProject }: Props) {
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -100,7 +101,7 @@ export default function ProjectPlanningFeed({ client, lang, compact = false }: P
           {visible.map((item) => {
             const deadline = item.item_type === "project_deadline";
             return (
-              <article className="project-feed-item" key={item.item_type + ":" + item.id}>
+              <button className="project-feed-item" type="button" key={item.item_type + ":" + item.id} onClick={() => { if (item.project_id) onOpenProject(item.project_id); }}>
                 <span className={"project-feed-marker " + (deadline ? "is-deadline" : "is-task")} />
                 <div className="project-feed-copy">
                   <strong>{item.title}</strong>
