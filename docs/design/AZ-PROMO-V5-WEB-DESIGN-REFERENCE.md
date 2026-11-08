@@ -133,3 +133,39 @@ Before accepting a new AZ screen, ask:
 
 ---
 **Decision note:** When discussing or implementing AZ web design, use `AZ_promo_v5` as the primary current reference unless the user explicitly supersedes it. Earlier references may remain useful for specific motion/atmosphere details, but must not override this newer overall web direction.
+
+
+## 10. Appearance system — confirmed product decisions
+
+AZ offers two selectable appearance systems in Settings. Students can switch between them at any time; changing appearance must not change product functionality, navigation, or information architecture.
+
+### 10.1 Universe
+
+- Free appearance.
+- Dark mode only; do not provide a white/light mode variant.
+- Distinctive immersive space-inspired atmosphere: deep cosmic surfaces, restrained stars/nebula imagery, ambient cyan/blue/violet light, and carefully controlled motion.
+- Keep study content, task surfaces, and text highly readable. Background effects must remain subordinate to content.
+
+### 10.2 AZ Signature
+
+- Free appearance.
+- Supports both Light Mode and Dark Mode.
+- Uses the official AZ identity: cyan/turquoise → electric blue → violet.
+- More restrained and clean than Universe while remaining recognizably AZ; it is not a generic default theme.
+
+### 10.3 Premium academic backgrounds
+
+- Premium subscribers may unlock a curated library of high-quality academic/discipline-inspired backgrounds, initially including concepts such as Medicine, Engineering, and Computer Science, with room to expand to other disciplines.
+- During onboarding, ask the student for their field/major and use it to recommend relevant backgrounds. The student may browse backgrounds from other disciplines too.
+- Allow a preview of premium backgrounds without a subscription. Require an explicit subscription upgrade when the student tries to apply/unlock one.
+- Keep the free Universe and AZ Signature appearances fully usable; premium backgrounds are an optional customization layer, not a usability restriction.
+- Backgrounds must be art-directed, premium-quality, and subtle enough to preserve contrast and long-session readability. They should adapt appropriately to the selected appearance where applicable.
+- Do not imply that every student in a discipline must use that discipline's background.
+
+### 10.4 Upgrade messaging and social proof
+
+- The premium prompt should explain the benefit clearly, show the selected background preview, display the actual current price and subscription terms, and provide a clear way to continue with the free experience.
+- Use encouraging community-oriented copy, e.g. “Join the next generation of students”, while the verified active-student count is below 10,000.
+- Only show “10,000+ students” (or another numeric social-proof claim) after the count is genuinely reached and supported by reliable product analytics. Never fabricate or prematurely round up the user count.
+- The onboarding and upgrade flow must feel encouraging, not coercive; do not block access to the free AZ experience.
+
