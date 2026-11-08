@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "wrangler types && tsc --noEmit && tsc --noEmit -p test/tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run --maxWorkers=1 --no-isolate"
   },
   "dependencies": {
     "@hocuspocus/server": "4.1.0",
