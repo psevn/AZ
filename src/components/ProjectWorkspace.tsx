@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const ProjectCollaborativeEditor = lazy(() => import("./ProjectCollaborativeEditor"));
 
 type Language = "ar" | "en";
 type Project = {
@@ -77,9 +79,9 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     primary: ar ? "المستند الرئيسي المشترك" : "PRIMARY SHARED DOCUMENT",
     docTitle: ar ? "مستند المشروع" : "Project document",
     docDescription: ar
-      ? "هذا هو المستند الأساسي الذي سيعمل عليه الفريق معاً. يجري تجهيز المحرر التعاوني وحفظ التعديلات المتزامنة."
-      : "This is the team's central working document. The collaborative editor and durable real-time sync are the next implementation milestone.",
-    editorStatus: ar ? "تجهيز المحرر التعاوني" : "COLLABORATIVE EDITOR IN PROGRESS",
+      ? "مستند واحد يعمل عليه الفريق معاً. تظهر التعديلات المشتركة مباشرة وتُحفظ تلقائياً."
+      : "One shared document for the team. Edits sync live between members and save automatically.",
+    editorStatus: ar ? "مستند تعاوني للفريق" : "SHARED TEAM DOCUMENT",
     taskTitle: ar ? "عنوان المهمة" : "Task title",
     taskDescription: ar ? "تفاصيل المهمة (اختياري)" : "Task details (optional)",
     assign: ar ? "إسناد إلى" : "Assign to",
@@ -327,13 +329,25 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
       )}
 
       {tab === "document" && (
-        <section className="content-panel project-document-detail">
-          <div className="project-document-detail-icon">▤</div>
-          <span className="eyebrow">{copy.primary}</span>
-          <h3>{document?.title || copy.docTitle}</h3>
-          <p>{copy.docDescription}</p>
-          <div className="project-document-state"><span className="status-dot" />{copy.editorStatus}</div>
-        </section>
+        document ? (
+          <Suspense fallback={<section className="content-panel project-editor-loading"><span className="skeleton-line skeleton-line-wide" /><span className="skeleton-line" /></section>}>
+            <ProjectCollaborativeEditor
+              client={client}
+              documentId={document.id}
+              documentTitle={document.title || copy.docTitle}
+              lang={lang}
+              userId={userId}
+            />
+          </Suspense>
+        ) : (
+          <section className="content-panel project-document-detail">
+            <div className="project-document-detail-icon">▤</div>
+            <span className="eyebrow">{copy.primary}</span>
+            <h3>{copy.docTitle}</h3>
+            <p>{error || copy.docDescription}</p>
+            <div className="project-document-state"><span className="status-dot" />{copy.editorStatus}</div>
+          </section>
+        )
       )}
 
       {tab === "tasks" && (
