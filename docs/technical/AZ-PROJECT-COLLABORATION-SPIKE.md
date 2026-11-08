@@ -1,6 +1,6 @@
 # AZ Projects — collaborative document technical spike
 
-Status: proposed implementation target; proof of concept required before production deployment.
+Status: implementation is integrated on an isolated draft branch; browser, authorization, revocation, and production acceptance remain open.
 Date: 2026-11-08
 Branch: `fix/az-projects-collaboration-p0`
 
@@ -62,28 +62,36 @@ Cloudflare recommends the Hibernation WebSocket API for idle Durable Object room
 1. Build the isolated Worker/DO transport spike and prove the Hocuspocus adapter.
 2. Add durable Yjs binary persistence and restart/reconnect tests.
 3. Add Supabase JWT verification and project membership checks.
-4. Add Tiptap editor and provider dependencies to the AZ frontend, updating `package-lock.json` with npm rather than hand-editing it.
-5. Replace the current editor-in-progress placeholder only after the provider passes the two-client test.
-6. Add collaborator presence, cursor styling, saving/connection states, and Arabic/English RTL/LTR coverage.
+4. Add Tiptap editor and provider dependencies to the AZ frontend, updating `package-lock.json` with npm rather than hand-editing it. **Implemented.**
+5. Replace the editor-in-progress placeholder with the Tiptap/Yjs editor after the Worker passes the two-client transport test. **Implemented in the branch; browser verification remains open.**
+6. Add collaborator presence, cursor styling, connection/sync states, and Arabic/English direction support. **Implemented in the branch; visual browser verification remains open.**
 7. Deploy only after the acceptance tests pass and the owner approves the Cloudflare/Supabase deployment.
 
 
 ## Current implementation snapshot — 2026-11-08
 
-An isolated Worker proof-of-concept scaffold now exists under `collaboration-worker/`:
+The isolated Worker and the AZ frontend editor are now connected at the code level on `fix/az-projects-collaboration-p0`:
 
-- `POST /ticket` validates the Supabase access token, resolves the primary project document, checks project membership with the caller's JWT/RLS, and issues a 15-minute HMAC-signed ticket.
+- `POST /ticket` validates the Supabase access token, resolves the primary project document, checks membership with the caller's JWT/RLS, and issues a 15-minute HMAC-signed ticket.
 - `GET /collab/:documentId` routes the document to a Durable Object.
-- The Durable Object bridges Cloudflare WebSockets to Hocuspocus v4 and stores encoded Yjs state in Durable Object storage; restored binary state is applied into a fresh Y.Doc on load.
-- Cloudflare's Workers Vitest integration covers Worker health/routing and Durable Object instantiation; Yjs tests cover binary round-trip persistence and concurrent update convergence at the CRDT layer. The end-to-end test now uses Wrangler's `createTestHarness()` to launch the real Worker build and connect two independent Hocuspocus providers over actual WebSockets. It asserts text propagation, awareness presence, and document recovery after disconnect/reconnect. The suite is authored but not yet executed successfully. Forced Durable Object eviction remains a separate acceptance test.
-- Wrangler declares required secret names and generates Worker binding types before TypeScript checks; no secret values are committed.
-- The browser's Supabase access token is sent only to the ticket endpoint; the WebSocket provider receives the scoped ticket instead.
-- A separate CI type-check job was added for this package.
+- The Durable Object bridges Cloudflare WebSockets to Hocuspocus v4 and persists encoded Yjs binary state.
+- `src/components/ProjectCollaborativeEditor.tsx` uses Tiptap, Yjs Collaboration, CollaborationCaret, Supabase Auth, and the Worker ticket endpoint. It displays connection/sync state and collaborator presence, refreshes its short-lived ticket before expiry, and uses automatic Yjs synchronization rather than replacing the whole HTML document.
+- `ProjectWorkspace` now lazy-loads the collaborative editor when the primary document tab is opened. The root environment variable `VITE_AZ_COLLABORATION_URL` points to the Worker origin.
+- The invitation migration now includes the `member_invited` event in the `project_activity` check constraint. This was dry-run inside a transaction and rolled back; no live migration was applied.
+- CI passed the root AZ type-check and Vite production build, Worker TypeScript checks, Worker health/routing and DO smoke tests, Yjs binary persistence and CRDT merge tests, and a real two-client WebSocket integration test. The integration test verifies text propagation, awareness presence, and reconnect recovery using Wrangler's `createTestHarness()`.
 
-**Not yet verified:** npm dependency installation, TypeScript compilation, actual test execution, provider-to-provider WebSocket convergence (the new integration suite still needs a CI run), persistence after DO eviction/restart, Supabase RLS compatibility, and active-session revocation. The current Worker smoke test instantiates a Durable Object but does not exercise its WebSocket or persistence hooks. No deployment has occurred. The current session expiry is a 15-minute upper bound; it is not immediate revocation. The current adapter uses standard WebSockets, not the Hibernation API.
+**What the passing integration test does not prove:** it creates a test-signed ticket and exercises the `/collab/:documentId` route. It does not test the browser UI, `POST /ticket`, live Supabase Auth/RLS, simultaneous conflicting edits through the full Tiptap editor, forced Durable Object eviction/restart, or active membership revocation.
 
-The scaffold must not be integrated into the production editor until the acceptance tests above pass. The AZ frontend dependencies and lockfile have intentionally not been changed yet.
+**Remaining production blockers:**
+- Verify the complete browser flow against a local Worker and the AZ Supabase project.
+- Verify RLS for project documents and membership rows with both member and non-member accounts.
+- Implement and test prompt revocation of active WebSocket sessions when a member is removed. The current 15-minute ticket expiry is not immediate revocation; idle sockets can remain connected.
+- Test recovery after forced Durable Object eviction/restart. Current passing test covers client disconnect/reconnect only.
+- Verify Arabic RTL, English LTR, mixed-direction paragraphs, accessibility, and mobile behavior in a browser.
+- The live Supabase migration history contains project foundation migrations whose corresponding SQL files are missing from the Git repository. Recover and commit those SQL sources before a clean rebuild or production deployment.
+- The adapter uses standard accepted WebSockets, not the Hibernation API. Cost, connection limits, and hibernation compatibility remain unverified.
 
+No Worker deployment has occurred, no live Supabase migration has been applied, and the draft PR remains targeted at `feature/az-projects-mvp`, not `main`.
 ## References
 
 - Hocuspocus v4 release notes: https://github.com/ueberdosis/hocuspocus/blob/main/RELEASE_NOTES_V4.md
