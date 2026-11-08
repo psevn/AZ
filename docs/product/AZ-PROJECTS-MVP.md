@@ -33,6 +33,8 @@ A team must be able to:
 - Project title, short description, optional linked AZ subject, due date, and status.
 - Private by default; only project members can access it.
 - Project overview with progress, upcoming deadlines, outstanding work, members, and recent activity.
+- **AZ-wide integration:** the project's due date is a single canonical project field. It appears automatically in every member's Planning and Home views; it must never be copied into separate personal task rows. Assigned project tasks appear in the assignee's Planning, while the full team task board remains in the project workspace.
+- Changing or completing the project updates all relevant AZ surfaces from the same source of truth.
 - One primary rich-text report/document in the first collaborative release.
 - Project attachments (PDF, DOCX, PPTX, images) may be uploaded and downloaded; editing arbitrary file formats collaboratively is out of scope.
 - The data model must not prevent multiple editable documents from being added later.
@@ -67,6 +69,8 @@ Rules:
 - Export to DOCX/PDF can follow after core editing and persistence are stable; do not claim export until tested.
 
 ### 3.4 Tasks
+
+Project tasks are shared project records, not duplicated personal tasks. Planning consumes them through a unified read model alongside personal tasks. A project deadline is a shared milestone visible to every project member; it is not an individually owned task.
 
 Task fields:
 
@@ -180,7 +184,17 @@ Names are proposed; final SQL must be reconciled with the live schema and migrat
 
 Use composite foreign keys where appropriate to ensure task assignees and document references belong to the same project. Enable RLS on every exposed public table. Add explicit Data API grants for new public tables because current Supabase projects no longer automatically expose new tables by default.
 
-## 7. Security and privacy requirements
+## 7. AZ-wide integration requirements
+
+- Projects are first-class academic entities, not an isolated Community feature.
+- The canonical project deadline is stored once on `projects.due_at`.
+- A unified `planning_items` read model combines personal tasks, each member's assigned project tasks, and shared project deadlines.
+- Home, Planning, notifications, and future Weekly Review should consume the same project/task records rather than creating shadow copies.
+- A project deadline change must propagate to every member's Planning/Home view without each member manually adding or syncing it.
+- Project task completion and project status must be reflected consistently in project overview and relevant personal views.
+- Navigation should preserve context: opening a project item from Planning should deep-link to that project and task; opening the project deadline should open the project overview.
+
+## 8. Security and privacy requirements
 
 - All project tables have RLS enabled before client access is granted.
 - Project reads require membership; project writes require role-appropriate membership.
@@ -195,7 +209,7 @@ Use composite foreign keys where appropriate to ensure task assignees and docume
 - Revocation and role changes must invalidate active collaboration access, not only future page loads.
 - Audit cross-project access with two independent test users.
 
-## 8. Technical direction — proposed, subject to a proof of concept
+## 9. Technical direction — proposed, subject to a proof of concept
 
 ### Client
 
@@ -227,7 +241,7 @@ Fallback: use a Yjs provider over Supabase Realtime Broadcast with durable Yjs b
 
 No paid collaboration service is selected or approved at this stage.
 
-## 9. Design requirements
+## 10. Design requirements
 
 - Follow the AZ_promo_v5 visual reference: dark spatial workspace, charcoal layered panels, restrained cyan/blue/violet accents, clear hierarchy, and purposeful motion.
 - Keep the editor readable and calm; the document itself must dominate the working area.
@@ -237,7 +251,7 @@ No paid collaboration service is selected or approved at this stage.
 - Presence colors must be curated and accessible, not arbitrary rainbow decoration.
 - Respect reduced-motion settings and keyboard accessibility.
 
-## 10. Delivery phases
+## 11. Delivery phases
 
 ### Phase 0 — Foundation and spike
 - Confirm the current app architecture and database policies.
@@ -268,7 +282,7 @@ No paid collaboration service is selected or approved at this stage.
 - Responsive, accessibility, performance, and security review.
 - Usage/cost measurement for AI features.
 
-## 11. Definition of done
+## 12. Definition of done
 
 The MVP is not done until:
 
@@ -283,7 +297,7 @@ The MVP is not done until:
 - Automated tests cover role permissions, invitation expiry/reuse, cross-project isolation, and concurrent document edits.
 - No secret key is present in client bundles.
 
-## 12. Decisions still open
+## 13. Decisions still open
 
 1. Final collaboration transport after the proof of concept.
 2. Whether invitations are link-only initially or also email-bound.
