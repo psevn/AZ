@@ -77,7 +77,7 @@ class WorkerLoopbackWebSocket extends EventTarget {
     }
   }
 
-  send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+  send(data: string | ArrayBuffer | Blob | ArrayBufferView) {
     if (this.readyState !== WorkerLoopbackWebSocket.OPEN || !this.socket) {
       throw new Error("WebSocket is not open");
     }
