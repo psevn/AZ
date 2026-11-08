@@ -7,7 +7,7 @@ This package is intentionally isolated from the AZ web app. It is not deployed a
 - `POST /ticket`: validates a Supabase access token, resolves the primary project document, checks current project membership under the user's RLS permissions, and issues a short-lived signed collaboration ticket.
 - `GET /collab/:documentId` (WebSocket upgrade): routes one document UUID to one Durable Object.
 - `CollaborativeDocument`: bridges Cloudflare WebSockets to Hocuspocus v4 and persists Yjs binary state in Durable Object storage.
-- Tests run through Cloudflare's Workers Vitest integration with shared storage and a single worker to support Durable Object WebSockets. Coverage includes Worker health/routing, Durable Object instantiation, Yjs binary round-trip, CRDT merge convergence, and a new two-provider test for live text sync, awareness presence, and recovery after forced Durable Object eviction. The new end-to-end test is authored but has not yet passed CI.
+- Unit tests run through Cloudflare's Workers Vitest integration with shared storage and a single worker. A separate Node.js integration suite uses Wrangler's `createTestHarness()` to run the actual Worker build and connect two independent Hocuspocus clients over real WebSockets. It checks live text sync, awareness presence, and document recovery after disconnect/reconnect. This end-to-end suite is authored but has not yet passed CI.
 
 The browser must pass the returned ticket through the Hocuspocus provider's `token` option. The Supabase access token itself is never placed in the WebSocket URL.
 
@@ -20,7 +20,7 @@ The browser must pass the returned ticket through the Hocuspocus provider's `tok
    - `COLLAB_TICKET_SECRET` — use a random secret of at least 32 characters.
    - Keep `.dev.vars` out of Git.
 3. For a future Cloudflare deployment, set each required value with `npx wrangler secret put <NAME>`; do not place secret values in `wrangler.jsonc`.
-4. Run `npm run typecheck`, `npm test`, then `npm run dev`.
+4. Run `npm run typecheck`, `npm test`, `npm run test:integration`, then `npm run dev`.
 5. The local app origin defaults to `http://localhost:5173`. Set `APP_ORIGIN` to the exact deployed AZ origin before any non-local deployment.
 
 Example local `.dev.vars` (never commit real values):
