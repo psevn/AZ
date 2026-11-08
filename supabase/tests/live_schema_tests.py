@@ -432,6 +432,44 @@ def t_exam_mode_and_flashcards():
     expect("flashcards: private function not callable by anon", "42501", f"select * from private.mark_flashcard('{fc}'::uuid,'known')", "anon")
 
 
+def t_planning_foundation():
+    """Tables added by ChatGPT (migration 20261105160000): academic_terms, class_meetings, academic_setup."""
+    seed()
+    ta, tb = "aaaaaaaa-0000-0000-0000-0000000000a1", "bbbbbbbb-0000-0000-0000-0000000000b1"
+    r = run(f"insert into academic_terms (id,user_id,name,is_active) values ('{ta}','{A}','Fall','true')", "authenticated", A)
+    check("planning: owner can create a term (positive control)", r.ok, r.err[:120])
+    run(f"insert into academic_terms (id,user_id,name) values ('{tb}','{B}','Fall B')", "authenticated", B)
+    run(f"insert into class_meetings (user_id,subject_id,weekday,starts_at_local,ends_at_local,timezone) values "
+        f"('{A}','{rid(A, 'subjects')}',1,'09:00','10:00','Asia/Qatar')", "authenticated", A)
+    run(f"insert into academic_setup (user_id,status) values ('{A}','in_progress')", "authenticated", A)
+    for t in ("academic_terms", "class_meetings", "academic_setup"):
+        check(f"planning: B sees none of A's rows in {t}", count(f"select 1 from {t} where user_id='{A}'", "authenticated", B) == 0)
+        expect(f"planning: anon denied on {t}", "42501", f"select * from {t}", "anon")
+    check("planning: B cannot update/delete A's term",
+          affected(f"update academic_terms set name='x' where id='{ta}'", "authenticated", B) == 0
+          and affected(f"delete from academic_terms where id='{ta}'", "authenticated", B) == 0)
+    expect("planning: B cannot insert a term owned by A (RLS)", "42501",
+           f"insert into academic_terms (user_id,name) values ('{A}','x')", "authenticated", B)
+    expect("planning: B cannot point a subject at A's term (23503)", "23503",
+           f"update subjects set term_id='{ta}' where id='{rid(B, 'subjects')}'", "service_role")
+    expect("planning: B cannot add a class meeting on A's subject (23503)", "23503",
+           f"insert into class_meetings (user_id,subject_id,weekday,starts_at_local,ends_at_local,timezone) values "
+           f"('{B}','{rid(A, 'subjects')}',1,'09:00','10:00','Asia/Qatar')", "service_role")
+    expect("planning: weekday 8 rejected (23514)", "23514",
+           f"update class_meetings set weekday=8 where user_id='{A}'", "service_role")
+    expect("planning: meeting must end after it starts (23514)", "23514",
+           f"update class_meetings set ends_at_local='08:00' where user_id='{A}'", "service_role")
+    expect("planning: only one active term per user (23505)", "23505",
+           f"insert into academic_terms (user_id,name,is_active) values ('{A}','Spring','true')", "service_role")
+    run(f"update subjects set term_id='{ta}' where id='{rid(A, 'subjects')}'", "service_role")
+    run(f"delete from academic_terms where id='{ta}'", "service_role")
+    check("planning: deleting a term keeps the subject and clears term_id",
+          run(f"select term_id is null from subjects where id='{rid(A, 'subjects')}'").scalar() == "t")
+    run(f"delete from auth.users where id='{A}'")
+    check("planning: account deletion removes meetings and setup state",
+          count(f"select 1 from class_meetings where user_id='{A}'") == 0 and count(f"select 1 from academic_setup where user_id='{A}'") == 0)
+
+
 def t_profiles_and_trigger():
     seed()
     check("trigger: auth user creation auto-creates profiles for both users", count("select 1 from profiles") == 2)
@@ -563,7 +601,7 @@ def t_spec_conformance():
     gap("notes table kept (PSEVN decision 2026-11-05), no UI yet", "P2 / Mini Notebook candidate")
 
 def main():
-    for fn in (t_read_isolation, t_write_isolation, t_composite_fk, t_anon_and_server_only, t_quiz_security, t_exam_mode_and_flashcards,
+    for fn in (t_read_isolation, t_write_isolation, t_composite_fk, t_anon_and_server_only, t_quiz_security, t_exam_mode_and_flashcards, t_planning_foundation,
                t_profiles_and_trigger, t_constraints, t_storage_policies, t_cascades_and_deletion, t_spec_conformance):
         print(f"\n== {fn.__name__}")
         fn()
