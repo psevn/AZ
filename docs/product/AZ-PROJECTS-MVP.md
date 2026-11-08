@@ -318,3 +318,24 @@ Product behavior:
 - Keep the primary document visually prominent and one click away from the project overview and assigned tasks.
 - Do not imply full Microsoft Word feature parity. Support practical DOCX import/export where validated; keep the native collaborative document as the canonical working copy.
 - Future support for multiple structured subdocuments can evolve from this foundation without changing the primary-document-first experience.
+
+
+## 14. Implementation progress — 2026-11-08
+
+The following foundations have now been applied to the connected Supabase project and recorded as migration files in this branch:
+
+- The existing `project_documents_one_primary_idx` unique partial index enforces at most one primary document per project.
+- A database trigger creates the primary `project_documents` metadata row when the project creator is added as the project's Lead. The insert is guarded by creator identity and `auth.uid()`; duplicate primary rows are ignored by the unique index.
+- The `public.create_project(...)` RPC creates the project and its Lead membership in one transaction. The Lead-membership trigger creates the primary document in that same transaction.
+- Project task insert, assignment/reassignment, and status/completion changes are recorded in `project_activity` by a database trigger, so activity is not dependent on a separate client-side write.
+- `project_documents` and `project_activity` are included in the `supabase_realtime` publication for workspace refreshes.
+
+The first frontend slice is now present in this branch:
+- AZ Projects has its own primary navigation destination.
+- Students can create projects and see their accessible project list.
+- A project workspace shell displays its primary document, team count, progress, task board, and activity feed.
+- Project tasks can be created and their status can be advanced by the lead or assignee.
+
+**Not yet implemented or verified:** secure invitations and member onboarding, the live Tiptap/Yjs collaborative editor, durable document update storage/recovery, active collaborator cursors/presence, file attachments, the AZ Project Assistant, and the submission checklist. The primary document screen is currently an explicit editor-in-progress placeholder, not a functioning collaborative editor.
+
+**Verification boundary:** database migrations and rollback-only SQL trigger checks have been run. End-to-end browser tests with real authenticated users, cross-user RLS tests, and the frontend `npm run build` have not yet been completed. Do not treat this progress note as a beta-ready feature declaration.
