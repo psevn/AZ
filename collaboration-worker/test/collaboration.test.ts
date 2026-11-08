@@ -69,6 +69,7 @@ class WorkerLoopbackWebSocket extends EventTarget {
       socket.addEventListener("error", () => {
         this.dispatchWithHandler("error", new Event("error"));
       });
+      socket.accept?.();
       this.readyState = WorkerLoopbackWebSocket.OPEN;
       this.dispatchWithHandler("open", new Event("open"));
     } catch {
