@@ -222,7 +222,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     return (labels[event.event_type] || copy.unknownEvent) + (title ? ": " + title : "");
   }
 
-  if (loading) return <section className="project-workspace-loading"><span className="eyebrow">{copy.loading}</span></section>;
+  if (loading) return <section className="project-workspace-loading page-skeleton" role="status" aria-label={copy.loading}><span className="skeleton-line skeleton-line-wide" /><span className="skeleton-line" /><span className="skeleton-line skeleton-line-short" /></section>;
   if (!project) return <section className="content-panel"><button className="quiet-button" type="button" onClick={onBack}>← {copy.back}</button><p className="muted">{error || copy.notFound}</p></section>;
 
   return (
