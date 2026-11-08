@@ -1,5 +1,4 @@
 import { Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
-import * as Y from "yjs";
 import { encodeYjsDocument, restoreYjsDocument } from "./yjsPersistence";
 
 interface Env {
@@ -49,12 +48,11 @@ async function verifyTicket(token: string, secret: string): Promise<TicketClaims
 
 export class CollaborativeDocument {
   private readonly hocuspocus: Hocuspocus;
-  private readonly sockets = new WeakMap<WebSocket, ReturnType<Hocuspocus["handleConnection"]>>();
   private documentId = "";
 
   constructor(
     private readonly state: DurableObjectState,
-    private readonly env: Env,
+    env: Env,
   ) {
     const room = this;
     this.hocuspocus = new Hocuspocus({
@@ -116,7 +114,6 @@ export class CollaborativeDocument {
       server as unknown as WebSocketLike,
       request,
     );
-    this.sockets.set(server, connection);
 
     server.addEventListener("message", async (event) => {
       const data = event.data;
@@ -130,7 +127,6 @@ export class CollaborativeDocument {
 
     server.addEventListener("close", (event) => {
       connection.handleClose({ code: event.code, reason: event.reason } as CloseEvent);
-      this.sockets.delete(server);
     });
 
     server.addEventListener("error", () => {
