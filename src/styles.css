@@ -1108,7 +1108,9 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 
 .project-feed-item {
   width: 100%;
-  border: 0;
+  border: 1px solid rgba(148, 163, 184, .12);
+  border-radius: 13px;
+  background: rgba(8, 15, 29, .34);
   font: inherit;
   color: inherit;
   text-align: start;
