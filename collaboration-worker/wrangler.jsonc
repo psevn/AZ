@@ -3,16 +3,33 @@
   "name": "az-collaboration",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-08",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "durable_objects": {
     "bindings": [
-      { "name": "DOCUMENTS", "class_name": "CollaborativeDocument" }
+      {
+        "name": "DOCUMENTS",
+        "class_name": "CollaborativeDocument"
+      }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["CollaborativeDocument"] }
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "CollaborativeDocument"
+      ]
+    }
   ],
   "vars": {
     "APP_ORIGIN": "http://localhost:5173"
+  },
+  "secrets": {
+    "required": [
+      "SUPABASE_URL",
+      "SUPABASE_ANON_KEY",
+      "COLLAB_TICKET_SECRET"
+    ]
   }
 }
