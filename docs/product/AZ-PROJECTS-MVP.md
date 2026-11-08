@@ -350,5 +350,7 @@ A first invitation implementation slice is now present on `fix/az-projects-colla
 - The Edge Function verifies the caller's Supabase session and uses the service-role key only server-side. Invitation rows remain inaccessible to browser roles.
 - The project overview has lead-only invite controls, and the app can accept an invitation token after sign-in.
 - The migration also removes anonymous grants from project tables and keeps invitation-table access server-side.
+- The same migration makes the task-activity trigger write through a restricted `SECURITY DEFINER` function and removes direct client insert permission from the activity feed, preventing members from fabricating audit events.
+- The collaborative editor spike decision and acceptance matrix are documented in [AZ Projects collaboration spike](../technical/AZ-PROJECT-COLLABORATION-SPIKE.md).
 
 **Not deployed or verified yet:** the new migration has not been applied to the connected Supabase database, and the Edge Function has not been deployed. The frontend invite flow therefore must not be treated as live until those steps and authenticated two-user tests pass. The collaboration editor remains a separate P0 item; this invitation work does not make document editing collaborative.
