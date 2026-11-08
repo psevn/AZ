@@ -1105,3 +1105,14 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   .project-overview-side { grid-template-columns: 1fr 1fr; }
   .project-title-meta { gap: 10px; }
 }
+
+.project-feed-item {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.project-feed-item:hover .project-feed-copy strong { color: var(--accent); }
+.project-feed-item:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
