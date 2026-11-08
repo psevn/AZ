@@ -13,12 +13,14 @@ The browser must pass the returned ticket through the Hocuspocus provider's `tok
 ## Local setup
 
 1. From this folder run `npm install`.
-2. Configure local secrets:
-   - `npx wrangler secret put SUPABASE_URL` is not needed; set `SUPABASE_URL` and `SUPABASE_ANON_KEY` as local vars in `.dev.vars`.
-   - Set `COLLAB_TICKET_SECRET` to a random secret of at least 32 characters in `.dev.vars`.
+2. Configure local secrets in `.dev.vars` (all three names are declared in `wrangler.jsonc`):
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `COLLAB_TICKET_SECRET` — use a random secret of at least 32 characters.
    - Keep `.dev.vars` out of Git.
-3. Run `npm run typecheck`, then `npm run dev`.
-4. The local app origin defaults to `http://localhost:5173`. Set `APP_ORIGIN` to the exact deployed AZ origin before any non-local deployment.
+3. For a future Cloudflare deployment, set each required value with `npx wrangler secret put <NAME>`; do not place secret values in `wrangler.jsonc`.
+4. Run `npm run typecheck`, `npm test`, then `npm run dev`.
+5. The local app origin defaults to `http://localhost:5173`. Set `APP_ORIGIN` to the exact deployed AZ origin before any non-local deployment.
 
 Example local `.dev.vars` (never commit real values):
 
