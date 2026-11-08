@@ -69,6 +69,8 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     creatingInvite: ar ? "جارٍ إنشاء الدعوة..." : "Creating invitation...",
     inviteReady: ar ? "انسخ الرابط وأرسله لعضو الفريق." : "Copy this link and send it to your teammate.",
     copyInvite: ar ? "نسخ الرابط" : "Copy link",
+    memberInvited: ar ? "تم إرسال دعوة لعضو" : "Invited a teammate",
+    memberJoined: ar ? "انضم عضو إلى المشروع" : "A teammate joined the project",
     progress: ar ? "الإنجاز" : "PROGRESS",
     due: ar ? "موعد التسليم" : "DEADLINE",
     noDue: ar ? "لم يحدد موعد" : "No deadline",
@@ -256,6 +258,8 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
       task_status_changed: copy.statusChanged,
       task_completed: copy.taskCompleted,
       document_created: copy.docCreated,
+      member_invited: copy.memberInvited,
+      member_joined: copy.memberJoined,
     };
     return (labels[event.event_type] || copy.unknownEvent) + (title ? ": " + title : "");
   }
