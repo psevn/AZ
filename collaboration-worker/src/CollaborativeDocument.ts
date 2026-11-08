@@ -1,5 +1,6 @@
 import { Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
 import * as Y from "yjs";
+import { encodeYjsDocument, restoreYjsDocument } from "./yjsPersistence";
 
 interface Env {
   COLLAB_TICKET_SECRET: string;
@@ -77,13 +78,11 @@ export class CollaborativeDocument {
           throw new Error("DOCUMENT_MISMATCH");
         }
         const saved = await state.storage.get<Uint8Array>("yjs-state");
-        const document = new Y.Doc();
-        if (saved) Y.applyUpdate(document, saved);
-        return document;
+        return restoreYjsDocument(saved);
       },
       async onStoreDocument({ document, documentName }) {
         if (documentName !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
-        const update = Y.encodeStateAsUpdate(document);
+        const update = encodeYjsDocument(document);
         await state.storage.put("yjs-state", update);
         await state.storage.put("saved-at", new Date().toISOString());
       },
