@@ -86,7 +86,11 @@ async function createTicket(request: Request, env: Env): Promise<Response> {
   const membership = memberships[0];
   if (!membership) return json({ error: "PROJECT_ACCESS_DENIED" }, 403);
 
-  const expiresAt = Math.floor(Date.now() / 1000) + 90;
+  if (!env.COLLAB_TICKET_SECRET || env.COLLAB_TICKET_SECRET.length < 32) {
+    return json({ error: "COLLABORATION_SECRET_NOT_CONFIGURED" }, 503);
+  }
+
+  const expiresAt = Math.floor(Date.now() / 1000) + 15 * 60;
   const token = await signTicket({
     sub: user.id,
     documentId: document.id,
@@ -102,14 +106,15 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const origin = request.headers.get("origin");
+    const allowedOrigin = env.APP_ORIGIN || "http://localhost:5173";
     const corsHeaders: HeadersInit = {
-      "access-control-allow-origin": env.APP_ORIGIN || "",
+      "access-control-allow-origin": allowedOrigin,
       "access-control-allow-methods": "POST, OPTIONS",
       "access-control-allow-headers": "authorization, content-type, apikey",
       "vary": "Origin",
     };
     if (request.method === "OPTIONS") {
-      if (origin && env.APP_ORIGIN && origin !== env.APP_ORIGIN) return new Response(null, { status: 403 });
+      if (origin && origin !== allowedOrigin) return new Response(null, { status: 403 });
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
@@ -130,6 +135,7 @@ export default {
       return json({ error: "NOT_FOUND" }, 404);
     }
 
+    if (origin && origin !== allowedOrigin) return json({ error: "ORIGIN_DENIED" }, 403);
     const id = env.DOCUMENTS.idFromName(match[1].toLowerCase());
     const stub = env.DOCUMENTS.get(id);
     return stub.fetch(request);
