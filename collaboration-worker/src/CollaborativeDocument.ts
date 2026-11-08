@@ -15,6 +15,14 @@ interface TicketClaims {
 
 const decoder = new TextDecoder();
 
+function assertLiveContext(context: unknown): asserts context is { userId: string; projectId: string; ticketExpiresAt: number } {
+  const claims = context as { userId?: string; projectId?: string; ticketExpiresAt?: number } | undefined;
+  if (!claims?.userId || !claims.projectId) throw new Error("AUTH_REQUIRED");
+  if (!claims.ticketExpiresAt || claims.ticketExpiresAt < Math.floor(Date.now() / 1000)) {
+    throw new Error("TICKET_EXPIRED");
+  }
+}
+
 function decodeBase64Url(value: string): Uint8Array {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
@@ -80,8 +88,10 @@ export class CollaborativeDocument {
         await state.storage.put("saved-at", new Date().toISOString());
       },
       async beforeHandleMessage({ context }) {
-        if (!context?.userId || !context?.projectId) throw new Error("AUTH_REQUIRED");
-        if (context.ticketExpiresAt < Math.floor(Date.now() / 1000)) throw new Error("TICKET_EXPIRED");
+        assertLiveContext(context);
+      },
+      async beforeHandleAwareness({ context }) {
+        assertLiveContext(context);
       },
     });
   }
