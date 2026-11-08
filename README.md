@@ -45,6 +45,10 @@ AZ is a web-first academic workspace. This repository starts with the Stage B fo
 - Authenticated read/create for the user's own `subjects`, relying on database RLS.
 - No service-role key in the frontend.
 
+## Design direction
+
+The primary current visual/product reference is [AZ Promo V5 — Web Design Reference](docs/design/AZ-PROMO-V5-WEB-DESIGN-REFERENCE.md). It documents the dark futuristic unified workspace, navigation, Today dashboard, Library, PDF/AI study workspace, motion principles, and V1 scope guardrails.
+
 ## Not complete yet
 
 - Invite-code gating.
