@@ -17,6 +17,7 @@
     "typescript": "5.8.3",
     "wrangler": "4.158.0",
     "vitest": "~4.1.0",
-    "@cloudflare/vitest-plugin": "1.6.0"
+    "@cloudflare/vitest-plugin": "1.6.0",
+    "@hocuspocus/provider": "4.1.0"
   }
 }
