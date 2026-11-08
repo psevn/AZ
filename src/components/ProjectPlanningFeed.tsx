@@ -110,7 +110,7 @@ export default function ProjectPlanningFeed({ client, lang, compact = false, onO
                 <span className={"project-feed-kind " + (deadline ? "is-deadline" : "is-task")}>
                   {deadline ? (ar ? "موعد المشروع" : "Project deadline") : (ar ? "مهمة فريق" : "Team task")}
                 </span>
-              </article>
+              </button>
             );
           })}
         </div>
