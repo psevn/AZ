@@ -23,6 +23,7 @@ function decodeBase64Url(value: string): Uint8Array {
 }
 
 async function verifyTicket(token: string, secret: string): Promise<TicketClaims> {
+  if (!secret || secret.length < 32) throw new Error("COLLABORATION_SECRET_NOT_CONFIGURED");
   const [payload, signature, extra] = token.split(".");
   if (!payload || !signature || extra) throw new Error("INVALID_TICKET");
   const key = await crypto.subtle.importKey(
