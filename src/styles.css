@@ -1184,3 +1184,127 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 @media (prefers-reduced-motion:reduce) {
   .mobile-bottom-nav button { transition:none; }
 }
+
+
+/* AZ spatial composition — remove the conventional stacked-dashboard ceiling.
+   Keep information structure, but let the workspace breathe as one continuous environment. */
+.app-shell {
+  --space-glow-cyan: rgba(103, 219, 243, .16);
+  --space-glow-violet: rgba(101, 1, 210, .13);
+  --surface-hairline: color-mix(in srgb, var(--line) 72%, transparent);
+}
+.az-workspace {
+  gap: clamp(28px, 4.2vw, 64px);
+}
+.workspace-rail {
+  border-color: transparent;
+  border-radius: 0;
+  border-inline-end: 1px solid var(--surface-hairline);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel-solid) 32%, transparent), transparent 82%);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.workspace-heading {
+  margin-bottom: clamp(28px, 3.5vw, 48px);
+}
+.workspace-meta {
+  border-color: transparent;
+  border-radius: 0;
+  border-inline-start: 1px solid var(--surface-hairline);
+  background: transparent;
+}
+.home-view {
+  gap: clamp(28px, 4vw, 52px);
+}
+.home-hero {
+  min-height: 390px;
+  padding: clamp(18px, 3vw, 38px) 0;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at 76% 48%, var(--space-glow-cyan), transparent 39%),
+    radial-gradient(ellipse at 96% 84%, var(--space-glow-violet), transparent 34%);
+  box-shadow: none;
+}
+.home-hero::before {
+  opacity: .22;
+  mask-image: linear-gradient(90deg, transparent, #000 35%, #000 82%, transparent);
+}
+.home-hero-copy h2 {
+  max-width: 590px;
+  font-size: clamp(36px, 4.5vw, 60px);
+  line-height: 1.16;
+}
+.home-universe-visual {
+  min-height: 340px;
+}
+.home-overview {
+  grid-template-columns: minmax(220px, .68fr) minmax(0, 1.5fr);
+  gap: 0;
+  border-top: 1px solid var(--surface-hairline);
+  border-bottom: 1px solid var(--surface-hairline);
+}
+.home-progress-panel,
+.home-next-panel {
+  padding: clamp(22px, 3vw, 36px) clamp(18px, 2.6vw, 34px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.home-progress-panel {
+  border-inline-end: 1px solid var(--surface-hairline);
+}
+.home-next-panel .task-row,
+.home-progress-panel .task-row {
+  border: 0;
+  border-bottom: 1px solid var(--surface-hairline);
+  border-radius: 0;
+  background: transparent;
+  padding-inline: 2px;
+}
+.home-next-panel .task-row:last-child {
+  border-bottom: 0;
+}
+.home-metrics {
+  border-color: var(--surface-hairline);
+}
+.home-section-heading {
+  margin-bottom: 26px;
+}
+.home-section-heading h2 {
+  font-size: clamp(19px, 2vw, 23px);
+}
+.home-progress-track {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.theme-light .workspace-rail {
+  border-color: transparent;
+  border-inline-end-color: rgba(20,45,85,.14);
+  background: linear-gradient(180deg, rgba(255,255,255,.42), transparent 82%);
+  box-shadow: none;
+}
+.theme-light .home-hero {
+  background:
+    radial-gradient(ellipse at 76% 48%, rgba(103,219,243,.18), transparent 39%),
+    radial-gradient(ellipse at 96% 84%, rgba(101,1,210,.08), transparent 34%);
+  box-shadow: none;
+}
+.theme-light .home-overview {
+  border-color: rgba(20,45,85,.13);
+}
+@media (max-width: 1000px) {
+  .home-hero { min-height: 340px; }
+  .home-overview { grid-template-columns: 1fr; }
+  .home-progress-panel {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--surface-hairline);
+  }
+}
+@media (max-width: 760px) {
+  .workspace-rail { border: 0; }
+  .home-hero { min-height: 0; padding: 16px 0 4px; }
+  .home-universe-visual { min-height: 230px; }
+  .home-progress-panel,
+  .home-next-panel { padding: 22px 4px; }
+}
