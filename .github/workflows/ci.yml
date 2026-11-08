@@ -47,5 +47,7 @@ jobs:
         run: npm install --no-audit --no-fund --legacy-peer-deps
       - name: Type-check collaboration worker
         run: npm run typecheck
-      - name: Test Yjs persistence and two-client WebSocket collaboration
+      - name: Test Yjs persistence and Worker runtime smoke tests
         run: npm test
+      - name: Test real two-client collaboration over WebSockets
+        run: npm run test:integration
