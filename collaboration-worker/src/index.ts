@@ -1,11 +1,3 @@
-interface Env {
-  DOCUMENTS: DurableObjectNamespace;
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-  COLLAB_TICKET_SECRET: string;
-  APP_ORIGIN?: string;
-}
-
 interface TicketClaims {
   sub: string;
   documentId: string;
