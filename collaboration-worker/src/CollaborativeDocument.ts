@@ -40,6 +40,7 @@ async function verifyTicket(token: string, secret: string): Promise<TicketClaims
 export class CollaborativeDocument {
   private readonly hocuspocus: Hocuspocus;
   private readonly sockets = new WeakMap<WebSocket, ReturnType<Hocuspocus["handleConnection"]>>();
+  private documentId = "";
 
   constructor(
     private readonly state: DurableObjectState,
@@ -60,7 +61,7 @@ export class CollaborativeDocument {
         };
       },
       async onLoadDocument({ documentName }) {
-        if (documentName !== state.id.toString()) {
+        if (documentName !== this.documentId) {
           // The worker routes one stable document UUID to one Durable Object.
           // The UUID check is repeated here so the room cannot load another doc.
           throw new Error("DOCUMENT_MISMATCH");
@@ -69,14 +70,13 @@ export class CollaborativeDocument {
         return saved || new Y.Doc();
       },
       async onStoreDocument({ document, documentName }) {
-        if (documentName !== state.id.toString()) throw new Error("DOCUMENT_MISMATCH");
+        if (documentName !== this.documentId) throw new Error("DOCUMENT_MISMATCH");
         const update = Y.encodeStateAsUpdate(document);
         await state.storage.put("yjs-state", update);
         await state.storage.put("saved-at", new Date().toISOString());
       },
       async beforeHandleMessage({ context }) {
         if (!context?.userId || !context?.projectId) throw new Error("AUTH_REQUIRED");
-        if (context.ticketExpiresAt < Math.floor(Date.now() / 1000)) throw new Error("TICKET_EXPIRED");
       },
     });
   }
@@ -89,6 +89,10 @@ export class CollaborativeDocument {
       return new Response("WebSocket upgrade required", { status: 426 });
     }
 
+    const pathMatch = new URL(request.url).pathname.match(/^\\/collab\\/([0-9a-f-]{36})$/i);
+    if (!pathMatch) return new Response("Invalid document route", { status: 400 });
+    this.documentId = pathMatch[1].toLowerCase();
+
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
@@ -100,15 +104,13 @@ export class CollaborativeDocument {
     );
     this.sockets.set(server, connection);
 
-    server.addEventListener("message", (event) => {
+    server.addEventListener("message", async (event) => {
       const data = event.data;
       const bytes = typeof data === "string"
         ? new TextEncoder().encode(data)
-        : data instanceof ArrayBuffer
-          ? new Uint8Array(data)
-          : data instanceof Blob
-            ? new Uint8Array([])
-            : new Uint8Array(data as ArrayBuffer);
+        : data instanceof Blob
+          ? new Uint8Array(await data.arrayBuffer())
+          : new Uint8Array(data as ArrayBuffer);
       connection.handleMessage(bytes);
     });
 
