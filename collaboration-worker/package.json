@@ -7,7 +7,8 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "wrangler types && tsc --noEmit && tsc --noEmit -p test/tsconfig.json",
-    "test": "vitest run --maxWorkers=1 --no-isolate"
+    "test": "vitest run --maxWorkers=1 --no-isolate",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@hocuspocus/server": "4.1.0",
@@ -19,6 +20,7 @@
     "wrangler": "4.158.0",
     "vitest": "~4.1.0",
     "@cloudflare/vitest-plugin": "1.6.0",
-    "@hocuspocus/provider": "4.1.0"
+    "@hocuspocus/provider": "4.1.0",
+    "ws": "8.22.1"
   }
 }
