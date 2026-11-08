@@ -54,6 +54,7 @@ class WorkerLoopbackWebSocket extends EventTarget {
       const socket = (response as Response & { webSocket?: LocalSocket }).webSocket;
       if (!socket) throw new Error("Worker response did not expose its client WebSocket");
       this.socket = socket;
+      socket.binaryType = this.binaryType;
       socket.addEventListener("message", (event) => {
         this.dispatchWithHandler("message", new MessageEvent("message", { data: event.data }));
       });
