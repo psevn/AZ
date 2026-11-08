@@ -71,7 +71,7 @@ export default function App() {
   const [loading,setLoading] = useState(false);
   const [setupChecked,setSetupChecked] = useState(false);
   const [showAcademicSetup,setShowAcademicSetup] = useState(false);
-  const [sidebarCollapsed,setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed,setSidebarCollapsed] = useState(() => window.innerWidth <= 1100);
   const [moreMenuOpen,setMoreMenuOpen] = useState(false);
   const [message,setMessage] = useState("");
   const [error,setError] = useState("");
