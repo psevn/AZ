@@ -1,10 +1,10 @@
 # AZ Web Design Reference — AZ_promo_v5
 
-**Status:** Primary visual/product-experience reference for the AZ web interface  
+**Status:** Primary visual/product-experience reference for the AZ web interface; AZ Projects collaboration is now explicitly approved for the V1 scope  
 **Source:** User-provided video `AZ_promo_v5.mp4` (28 seconds, 910×512, 30 fps; reviewed frame-by-frame via representative samples)  
 **Recorded:** 2026-11-06
 
-> This document translates the supplied promo into an implementation-oriented design reference. It is not permission to expand V1 scope: promotional concepts that imply collaboration or other deferred features remain out of V1 unless explicitly approved.
+> This document translates the supplied promo into an implementation-oriented design reference. Promotional concepts do not automatically expand V1 scope. AZ Projects collaboration has since been explicitly approved and is specified separately; other promotional concepts remain deferred unless explicitly approved.
 
 ## 1. Core direction
 
