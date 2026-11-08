@@ -293,7 +293,7 @@ export default function App() {
           <form onSubmit={auth}>
             <label><span>{t.email}</span><input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label>
             <label><span>{t.password}</span><input type="password" autoComplete={mode==="signup"?"new-password":"current-password"} minLength={6} value={password} onChange={e=>setPassword(e.target.value)} required/></label>
-            <button className="primary-button full-button" disabled={busy}>{busy?t.loading:mode==="signup"?t.create:t.signIn}<span>↗</span></button>
+            <button className="primary-button full-button" type="submit" disabled={busy}>{busy?t.loading:mode==="signup"?t.create:t.signIn}<span>↗</span></button>
           </form>
           <p className="switch-mode">{mode==="signin"?t.none:t.have}<button type="button" onClick={()=>setMode(mode==="signin"?"signup":"signin")}>{mode==="signin"?t.signUp:t.signIn}</button></p>
         </section>
@@ -360,11 +360,11 @@ export default function App() {
                   <label><span>{t.chooseSubject}</span><select value={subjectId} onChange={e=>setSubjectId(e.target.value)}><option value="">{t.noSubject}</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
                   <div className="form-two"><label><span>{t.due}</span><input type="date" value={due} onChange={e=>setDue(e.target.value)}/></label><label><span>{t.minutes}</span><input type="number" min="5" max="600" step="5" value={minutes} onChange={e=>setMinutes(e.target.value)}/></label></div>
                   <label><span>{t.priority}</span><select value={priority} onChange={e=>setPriority(e.target.value)}><option value="3">{t.high}</option><option value="2">{t.medium}</option><option value="1">{t.low}</option></select></label>
-                  <button className="primary-button full-button" disabled={busy||!title.trim()}>{busy?t.loading:t.addTask}<span>↗</span></button>
+                  <button className="primary-button full-button" type="submit" disabled={busy||!title.trim()}>{busy?t.loading:t.addTask}<span>↗</span></button>
                 </form>
               </section>
               <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">YOUR LEARNING AREAS</span><h2>{t.subjects}</h2></div><span className="count-pill">{subjects.length.toString().padStart(2,"0")}</span></div>
-                <form className="subject-form" onSubmit={addSubject}><input value={subjectName} onChange={e=>setSubjectName(e.target.value)} placeholder={t.subjectName} maxLength={120} required/><button className="primary-button" disabled={busy||!subjectName.trim()}>＋</button></form>
+                <form className="subject-form" onSubmit={addSubject}><input value={subjectName} onChange={e=>setSubjectName(e.target.value)} placeholder={t.subjectName} maxLength={120} required/><button className="primary-button" type="submit" disabled={busy||!subjectName.trim()}>＋</button></form>
                 {subjects.length===0?<p className="muted">{t.emptySubjects}</p>:<div className="subject-list">{subjects.map((s,i)=><article className="subject-row" key={s.id}><span className="subject-index">{String(i+1).padStart(2,"0")}</span><span className="subject-color"/><strong>{s.name}</strong></article>)}</div>}
               </section>
             </div>
