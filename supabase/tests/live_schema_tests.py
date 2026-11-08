@@ -20,7 +20,7 @@ A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 KIND = dict(subjects=1, tasks=2, focus_sessions=3, documents=4, notes=5, quizzes=6,
             quiz_questions=7, quiz_attempts=8, ai_usage_log=9, attempt_answers=10,
-            document_pages=11, summaries=12)
+            document_pages=11, summaries=12, flashcards=13, attempt_questions=14)
 
 results = []  # (name, status, detail)
 
@@ -82,10 +82,10 @@ def seed():
            f"insert into auth.users (id, email, raw_user_meta_data) values "
            f"('{A}','a@test','{{\"display_name\":\"A\"}}'), ('{B}','b@test',null);"]
     for u in (A, B):
-        s, t, f, d, n, q, qq, at, lg, aa, dp, sm = (rid(u, k) for k in
+        s, t, f, d, n, q, qq, at, lg, aa, dp, sm, fc, aq = (rid(u, k) for k in
                                         ("subjects", "tasks", "focus_sessions", "documents", "notes", "quizzes",
                                          "quiz_questions", "quiz_attempts", "ai_usage_log", "attempt_answers",
-                                         "document_pages", "summaries"))
+                                         "document_pages", "summaries", "flashcards", "attempt_questions"))
         sql += [
             f"insert into subjects (id,user_id,name) values ('{s}','{u}','subj');",
             f"insert into tasks (id,user_id,subject_id,title) values ('{t}','{u}','{s}','task');",
@@ -96,7 +96,10 @@ def seed():
             f"insert into quiz_questions (id,user_id,quiz_id,prompt,choices) values ('{qq}','{u}','{q}','q?','[\"x\",\"y\",\"z\"]');",
             f"insert into private.question_keys (question_id,user_id,correct_index,explanation) values ('{qq}','{u}',1,'because');",
             f"insert into quiz_attempts (id,user_id,quiz_id) values ('{at}','{u}','{q}');",
+            f"insert into attempt_questions (id,user_id,attempt_id,question_id,position_no) values ('{aq}','{u}','{at}','{qq}',1);",
             f"insert into attempt_answers (id,user_id,attempt_id,question_id,chosen_index,is_correct) values ('{aa}','{u}','{at}','{qq}',0,false);",
+            f"insert into flashcards (id,user_id,document_id,front,back,source_page,topic) values ('{fc}','{u}','{d}','front','back',1,'t1');",
+            f"insert into flashcard_progress (user_id,flashcard_id,status) values ('{u}','{fc}','known');",
             f"insert into ai_usage_log (id,user_id,feature,model,request_key) values ('{lg}','{u}','quiz','m','seed-key');",
             f"insert into document_pages (id,user_id,document_id,page_no,text) values ('{dp}','{u}','{d}',1,'p1');",
             f"insert into summaries (id,user_id,document_id,content) values ('{sm}','{u}','{d}','sum');",
@@ -111,10 +114,11 @@ def seed():
 OWNER_COL = {"profiles": "id", "subjects": "user_id", "tasks": "user_id", "focus_sessions": "user_id",
              "notes": "user_id", "documents": "user_id", "quizzes": "user_id", "quiz_questions": "user_id",
              "quiz_attempts": "user_id", "ai_usage_log": "user_id", "attempt_answers": "user_id",
-             "document_pages": "user_id", "summaries": "user_id"}
+             "document_pages": "user_id", "summaries": "user_id", "flashcards": "user_id",
+             "attempt_questions": "user_id"}
 WRITABLE = ["subjects", "tasks", "focus_sessions", "notes"]
 READ_ONLY = ["documents", "quizzes", "quiz_questions", "quiz_attempts", "ai_usage_log", "attempt_answers",
-             "document_pages", "summaries"]
+             "document_pages", "summaries", "flashcards", "attempt_questions"]
 SET_COL = {"subjects": "name = 'hacked'", "tasks": "title = 'hacked'",
            "focus_sessions": "ended_at = now()", "notes": "body = 'hacked'"}
 
@@ -159,6 +163,10 @@ def t_write_isolation():
                f"insert into {tbl} (user_id) values ('{A}')", "authenticated", A)
     expect("write: owner cannot insert usage_counters directly", "42501",
            f"insert into usage_counters (user_id,period_type,period_start) values ('{A}','day',current_date)", "authenticated", A)
+    expect("write: owner cannot write flashcard_progress directly", "42501",
+           f"insert into flashcard_progress (user_id,flashcard_id,status) values ('{A}','{rid(A, 'flashcards')}','known')", "authenticated", A)
+    expect("write: owner cannot edit flashcard content", "42501",
+           f"update flashcards set back = 'x' where user_id = '{A}'", "authenticated", A)
     expect("write: owner cannot raise own credits_used", "42501",
            f"update usage_counters set credits_used = 0 where user_id = '{A}'", "authenticated", A)
     expect("write: B cannot insert a subject owned by A (RLS)", "42501",
@@ -185,6 +193,10 @@ def t_composite_fk():
         "attempt answer -> A's attempt": f"insert into attempt_answers (user_id,attempt_id,question_id,chosen_index,is_correct) values ('{B}','{rid(A, 'quiz_attempts')}','{rid(B, 'quiz_questions')}',0,false)",
         "attempt answer -> A's question": f"insert into attempt_answers (user_id,attempt_id,question_id,chosen_index,is_correct) values ('{B}','{rid(B, 'quiz_attempts')}','{rid(A, 'quiz_questions')}',0,false)",
         "document page -> A's document": f"insert into document_pages (user_id,document_id,page_no) values ('{B}','{rid(A, 'documents')}',9)",
+        "flashcard -> A's document": f"insert into flashcards (user_id,document_id,front,back) values ('{B}','{rid(A, 'documents')}','f','b')",
+        "flashcard progress -> A's flashcard": f"insert into flashcard_progress (user_id,flashcard_id,status) values ('{B}','{rid(A, 'flashcards')}','known')",
+        "attempt question -> A's question": f"insert into attempt_questions (user_id,attempt_id,question_id,position_no) values ('{B}','{rid(B, 'quiz_attempts')}','{rid(A, 'quiz_questions')}',2)",
+        "attempt question -> A's attempt": f"insert into attempt_questions (user_id,attempt_id,question_id,position_no) values ('{B}','{rid(A, 'quiz_attempts')}','{rid(B, 'quiz_questions')}',2)",
         "summary -> A's document": f"insert into summaries (user_id,document_id,content) values ('{B}','{rid(A, 'documents')}','x')",
         "answer key -> A's question": f"insert into private.question_keys (question_id,user_id,correct_index) values ('{rid(A, 'quiz_questions')}','{B}',0)",
         "moving A's task to user B": f"update tasks set user_id = '{B}' where id = '{rid(A, 'tasks')}'",
@@ -315,6 +327,111 @@ def t_quiz_security():
     expect("attempt: score range constraint (23514)", "23514",
            f"update quiz_attempts set score = 101 where id = '{att3}'", "service_role")
 
+def t_exam_mode_and_flashcards():
+    seed()
+    q1, qz = rid(A, "quiz_questions"), rid(A, "quizzes")
+    # second question in A's quiz (server side) so an exam can use a subset
+    run(f"insert into quiz_questions (id,user_id,quiz_id,prompt,choices,source_page,topic,difficulty) values "
+        f"('aaaaaaaa-0000-0000-0000-000000000099','{A}','{qz}','q2?','[\"x\",\"y\"]',3,'topic-2',2);"
+        f"insert into private.question_keys (question_id,user_id,correct_index,explanation) values "
+        f"('aaaaaaaa-0000-0000-0000-000000000099','{A}',0,'because 2');", "service_role")
+    q2 = "aaaaaaaa-0000-0000-0000-000000000099"
+
+    # input validation
+    expect("exam: unknown mode rejected (22023)", "22023", f"select * from public.start_attempt('{qz}'::uuid,'quiz')", "authenticated", A)
+    expect("exam: time limit on a practice attempt rejected (22023)", "22023",
+           f"select * from public.start_attempt('{qz}'::uuid,'practice',null,600)", "authenticated", A)
+    expect("exam: time limit under 60 s rejected (22023)", "22023",
+           f"select * from public.start_attempt('{qz}'::uuid,'exam',null,10)", "authenticated", A)
+    expect("exam: question count 0 rejected (22023)", "22023",
+           f"select * from public.start_attempt('{qz}'::uuid,'exam',0,600)", "authenticated", A)
+    expect("exam: B cannot start an exam on A's quiz (P0002)", "P0002",
+           f"select * from public.start_attempt('{qz}'::uuid,'exam',1,600)", "authenticated", B)
+
+    r = run(f"select attempt_id, question_count, deadline is not null from public.start_attempt('{qz}'::uuid,'exam',1,600)", "authenticated", A)
+    check("exam: starts with 1 of 2 questions and a server deadline", r.ok and r.rows[0][1] == "1" and r.rows[0][2] == "t", f"{r.rows} {r.err[:120]}")
+    att = r.rows[0][0]
+    n = count(f"select 1 from attempt_questions where attempt_id='{att}'")
+    check("exam: attempt stores exactly its own question set (1 row)", n == 1, f"n={n}")
+    inside = run(f"select question_id from attempt_questions where attempt_id='{att}'").scalar()
+    outside = q2 if inside == q1 else q1
+    expect("exam: a question outside the attempt's set is rejected (P0002)", "P0002",
+           f"select * from public.submit_answer('{att}'::uuid,'{outside}'::uuid,0::smallint)", "authenticated", A)
+
+    sub = lambda qq, i, a=att, u=A: run(f"select is_correct, correct_index, explanation from public.submit_answer('{a}'::uuid,'{qq}'::uuid,{i}::smallint)", "authenticated", u)
+    right = 1 if inside == q1 else 0
+    wrong = 0 if right == 1 else 1
+    r = sub(inside, wrong)
+    check("exam: submitting reveals nothing (no correctness, key or explanation)", r.ok and r.rows and r.rows[0][:3] == ["", "", ""], f"{r.rows} {r.err[:120]}")
+    r = sub(inside, right)
+    check("exam: the answer can be changed before finishing", r.ok, r.err[:120])
+    check("exam: only the final answer is stored (1 row, correct)",
+          run(f"select count(*)||'/'||bool_and(is_correct) from attempt_answers where attempt_id='{att}'").scalar() == "1/true")
+    expect("exam: review before finishing rejected (55000)", "55000",
+           f"select * from public.get_attempt_review('{att}'::uuid)", "authenticated", A)
+    r = run(f"select score, correct_count, total_questions from public.finish_attempt('{att}'::uuid)", "authenticated", A)
+    check("exam: score counts only the attempt's own questions (1 of 1 -> 100)", r.ok and float(r.rows[0][0]) == 100 and r.rows[0][2] == "1", f"{r.rows} {r.err[:120]}")
+    r = run(f"select r_correct_index, r_explanation, r_source_page, r_topic, r_is_correct from public.get_attempt_review('{att}'::uuid)", "authenticated", A)
+    check("review: after finishing shows key, explanation, source page, topic", r.ok and len(r.rows) == 1 and r.rows[0][0] == str(1 if inside == q1 else 0)
+          and r.rows[0][4] == "t", f"{r.rows} {r.err[:120]}")
+    expect("review: B cannot read A's review (P0002)", "P0002", f"select * from public.get_attempt_review('{att}'::uuid)", "authenticated", B)
+    expect("review: anon denied", "42501", f"select * from public.get_attempt_review('{att}'::uuid)", "anon")
+    expect("review: unauthenticated rejected (28000)", "28000", f"select * from public.get_attempt_review('{att}'::uuid)", "authenticated")
+    expect("exam: answers rejected after finishing (55000)", "55000", f"select * from public.submit_answer('{att}'::uuid,'{inside}'::uuid,0::smallint)", "authenticated", A)
+
+    # unanswered questions in a full exam count as wrong; review lists all of them
+    r = run(f"select attempt_id, question_count from public.start_attempt('{qz}'::uuid,'exam',null,null)", "authenticated", A)
+    att2 = r.rows[0][0]
+    check("exam: no count given -> all questions", r.rows[0][1] == "2")
+    sub(q1, 1, att2)
+    r = run(f"select score, total_questions from public.finish_attempt('{att2}'::uuid)", "authenticated", A)
+    check("exam: 1 correct of 2 -> 50", r.ok and float(r.rows[0][0]) == 50 and r.rows[0][1] == "2", f"{r.rows}")
+    r = run(f"select count(*), count(r_chosen_index) from public.get_attempt_review('{att2}'::uuid)", "authenticated", A)
+    check("review: lists all questions incl. unanswered (2 rows, 1 answered)", r.ok and r.rows[0] == ["2", "1"], str(r.rows))
+    check("exam: count larger than available is clamped to what exists",
+          run(f"select question_count from public.start_attempt('{qz}'::uuid,'exam',99,600)", "authenticated", A).scalar() == "2")
+
+    # server-side timer
+    r = run(f"select attempt_id from public.start_attempt('{qz}'::uuid,'exam',1,60)", "authenticated", A)
+    att3 = r.rows[0][0]
+    inside3 = run(f"select question_id from attempt_questions where attempt_id='{att3}'").scalar()
+    run(f"update quiz_attempts set started_at = now() - interval '2 minutes' where id='{att3}'", "service_role")
+    rr = run(f"select * from public.submit_answer('{att3}'::uuid,'{inside3}'::uuid,0::smallint)", "authenticated", A)
+    check("timer: an answer after the deadline is rejected by the server (55000 Time is up)", (not rr.ok) and rr.state == "55000" and "Time is up" in rr.err, f"{rr.state} {rr.err[:100]}")
+    r = run(f"select score, correct_count from public.finish_attempt('{att3}'::uuid)", "authenticated", A)
+    check("timer: finishing after the deadline is still allowed (unanswered = 0)", r.ok and float(r.rows[0][0]) == 0, f"{r.rows} {r.err[:100]}")
+    run(f"insert into quiz_attempts (id,user_id,quiz_id,mode,time_limit_seconds) values (gen_random_uuid(),'{A}','{qz}','exam',60)", "service_role")
+    expect("constraint: time limit only allowed on exam attempts (23514)", "23514",
+           f"update quiz_attempts set mode='practice' where user_id='{A}' and time_limit_seconds=60", "service_role")
+
+    # practice mode unchanged: reveals per answer, no change allowed
+    r = run(f"select attempt_id from public.start_attempt('{qz}'::uuid)", "authenticated", A)
+    att4 = r.rows[0][0]
+    r = sub(q1, 1, att4)
+    check("practice: still reveals correctness, key and explanation per answer", r.ok and r.rows[0][:3] == ["t", "1", "because"], f"{r.rows} {r.err[:100]}")
+    expect("practice: changing an answer is rejected (23505)", "23505", f"select * from public.submit_answer('{att4}'::uuid,'{q1}'::uuid,0::smallint)", "authenticated", A)
+
+    # question metadata constraints
+    expect("question: short-answer type not enabled yet (23514)", "23514", f"update quiz_questions set question_type='short' where id='{q1}'", "service_role")
+    expect("question: source_page must be >= 1 (23514)", "23514", f"update quiz_questions set source_page=0 where id='{q1}'", "service_role")
+    expect("question: difficulty outside 1..3 rejected (23514)", "23514", f"update quiz_questions set difficulty=4 where id='{q1}'", "service_role")
+    expect("document: language outside ar/en/mixed rejected (23514)", "23514", f"update documents set language='fr' where id='{rid(A, 'documents')}'", "service_role")
+
+    # flashcards
+    fc = rid(A, "flashcards")
+    r = run(f"select r_status, r_review_count from public.mark_flashcard('{fc}'::uuid,'needs_review')", "authenticated", A)
+    check("flashcards: owner can mark a card; review count increments", r.ok and r.rows[0] == ["needs_review", "2"], f"{r.rows} {r.err[:100]}")
+    r = run(f"select r_status, r_review_count from public.mark_flashcard('{fc}'::uuid,'known')", "authenticated", A)
+    check("flashcards: status updates, count keeps growing", r.ok and r.rows[0] == ["known", "3"], str(r.rows))
+    expect("flashcards: B cannot mark A's card (P0002)", "P0002", f"select * from public.mark_flashcard('{fc}'::uuid,'known')", "authenticated", B)
+    expect("flashcards: invalid status rejected (22023)", "22023", f"select * from public.mark_flashcard('{fc}'::uuid,'mastered')", "authenticated", A)
+    expect("flashcards: anon denied", "42501", f"select * from public.mark_flashcard('{fc}'::uuid,'known')", "anon")
+    expect("flashcards: unauthenticated rejected (28000)", "28000", f"select * from public.mark_flashcard('{fc}'::uuid,'known')", "authenticated")
+    check("flashcards: B sees none of A's progress", count(f"select 1 from flashcard_progress where user_id='{A}'", "authenticated", B) == 0)
+    check("flashcards: owner sees own progress", count("select 1 from flashcard_progress", "authenticated", A) == 1)
+    expect("flashcards: private function not callable by anon", "42501", f"select * from private.mark_flashcard('{fc}'::uuid,'known')", "anon")
+
+
 def t_profiles_and_trigger():
     seed()
     check("trigger: auth user creation auto-creates profiles for both users", count("select 1 from profiles") == 2)
@@ -418,7 +535,7 @@ def t_cascades_and_deletion():
     seed()
     run(f"delete from documents where id = '{rid(A, 'documents')}'")
     left = {t: count(f"select 1 from {t} where user_id = '{A}'")
-            for t in ("notes", "quizzes", "quiz_questions", "quiz_attempts", "attempt_answers", "document_pages", "summaries")}
+            for t in ("notes", "quizzes", "quiz_questions", "quiz_attempts", "attempt_answers", "document_pages", "summaries", "attempt_questions", "flashcards", "flashcard_progress")}
     left["question_keys"] = count(f"select 1 from private.question_keys where user_id = '{A}'")
     check("cascade: deleting a document removes notes, quizzes, questions, attempts, answers, pages, summaries and answer keys",
           all(v == 0 for v in left.values()), str(left))
@@ -446,7 +563,7 @@ def t_spec_conformance():
     gap("notes table kept (PSEVN decision 2026-11-05), no UI yet", "P2 / Mini Notebook candidate")
 
 def main():
-    for fn in (t_read_isolation, t_write_isolation, t_composite_fk, t_anon_and_server_only, t_quiz_security,
+    for fn in (t_read_isolation, t_write_isolation, t_composite_fk, t_anon_and_server_only, t_quiz_security, t_exam_mode_and_flashcards,
                t_profiles_and_trigger, t_constraints, t_storage_policies, t_cascades_and_deletion, t_spec_conformance):
         print(f"\n== {fn.__name__}")
         fn()
