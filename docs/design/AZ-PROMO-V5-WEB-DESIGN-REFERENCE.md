@@ -169,3 +169,41 @@ AZ offers two selectable appearance systems in Settings. Students can switch bet
 - Only show “10,000+ students” (or another numeric social-proof claim) after the count is genuinely reached and supported by reliable product analytics. Never fabricate or prematurely round up the user count.
 - The onboarding and upgrade flow must feel encouraging, not coercive; do not block access to the free AZ experience.
 
+
+
+## 11. Responsive navigation — confirmed product decision
+
+The navigation model must adapt to the device rather than compressing the desktop sidebar onto smaller screens. This is an approved product decision for AZ.
+
+### 11.1 Mobile — five-item bottom navigation
+
+- Use a fixed or safely inset bottom navigation bar with exactly five primary destinations:
+  1. **Home**
+  2. **Planning**
+  3. **Study**
+  4. **AZ Projects**
+  5. **More**
+- Place secondary destinations and utilities inside **More**. Community belongs there and remains visibly marked **Coming Soon** until it is implemented.
+- Keep icons, labels, active-state indication, and touch targets clear and comfortable. Respect device safe areas and ensure the bar does not cover page content, forms, or the on-screen keyboard.
+- Do not simply shrink or horizontally scroll the desktop sidebar on mobile.
+
+### 11.2 Tablet / iPad — collapsible sidebar
+
+- Retain the vertical sidebar pattern, but make it collapsible to an icon-only rail and expandable to the full labeled navigation.
+- Choose the initial expanded/collapsed state based on available viewport width; preserve the user's ability to toggle it.
+- Ensure the main workspace receives sufficient width and touch targets remain comfortable.
+
+### 11.3 Desktop — collapsible full sidebar
+
+- Keep the full vertical sidebar as the primary desktop navigation, with labels and the established AZ visual hierarchy.
+- Allow the sidebar to collapse into a compact icon rail and expand again without disrupting the current page or losing navigation state.
+
+### 11.4 Responsive quality requirements
+
+- Use responsive breakpoints based on available layout width, not device-name assumptions alone.
+- Preserve consistent destinations and information architecture across all three form factors.
+- Verify the experience at representative phone, tablet, and desktop widths, including RTL and LTR layouts.
+- Test safe-area spacing, keyboard overlap, scrolling, active states, and keyboard/touch accessibility before accepting the implementation.
+- The five-item mobile bar is a navigation simplification, not a reduction in AZ functionality; secondary areas remain accessible through **More**.
+
+**Approval:** Explicitly approved by the user on 2026-11-08. Treat this navigation model as the source of truth unless the user changes it.
