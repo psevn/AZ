@@ -32,7 +32,7 @@ APP_ORIGIN=http://localhost:5173
 ## Security and current limitations
 
 - Supabase membership is checked before issuing each ticket. The ticket is bound to one document and expires after 15 minutes.
-- Active connections are closed when the ticket expires because each inbound message rechecks the expiry. This is a bounded-session safeguard, **not immediate membership revocation**. A production rollout must add and test a server-side revocation mechanism that closes active sessions promptly when a member is removed.
+- Expired tickets are rejected on inbound document messages and awareness updates. An idle socket may remain physically open until it sends data or disconnects; this is not immediate revocation. This is a bounded-session safeguard, **not immediate membership revocation**. A production rollout must add and test a server-side revocation mechanism that closes active sessions promptly when a member is removed.
 - This first transport uses standard accepted Durable Object WebSockets. It does not use the Hibernation API; hibernation compatibility is unproven.
 - No service-role key is used. The membership queries use the user's Supabase JWT and rely on the existing RLS policies.
 - Yjs state is persisted as binary updates. Do not replace it with HTML/JSON as the collaboration source of truth.
