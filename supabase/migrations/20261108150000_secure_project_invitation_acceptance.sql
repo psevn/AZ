@@ -117,7 +117,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $activity$
 begin
   if tg_op = 'INSERT' then
     insert into public.project_activity (project_id, actor_id, event_type, payload)
@@ -172,7 +172,7 @@ begin
 
   return new;
 end;
-$;
+$activity$;
 
 revoke all on function private.record_project_task_activity() from public;
 revoke all on function private.record_project_task_activity() from anon;
