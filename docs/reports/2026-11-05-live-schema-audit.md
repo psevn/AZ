@@ -95,3 +95,14 @@ Applied live: `20261108121410_exam_mode_flashcards_question_metadata` (see docs/
 
 ChatGPT's changes found on the live project: `add_academic_planning_foundation` (version 20261105153306 live vs file 20261105160000 in the repo — **version mismatch, same class as before**; isolation tests added and passing) and `schedule_sweep_stuck_reservations` (pg_cron job every 5 min calling `private.sweep_stuck_reservations(100)`; **migration file is not in the repository** — ChatGPT should commit it as applied, not reconstructed by me). One real user now exists in the live project.
 New advisor warning: **Auth leaked-password protection is disabled** (Auth setting; check whether the current plan allows enabling it).
+
+## Update — 2026-11-08: exam mode, flashcards, audit of ChatGPT's migrations
+
+Applied by Claude: `20261108121410_exam_mode_flashcards_question_metadata` (see docs/V1_SCOPE.md) — tested locally (275 + 61 checks) and on the live project with a rolled-back runtime test.
+
+Audit of what ChatGPT applied to the live project on 2026-11-05/08 (planning foundation, pg_cron sweep, 9 `az_projects*` migrations):
+- **Planning tables** (`academic_terms`, `class_meetings`, `academic_setup`): isolation correct, composite FKs correct — added to the local suite (16 checks).
+- **Project tables**: cross-user isolation correct (a second user sees 0 rows, cannot join, cannot self-promote to lead, cannot add tasks; anon blocked). `planning_items` is `security_invoker`, correctly filtered.
+- **BUG (fixed, `20261108153310`)**: `public.create_project()` failed with 42501 for every real user (INSERT … RETURNING hit the SELECT policy before the creator was a member). Fixed by generating the id first and inserting without RETURNING.
+- **Hygiene (fixed, same migration)**: project tables had default grants — `anon` ALL (incl. TRUNCATE), `authenticated` TRUNCATE/TRIGGER/REFERENCES. Revoked; CRUD stays.
+- **Open, for ChatGPT**: (a) the SQL of the pg_cron migration and of **all 9 project migrations is not in the repository** and the planning migration's file version (`20261105160000`) differs from the live version (`20261105153306`) — same process failure as the five missing foundation migrations; committing the exact applied SQL (from `supabase_migrations`) is required, not reconstruction; (b) `private.is_project_member(project, user)` is executable by `authenticated` with an arbitrary user id, so a user who knows a project id could probe whether another user is a member (low severity; tighten to `auth.uid()` or keep it out of client reach); (c) the project tables are not covered by the local test suite until their SQL is in the repo; (d) Auth: leaked-password protection is disabled in the Supabase dashboard (advisor WARN) — enable it.

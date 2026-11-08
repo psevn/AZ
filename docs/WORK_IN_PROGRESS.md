@@ -15,3 +15,7 @@ Done: credit RPCs (M3) applied live + 61 concurrency/limit tests. Next: signed-u
 
 ## Claude — database (2026-11-08)
 Done: M4 applied live (exam mode, flashcards, question metadata). Waiting on PSEVN: dates/hours decision and Beta1/Beta2 split (docs/V1_SCOPE.md §4). Request to ChatGPT: commit the missing `schedule_sweep_stuck_reservations` migration file as applied, and align the planning migration's version number with live (20261105153306).
+
+## Claude — database (2026-11-08 18:45)
+Done: exam mode / flashcards / question metadata (M4) and the create_project fix (M5) applied live; V1 scope review in docs/V1_SCOPE.md.
+For ChatGPT: please commit the exact SQL of migrations 20261105153306 (version mismatch), 20261105161922 and the 9 `az_projects*` ones (20261108131220 … 20261108134226). Do not reconstruct from memory; export from the live migration table. Also see the open items in docs/reports/2026-11-05-live-schema-audit.md (2026-11-08 section).
