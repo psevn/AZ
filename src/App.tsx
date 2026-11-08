@@ -308,7 +308,7 @@ export default function App() {
               </section>
             </section>
           </div>}
-          {section==="home" && <ProjectPlanningFeed client={supabase} lang={lang} compact />}
+          {section==="home" && <ProjectPlanningFeed client={supabase} lang={lang} compact onOpenProject={setSelectedProjectId} />}
           {section==="planning" && <div className="planning-view">
             <div className="planning-grid">
               <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">BUILD YOUR ROUTE</span><h2>{t.addTask}</h2></div><span className="panel-symbol">＋</span></div>
@@ -330,7 +330,7 @@ export default function App() {
               {loading?<p className="muted">{t.loading}</p>:visible.length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p></div>:<div className="task-list">{visible.map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.due_at?new Date(task.due_at).toLocaleDateString(ar?"ar-QA":"en-US"):t.noDue}</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":task.status==="doing"?"done":"todo")}>{task.status==="todo"?t.startTask:task.status==="doing"?t.finishTask:t.reopen}</button><button className="delete-action" onClick={()=>void removeTask(task)} aria-label={t.remove}>×</button></article>)}</div>}
             </section>
           </div>}
-          {section==="planning" && <ProjectPlanningFeed client={supabase} lang={lang} />}
+          {section==="planning" && <ProjectPlanningFeed client={supabase} lang={lang} onOpenProject={setSelectedProjectId} />}
           {section==="projects" && (selectedProjectId ? <ProjectWorkspace client={supabase} lang={lang} projectId={selectedProjectId} userId={user.id} onBack={()=>setSelectedProjectId(null)} /> : <ProjectsHome client={supabase} lang={lang} subjects={subjects} onOpenProject={setSelectedProjectId} />)}
           {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">DEEP WORK SESSION</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>FOCUS ELAPSED</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">KNOWLEDGE SYSTEM / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
