@@ -31,8 +31,10 @@ SQL
 "${PSQL[@]}" -d az_test -f "$HERE/local_stubs.sql"
 "${PSQL[@]}" -d az_test -f "$SNAPSHOT"
 # The snapshot is the live state as of 2026-11-05 morning. Replay what was applied after it.
-for f in "$ROOT"/supabase/migrations/20261105*.sql; do
+for f in $(ls "$ROOT"/supabase/migrations/*.sql | sort); do
+  [ "$(basename "$f")" \< "20261105" ] && continue  # earlier ones are already inside the snapshot
   [ -e "$f" ] || continue
+  if head -1 "$f" | grep -q "LOCAL-REPLAY: SKIP"; then echo "skipping $(basename "$f") (needs SQL not in repo)"; continue; fi
   echo "applying live migration $(basename "$f")"
   "${PSQL[@]}" -d az_test -f "$f"
 done

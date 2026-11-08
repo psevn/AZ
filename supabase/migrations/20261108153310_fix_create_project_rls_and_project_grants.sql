@@ -1,3 +1,4 @@
+-- LOCAL-REPLAY: SKIP (depends on ChatGPT's az_projects tables, whose SQL is not in the repository yet)
 -- M5 (audit fix of ChatGPT's az_projects migrations, applied live 2026-11-08).
 -- Found by Claude (rolled-back runtime test on the live project):
 --  1) public.create_project() failed with 42501 for EVERY real user. It did
