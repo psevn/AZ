@@ -1308,3 +1308,182 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   .home-progress-panel,
   .home-next-panel { padding: 22px 4px; }
 }
+
+
+/* Home orbital polish — the approved AZ mark stays fixed while its orbital system moves. */
+.home-universe-visual {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.home-universe-visual .home-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  margin: 0;
+  border-radius: 50%;
+  transform-origin: center center;
+  pointer-events: none;
+  will-change: transform;
+}
+.home-universe-visual .home-orbit.one {
+  width: min(310px, 88%);
+  height: 112px;
+  transform: translate(-50%, -50%) rotate(-28deg);
+}
+.home-universe-visual .home-orbit.two {
+  width: 230px;
+  height: 230px;
+  max-width: 78%;
+  max-height: 100%;
+  transform: translate(-50%, -50%) rotate(36deg);
+}
+.home-universe-visual .home-orbit.three {
+  width: min(350px, 96%);
+  height: 190px;
+  transform: translate(-50%, -50%) rotate(62deg);
+}
+.home-universe-visual .home-orbit::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: #b8f8ff;
+  box-shadow: 0 0 8px 2px rgba(103,219,243,.55), 0 0 22px rgba(103,219,243,.45);
+}
+.home-universe-visual .home-orbit.two::after {
+  width: 5px;
+  height: 5px;
+  background: #9e9bff;
+  box-shadow: 0 0 8px 2px rgba(120,120,255,.65), 0 0 20px rgba(101,1,210,.5);
+}
+.home-universe-visual .home-orbit.three::after {
+  width: 4px;
+  height: 4px;
+  background: #d6c4ff;
+  box-shadow: 0 0 9px 2px rgba(154,111,255,.55);
+}
+.home-universe-visual .home-planet {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  animation: none !important;
+}
+.home-universe-visual .home-planet img {
+  display: block;
+  width: 72px;
+  height: auto;
+  max-width: 78%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 15px rgba(103,219,243,.34));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-universe-visual .home-orbit.one {
+    animation: az-home-orbit-one 44s linear infinite;
+  }
+  .home-universe-visual .home-orbit.two {
+    animation: az-home-orbit-two 62s linear infinite;
+  }
+  .home-universe-visual .home-orbit.three {
+    animation: az-home-orbit-three 78s linear infinite;
+  }
+  .home-universe-visual .home-star {
+    animation: az-home-star-pulse 4.8s ease-in-out infinite;
+  }
+  .home-universe-visual .star-two { animation-delay: -1.6s; }
+  .home-universe-visual .star-three { animation-delay: -3.1s; }
+}
+@keyframes az-home-orbit-one {
+  from { transform: translate(-50%, -50%) rotate(-28deg); }
+  to { transform: translate(-50%, -50%) rotate(332deg); }
+}
+@keyframes az-home-orbit-two {
+  from { transform: translate(-50%, -50%) rotate(36deg); }
+  to { transform: translate(-50%, -50%) rotate(396deg); }
+}
+@keyframes az-home-orbit-three {
+  from { transform: translate(-50%, -50%) rotate(62deg); }
+  to { transform: translate(-50%, -50%) rotate(422deg); }
+}
+@keyframes az-home-star-pulse {
+  0%, 100% { opacity: .45; transform: scale(.82); }
+  50% { opacity: .95; transform: scale(1.18); }
+}
+
+/* Shared loading, interaction and navigation motion primitives. */
+.page-skeleton {
+  display: grid;
+  gap: 13px;
+  min-height: 150px;
+  align-content: center;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--panel-solid) 52%, transparent);
+}
+.skeleton-line {
+  display: block;
+  width: 62%;
+  height: 11px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--muted) 10%, transparent), color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--muted) 10%, transparent));
+  background-size: 220% 100%;
+  animation: az-skeleton-shimmer 1.8s ease-in-out infinite;
+}
+.skeleton-line-wide { width: 84%; height: 15px; }
+.skeleton-line-short { width: 38%; }
+@keyframes az-skeleton-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -120% 0; }
+}
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transform: scale(.985);
+}
+.primary-button:active:not(:disabled) {
+  transform: translateY(0) scale(.985);
+}
+@supports (view-transition-name: root) {
+  ::view-transition-old(root) {
+    animation: az-view-out 110ms ease both;
+  }
+  ::view-transition-new(root) {
+    animation: az-view-in 170ms cubic-bezier(.2,.7,.2,1) both;
+  }
+}
+@keyframes az-view-out {
+  to { opacity: 0; filter: blur(2px); }
+}
+@keyframes az-view-in {
+  from { opacity: 0; filter: blur(2px); }
+  to { opacity: 1; filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-universe-visual .home-orbit,
+  .home-universe-visual .home-star,
+  .skeleton-line {
+    animation: none !important;
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  .primary-button:active:not(:disabled) {
+    transform: none;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+@media (max-width: 680px) {
+  .home-universe-visual .home-orbit.one { width: min(250px, 90%); height: 90px; }
+  .home-universe-visual .home-orbit.two { width: min(185px, 72vw); height: min(185px, 72vw); }
+  .home-universe-visual .home-orbit.three { width: min(285px, 96%); height: 150px; }
+  .home-universe-visual .home-planet img { width: 58px; }
+}
