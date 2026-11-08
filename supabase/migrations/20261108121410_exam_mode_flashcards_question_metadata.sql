@@ -1,4 +1,4 @@
--- M4 (PROPOSED): database support for the V1 Final Scope (docs/V1_SCOPE.md), beta-1 part.
+-- M4 (APPLIED live 2026-11-08): database support for the V1 Final Scope (docs/V1_SCOPE.md), beta-1 part.
 --   * question metadata: type (mcq only for now), source_page, topic, difficulty; documents.language
 --   * attempts get a MODE: 'practice' (answer revealed per question, as before) or 'exam'
 --       - exam: correct answers stay hidden until the attempt is finished; answers can be changed until then;
