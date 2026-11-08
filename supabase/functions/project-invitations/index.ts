@@ -129,6 +129,13 @@ Deno.serve(async (request: Request) => {
     });
     if (insertError) return jsonResponse({ error: "Could not create invitation" }, 500, allowedOrigin);
 
+    await serviceClient.from("project_activity").insert({
+      project_id: body.projectId,
+      actor_id: user.id,
+      event_type: "member_invited",
+      payload: { invited_email: invitedEmail, expires_at: expiresAt },
+    });
+
     return jsonResponse({ token, expiresAt, invitedEmail }, 201, allowedOrigin);
   }
 
