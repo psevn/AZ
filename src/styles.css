@@ -1487,3 +1487,23 @@ button:not(:disabled):active,
   .home-universe-visual .home-orbit.three { width: min(285px, 96%); height: 150px; }
   .home-universe-visual .home-planet img { width: 58px; }
 }
+
+
+.home-task-skeleton {
+  display: grid;
+  gap: 12px;
+}
+.home-task-skeleton i {
+  display: block;
+  height: 52px;
+  border: 1px solid var(--surface-hairline);
+  border-radius: 11px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--panel-solid) 62%, transparent), color-mix(in srgb, var(--accent) 9%, var(--panel-solid)), color-mix(in srgb, var(--panel-solid) 62%, transparent));
+  background-size: 220% 100%;
+  animation: az-skeleton-shimmer 1.8s ease-in-out infinite;
+}
+.home-task-skeleton i:nth-child(2) { width: 92%; }
+.home-task-skeleton i:nth-child(3) { width: 84%; }
+@media (prefers-reduced-motion: reduce) {
+  .home-task-skeleton i { animation: none; }
+}
