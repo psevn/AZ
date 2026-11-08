@@ -187,7 +187,7 @@ export default function App() {
   async function signOut() {
     if (!supabase) return;
     setBusy(true); const {error:e} = await supabase.auth.signOut();
-    if (e) setError(e.message); else { setUser(null); setTasks([]); setSubjects([]); }
+    if (e) setError(e.message); else { setUser(null); setTasks([]); setSubjects([]); setSelectedProjectId(null); }
     setBusy(false);
   }
   async function addSubject(event:FormEvent<HTMLFormElement>) {
