@@ -30,3 +30,20 @@ jobs:
         run: npm ci
       - name: Type-check and build
         run: npm run build
+
+  collaboration-worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: collaboration-worker
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install collaboration worker dependencies
+        run: npm install --no-audit --no-fund
+      - name: Type-check collaboration worker
+        run: npm run typecheck
