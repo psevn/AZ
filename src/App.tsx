@@ -124,6 +124,15 @@ export default function App() {
 
   useEffect(() => {
     try {
+      const pendingInvite = new URL(window.location.href).searchParams.get("projectInvite");
+      if (pendingInvite) window.sessionStorage.setItem("az-pending-project-invite", pendingInvite);
+    } catch {
+      // The invitation remains in the URL when session storage is unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
       window.localStorage.setItem("az-language",lang);
     } catch {
       // Keep the selected language for the current session if storage is unavailable.
@@ -172,7 +181,7 @@ export default function App() {
   useEffect(() => {
     if (!user || !supabase) return;
     const url = new URL(window.location.href);
-    const token = url.searchParams.get("projectInvite");
+    const token = url.searchParams.get("projectInvite") || window.sessionStorage.getItem("az-pending-project-invite");
     if (!token) return;
     let active = true;
     void (async () => {
@@ -185,6 +194,7 @@ export default function App() {
         return;
       }
       url.searchParams.delete("projectInvite");
+      window.sessionStorage.removeItem("az-pending-project-invite");
       window.history.replaceState(window.history.state, "", url.toString());
       setSelectedProjectId(data.projectId as string);
       setSection("projects");
