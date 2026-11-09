@@ -19,3 +19,8 @@ RLS on, select-only grant to `authenticated`, anon revoked; `search_academic_cat
 8. Not reviewed: the client code that creates `subjects` from a catalog course (Courses.tsx) — must insert with the caller's user_id only and handle the duplicate-key error gracefully.
 
 Verdict: safe to apply after fixes 2–3 and 7 are checked and a local replay passes; 1 is a product gap, not a safety issue. Applying to the live DB remains the owner's decision.
+
+## Update — local run of the fixed migration (branch `fix/catalog-migration-review-followups` @343e720)
+Replayed on the throwaway local PostgreSQL 16 (snapshot + all repo migrations + the catalog file): applies cleanly; existing suites still pass (credits 61/61). New file `supabase/tests/catalog_tests.sql`: **17/17 passed** — anon blocked; authenticated read-only; draft rows invisible; ACCT/Accounting/محاسبة searches return results; limit clamps to 50; higher-level search is not school-first; user can add a catalog subject for self, duplicate blocked, cannot insert for another user, other users cannot see it.
+Verified fixes: SELECT policies now require verified + active institution; the 5 generic school courses are 'draft'; business-code courses present (17 with ACCT/FINC/MIS/ECON/MGMT/MKTG/STAT/ISOM/BUSS/BLAW prefixes, QU).
+Limits of this check: local replica only (not live); the `%` test is weak (passes if '%' returns fewer rows than the empty query); the term-scoped duplicate index and the client code (`Courses.tsx`) were not exercised; course data accuracy (codes, names, credit hours) was not verified against the sources.
