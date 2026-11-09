@@ -58,9 +58,10 @@ The Ministry page also identifies teaching locations for specific higher-educati
 
 ### Course-level verification status
 
-- HBKU: eight subject/code entries are currently seeded from its official 2026-2027 course-descriptions directory. These are broad catalog entries, not section offerings or degree-plan requirements.
-- Qatar University: institution is indexed; course import should use the current 2026-2027 undergraduate catalog and official graduate sources where available. Older catalogs must not be treated as current.
-- UDST and the other listed institutions: institution records are indexed, but no individual courses are invented. Import course records only after checking the institution's official current catalog/program pages.
+- **Qatar University:** 38 individual course records are seeded from the University's official Core Curriculum Packages page. They include course codes, titles, Arabic display names, credit hours, and source attribution. They are catalog options, not a claim that every program requires every course. The course-page source does not provide a single consistent catalog-year label for all entries, so `academic_year` is left unset rather than guessed. The 2026-2027 undergraduate catalog is linked separately as the current program/catalog reference.
+- **HBKU:** 15 individual Applied Islamic Ethics (AIE) courses are seeded from its official 2026-2027 Course Descriptions page, including course codes, titles, credits where specified, and concise descriptions. Other subject areas remain to be imported; subject-prefix listings are not treated as individual courses.
+- **UDST:** one verified course, `DCMP2010A — Introduction to Journalism`, is seeded from the official 2026-2027 catalog, including its description, credits, and program association in the source.
+- **Other institutions:** institution records are indexed, but course coverage is not yet imported. Do not infer or invent course codes/titles from program names. Import only after checking the institution's official current catalog/program pages.
 - The institution directory is complete against the Ministry's 2026-2027 listing; course coverage is intentionally partial and must be tracked per institution/source/year.
 
 ## School dataset
