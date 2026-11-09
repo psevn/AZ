@@ -109,7 +109,7 @@ function extractDate(source, now) {
   const arabicDays = [...WEEKDAYS.keys()].filter(name => /^[\u0600-\u06ff]/u.test(name)).sort((a,b)=>b.length-a.length);
   for (const name of englishDays) {
     const escaped = name.replace(/[.*+?^\u0024{}()|[\]\\]/gu, "\\$&");
-    const found = getDateMatch(normalized, new RegExp("(?<![\\\\p{L}])((?:(?:next|this|on)\\\\s+)?"+escaped+")(?![\\\\p{L}])", "u"));
+    const found = getDateMatch(normalized, new RegExp("(?<![\\p{L}])((?:(?:next|this|on)\\s+)?"+escaped+")(?![\\p{L}])", "u"));
     if (!found) continue;
     const target = WEEKDAYS.get(name);
     const forceNext = found.token.startsWith("next ");
