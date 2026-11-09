@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, CSSProperties } from "react";
 import { supabase } from "../lib/supabase";
 import { parseQuickAdd } from "../lib/quickAdd.mjs";
+import { qatarDateKey, addCalendarDays, qatarDateTimeToIso } from "../lib/qatarTime.mjs";
 import "./PlanningPage.css";
 
 type Subject = { id: string; name: string; color: string | null; exam_date: string | null };
@@ -16,9 +17,8 @@ const C = {
  ar: { planning:"التخطيط", doneToday:"مكتملة اليوم", placeholder:"أضف مهمة… مثال: راجع الفصل 3 غداً #أحياء !1 45د", inbox:"الوارد", today:"اليوم", upcoming:"القادمة", done:"مكتملة", overdue:"متأخرة", clear:"كل شيء منجز لليوم.", emptyInbox:"لا توجد مهام في الوارد.", emptyUpcoming:"لا توجد مهام قادمة.", emptyDone:"ستظهر المهام المكتملة هنا.", subject:"المادة", addSubject:"+ مادة", subjectName:"اسم المادة", cancel:"إلغاء", noSubject:"بدون مادة", noDate:"بلا موعد", tomorrow:"غداً", priority:"الأولوية", duration:"المدة", due:"موعد الإنجاز", note:"ملاحظة", title:"العنوان", p1:"P1 · عالية", p2:"P2 · متوسطة", p3:"P3 · منخفضة", none:"بدون", edit:"تعديل", delete:"حذف", focus:"ابدأ التركيز", undo:"تراجع", completed:"مكتملة", deleted:"تم حذف المهمة", saved:"تم الحفظ", min:"د", exam:"الاختبار بعد", days:"أيام", examToday:"الاختبار اليوم", task:"المهمة", date:"التاريخ", loading:"جارٍ التحميل…", add:"إضافة", close:"إغلاق", saveFailed:"تعذّر حفظ التعديلات." }
 };
 const PALETTE = ["#20E6F2", "#8A00E8", "#0879E8", "#E59B35", "#32B887", "#D86D9B"];
-const keyOf = (date: Date) => date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
-const dayOf = (value: string | null) => value ? keyOf(new Date(value)) : null;
-const dueAt = (value: string) => value ? new Date(value+"T23:59:00").toISOString() : null;
+const dayOf = (value: string | null) => value ? qatarDateKey(new Date(value)) : null;
+const dueAt = (value: string) => value ? qatarDateTimeToIso(value, 23, 59) : null;
 
 export default function PlanningPage({ userId, lang, tasks, subjects, loading, documentLinkAvailable = false, initialText = "", onInitialTextConsumed, onRefresh, onStartFocus, onOpenDocument }: Props) {
  const t=C[lang], ar=lang==="ar", input=useRef<HTMLInputElement>(null);
@@ -29,7 +29,7 @@ export default function PlanningPage({ userId, lang, tasks, subjects, loading, d
  const [menu,setMenu]=useState<string|null>(null), [busy,setBusy]=useState(false), [saving,setSaving]=useState(false), [completing,setCompleting]=useState<string|null>(null);
  const [toast,setToast]=useState<{text:string;task?:Task;action?:"undo-delete"|"undo-done"}|null>(null), [pendingDelete,setPendingDelete]=useState<Task|null>(null);
  const deleteTimer=useRef<number|null>(null);
- const today=keyOf(new Date()), nextDate=new Date(); nextDate.setDate(nextDate.getDate()+1); const tomorrow=keyOf(nextDate);
+ const today=qatarDateKey(new Date()), tomorrow=addCalendarDays(today, 1);
  const parsed=useMemo(()=>parseQuickAdd(text,subjects),[text,subjects]);
  const pickerDocuments=useMemo(()=>documents.filter(d=>d.title.toLocaleLowerCase().includes(docSearch.toLocaleLowerCase())).sort((a,b)=>Number(b.subject_id===draft?.subject_id)-Number(a.subject_id===draft?.subject_id)),[documents,docSearch,draft?.subject_id]);
  const quickSubjects=subjects.filter(x=>x.name.toLocaleLowerCase().includes(pickerQuery.toLocaleLowerCase()));
