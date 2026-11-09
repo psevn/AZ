@@ -100,9 +100,35 @@ create index if not exists academic_catalog_courses_name_en_idx
 create index if not exists academic_catalog_courses_aliases_idx
   on public.academic_catalog_courses using gin (aliases);
 
+-- Stable course identity within an institution and curriculum. Keep same-code
+-- seminar variants distinct by including the normalized course name.
+create unique index if not exists academic_catalog_courses_institution_curriculum_identity_uidx
+  on public.academic_catalog_courses (
+    institution_id,
+    coalesce(curriculum_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    coalesce(nullif(lower(btrim(course_code)), ''), ''),
+    lower(btrim(name_en))
+  );
+
 alter table public.subjects
   add column if not exists catalog_course_id uuid
   references public.academic_catalog_courses(id) on delete set null;
+
+-- term_id is introduced by 20261105160000_add_academic_planning_foundation.sql.
+-- Fail explicitly before defining term-aware indexes if migration order/schema drift is wrong.
+do $
+begin
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'subjects'
+      and column_name = 'term_id'
+  ) then
+    raise exception 'subjects.term_id is required; apply 20261105160000_add_academic_planning_foundation.sql first';
+  end if;
+end;
+$;
 
 create index if not exists subjects_catalog_course_id_idx
   on public.subjects (catalog_course_id)
@@ -126,19 +152,47 @@ alter table public.academic_catalog_courses enable row level security;
 
 drop policy if exists academic_catalog_institutions_authenticated_read on public.academic_catalog_institutions;
 create policy academic_catalog_institutions_authenticated_read
-  on public.academic_catalog_institutions for select to authenticated using (true);
+  on public.academic_catalog_institutions for select to authenticated
+  using (is_active = true);
 
 drop policy if exists academic_catalog_curricula_authenticated_read on public.academic_catalog_curricula;
 create policy academic_catalog_curricula_authenticated_read
-  on public.academic_catalog_curricula for select to authenticated using (true);
+  on public.academic_catalog_curricula for select to authenticated
+  using (
+    is_active = true
+    and (
+      institution_id is null
+      or exists (
+        select 1 from public.academic_catalog_institutions i
+        where i.id = academic_catalog_curricula.institution_id
+          and i.is_active = true
+      )
+    )
+  );
 
 drop policy if exists academic_catalog_programs_authenticated_read on public.academic_catalog_programs;
 create policy academic_catalog_programs_authenticated_read
-  on public.academic_catalog_programs for select to authenticated using (true);
+  on public.academic_catalog_programs for select to authenticated
+  using (
+    is_active = true
+    and exists (
+      select 1 from public.academic_catalog_institutions i
+      where i.id = academic_catalog_programs.institution_id
+        and i.is_active = true
+    )
+  );
 
 drop policy if exists academic_catalog_courses_authenticated_read on public.academic_catalog_courses;
 create policy academic_catalog_courses_authenticated_read
-  on public.academic_catalog_courses for select to authenticated using (true);
+  on public.academic_catalog_courses for select to authenticated
+  using (
+    verification_status = 'verified'
+    and exists (
+      select 1 from public.academic_catalog_institutions i
+      where i.id = academic_catalog_courses.institution_id
+        and i.is_active = true
+    )
+  );
 
 -- Explicit grants are required: new public tables are no longer automatically exposed by the Data API.
 revoke all on public.academic_catalog_institutions, public.academic_catalog_curricula,
@@ -173,7 +227,12 @@ language sql
 stable
 security invoker
 set search_path = public
-as $$
+as $
+  with search_terms as (
+    select
+      replace(replace(replace(trim(coalesce(p_query, '')), E'\\', E'\\\\'), '%', E'\\%'), '_', E'\\_') as q,
+      replace(replace(replace(trim(coalesce(p_institution_query, '')), E'\\', E'\\\\'), '%', E'\\%'), '_', E'\\_') as institution_q
+  )
   select
     c.id,
     c.name_ar,
@@ -192,6 +251,7 @@ as $$
   from public.academic_catalog_courses c
   join public.academic_catalog_institutions i on i.id = c.institution_id
   left join public.academic_catalog_curricula cur on cur.id = c.curriculum_id
+  cross join search_terms st
   where
     c.verification_status = 'verified'
     and c.institution_id is not null
@@ -205,25 +265,29 @@ as $$
     )
     and (
       nullif(trim(coalesce(p_institution_query, '')), '') is null
-      or i.name_ar ilike '%' || trim(p_institution_query) || '%'
-      or i.name_en ilike '%' || trim(p_institution_query) || '%'
+      or i.name_ar ilike '%' || st.institution_q || '%' escape E'\\'
+      or i.name_en ilike '%' || st.institution_q || '%' escape E'\\'
     )
     and (
       nullif(trim(coalesce(p_query, '')), '') is null
-      or c.name_ar ilike '%' || trim(p_query) || '%'
-      or c.name_en ilike '%' || trim(p_query) || '%'
-      or coalesce(c.course_code, '') ilike '%' || trim(p_query) || '%'
+      or c.name_ar ilike '%' || st.q || '%' escape E'\\'
+      or c.name_en ilike '%' || st.q || '%' escape E'\\'
+      or coalesce(c.course_code, '') ilike '%' || st.q || '%' escape E'\\'
       or exists (
         select 1 from unnest(c.aliases) alias
-        where alias ilike '%' || trim(p_query) || '%'
+        where alias ilike '%' || st.q || '%' escape E'\\'
       )
     )
   order by
-    case when c.education_level = 'school' then 0 else 1 end,
+    case
+      when p_education_level = 'higher' and c.education_level = 'school' then 1
+      when p_education_level = 'school' and c.education_level <> 'school' then 1
+      else 0
+    end,
     i.name_en,
     c.name_en
   limit least(greatest(coalesce(p_limit, 20), 1), 50);
-$$;
+$;
 
 revoke all on function public.search_academic_catalog(text,text,text,text,integer) from public, anon;
 grant execute on function public.search_academic_catalog(text,text,text,text,integer) to authenticated;
@@ -320,7 +384,7 @@ insert into public.academic_catalog_courses
 select
   i.id, cur.id, null, seed.name_ar, seed.name_en, seed.aliases, 'school', '2026-2027',
   'https://www.edu.gov.qa/en/Content/MinistryMandate',
-  'Qatar Ministry of Education - Ministry Mandate (K-12 curriculum standards)', date '2026-11-09', 'verified'
+  'Qatar Ministry of Education - Ministry Mandate (institutional mandate, not a course catalog)', date '2026-11-09', 'draft'
 from (values
   ('اللغة العربية','Arabic Language',array['Arabic','العربي']::text[]),
   ('التربية الإسلامية','Islamic Studies',array['Islamic Education','Islamic','التربية الاسلامية']::text[]),
@@ -440,6 +504,59 @@ where not exists (
   select 1 from public.academic_catalog_courses existing
   where existing.institution_id=i.id and existing.course_code=seed.course_code
 );
+
+-- Qatar University College of Business and Economics: individual course records
+-- from the official Fall 2024 BBA requirements/course descriptions (updated March 2025).
+-- The source is explicit about course codes and titles; no codes are inferred.
+insert into public.academic_catalog_courses
+  (institution_id, course_code, name_ar, name_en, aliases, education_level,
+   academic_year, credit_hours, source_url, source_name, source_checked_at, verification_status)
+select
+  i.id, seed.course_code, seed.name_ar, seed.name_en, seed.aliases, 'undergraduate',
+  '2024-2025', 3,
+  'https://www.qu.edu.qa/en-us/colleges/business/documents/update%20study%20plan%2021.3/fall%202024%20study%20plan-english%20v1%20%28update3-%20march%202025%29%2012-3-2025.pdf',
+  'Qatar University College of Business and Economics — BBA Program Requirements and Course Descriptions (Fall 2024, V.1 Update3, March 2025)',
+  date '2026-11-09', 'verified'
+from (values
+  ('ACCT 110','المحاسبة المالية','Financial Accounting',array['Accounting']::text[]),
+  ('ACCT 116','المحاسبة الإدارية','Managerial Accounting',array['Accounting']::text[]),
+  ('ACCT 221','المحاسبة المتوسطة 1','Intermediate Accounting I',array['Accounting']::text[]),
+  ('ACCT 331','محاسبة التكاليف والإدارة','Cost and Management Accounting',array['Accounting']::text[]),
+  ('ACCT 421','نظم المعلومات المحاسبية','Accounting Information Systems',array['Accounting']::text[]),
+  ('FINA 201','مبادئ التمويل','Principles of Finance',array['Finance']::text[]),
+  ('FINA 301','تمويل الشركات','Corporate Finance',array['Finance']::text[]),
+  ('FINA 402','التمويل الشخصي','Personal Finance',array['Finance']::text[]),
+  ('ECON 111','مبادئ الاقتصاد الجزئي','Principles of Microeconomics',array['Economics']::text[]),
+  ('ECON 112','مبادئ الاقتصاد الكلي','Principles of Macroeconomics',array['Economics']::text[]),
+  ('ECON 211','الاقتصاد الجزئي المتوسط','Intermediate Microeconomics',array['Economics']::text[]),
+  ('ECON 212','الاقتصاد الكلي المتوسط','Intermediate Macroeconomics',array['Economics']::text[]),
+  ('ECON 472','الاقتصاد الإداري','Managerial Economics',array['Economics']::text[]),
+  ('MAGT 101','مبادئ الإدارة','Principles of Management',array['Management']::text[]),
+  ('MAGT 301','السلوك التنظيمي','Organizational Behavior',array['Management']::text[]),
+  ('MAGT 304','إدارة الإنتاج والعمليات','Production and Operations Management',array['Management']::text[]),
+  ('MAGT 405','الإدارة الاستراتيجية','Strategic Management',array['Management']::text[]),
+  ('MAKT 101','مبادئ التسويق','Principles of Marketing',array['Marketing']::text[]),
+  ('MAKT 300','بحوث التسويق','Marketing Research',array['Marketing']::text[]),
+  ('MAKT 301','سلوك المستهلك','Consumer Behavior',array['Marketing']::text[]),
+  ('MAKT 306','التسويق الرقمي','Digital Marketing',array['Marketing']::text[]),
+  ('MIST 201','مقدمة في نظم المعلومات الإدارية','Introduction to Management Information Systems',array['MIS','Management Information Systems']::text[]),
+  ('MIST 310','تحليل وتصميم النظم','Systems Analysis and Design',array['MIS','Management Information Systems']::text[]),
+  ('MIST 320','إدارة البيانات والمعلومات','Data and Information Management',array['MIS','Management Information Systems']::text[]),
+  ('MIST 331','أنظمة المؤسسات','Enterprise Systems',array['MIS','Management Information Systems']::text[]),
+  ('MIST 420','ذكاء الأعمال','Business Intelligence',array['MIS','Management Information Systems']::text[]),
+  ('STAT 220','إحصاء الأعمال 1','Business Statistics I',array['Statistics']::text[]),
+  ('STAT 222','إحصاء الأعمال 2','Business Statistics II',array['Statistics']::text[])
+) as seed(course_code,name_ar,name_en,aliases)
+join public.academic_catalog_institutions i
+  on i.country_code = 'QA' and i.slug = 'qatar-university'
+where not exists (
+  select 1
+  from public.academic_catalog_courses existing
+  where existing.institution_id = i.id
+    and lower(coalesce(existing.course_code, '')) = lower(seed.course_code)
+    and lower(existing.name_en) = lower(seed.name_en)
+)
+on conflict do nothing;
 
 -- UDST: verified individual course from the official 2026-2027 catalog.
 insert into public.academic_catalog_courses
