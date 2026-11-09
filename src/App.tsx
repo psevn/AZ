@@ -121,12 +121,18 @@ export default function App() {
       supabase.from("subjects").select("id,name,color,exam_date,created_at").order("created_at"),
       supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,completed_at,created_at").order("created_at",{ascending:false})
     ]);
-    let q = initialTasks;
-    if (q.error && q.error.message.toLowerCase().includes("completed_at")) {
-      q = await supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,created_at").order("created_at",{ascending:false});
+    let taskError = initialTasks.error;
+    let taskData = (initialTasks.data || []) as Task[];
+    if (taskError && taskError.message.toLowerCase().includes("completed_at")) {
+      const fallbackTasks = await supabase
+        .from("tasks")
+        .select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,created_at")
+        .order("created_at", { ascending: false });
+      taskError = fallbackTasks.error;
+      taskData = (fallbackTasks.data || []) as Task[];
     }
     if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
-    if (q.error) setError(q.error.message); else setTasks((q.data||[]) as Task[]);
+    if (taskError) setError(taskError.message); else setTasks(taskData);
     setLoading(false);
   }
   useEffect(() => { if (user) void loadData(); else { setSubjects([]); setTasks([]); } },[user]);
@@ -235,7 +241,7 @@ export default function App() {
           <div className="rail-bottom"><button className="rail-account" type="button" onClick={()=>{setSection("me");setMessage("");setMobileNavOpen(false);}}><span className="rail-account-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</span><span className="rail-account-copy"><small>{ar?"الحساب":"Account"}</small><strong>{user.email}</strong></span></button></div>
         </aside>
         <div className="workspace-main">
-          {section!=="home" && section!=="planning" && <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="planning"?t.planning:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div></div>}
+          {section!=="home" && section!=="planning" && <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div></div>}
           {section==="home" && <div className="home-view">
             <section className="home-hero">
               <div className="home-hero-copy">
