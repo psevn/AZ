@@ -62,9 +62,19 @@ Show students what they have completed, what needs attention, where they are str
 
 Prioritize privacy, secure data handling, clear AI limitations, reliable functionality, accessibility, and honest communication.
 
-### 5.6 Build a product that can grow responsibly
+### 5.6 Build a globally capable product that can grow responsibly
 
-Start with a focused, useful web MVP for the initial Qatar market. Expand to more learners, educational stages, platforms, and capabilities only when evidence and resources justify it.
+**Global by Design, Launching from Qatar.** Qatar is AZ's first launch and validation market, not a permanent product boundary. Build shared foundations so students in other countries can use AZ without a country-specific rebuild. Expand distribution in stages—Qatar, the Gulf, the wider Arab world, then selected international markets—while using evidence, reliability, support capacity, and local requirements to decide when each market is ready. Global readiness does not mean launching everywhere at once or expanding V1 scope indiscriminately.
+
+### 5.7 International readiness as a design constraint
+
+- Separate country, interface language, academic language, locale, time zone, and currency; never infer one from another.
+- Do not hard-code Qatar-specific institution lists, country codes, academic terms, grading systems, or calendars into shared product logic.
+- Allow a learner to enter an institution or academic structure that is not in a catalog.
+- Keep country-specific catalogs and rules as configurable data, with a graceful path when a country is not yet supported.
+- Store timestamps consistently and render dates/times in the learner's selected or verified time zone; distinguish date-only deadlines from actual moments in time.
+- Design pricing, payments, legal notices, privacy practices, support, and content localization to be market-aware before entering each market.
+- Preserve Arabic/English and RTL/LTR quality while allowing additional locales without rewriting core product flows.
 
 ## 6. Product Principles
 
