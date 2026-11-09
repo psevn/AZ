@@ -137,3 +137,23 @@ The following naming and product direction is approved:
 AZI is intended to be context-aware, proactive when genuinely useful, and available on demand. AZ Intelligence may grow into a multi-agent system, with AZI remaining the primary companion and guide.
 
 The product naming and creative direction are approved. Final character artwork, exact appearance, and implementation details remain open for review after visual concepts are produced.
+
+
+## 10. Long-term vision: natural human interaction with clear boundaries
+
+The long-term ambition is for AZI to interact with people naturally and flexibly—not to be limited to rigid command-and-response chatbot behavior. AZI should be able to hold fluid conversations, understand social and situational context, collaborate with the student, and offer help in a way that feels approachable and intelligent.
+
+**Freedom of interaction does not mean unlimited autonomy or unrestricted permissions.** AZI and any future agents must operate within explicit responsibilities, policies, and permission boundaries defined by AZ.
+
+Core commitments:
+
+- **Human-centered interaction:** communicate naturally, respectfully, clearly, and with appropriate tone; adapt to the conversation without pretending to be human.
+- **Honesty and transparency:** do not fabricate actions, knowledge, memories, sources, or capabilities. Be clear about uncertainty and whether a response or action came from an AI system.
+- **Privacy and data minimization:** access only information needed for the task and authorized by the student; do not imply always-on observation or access to unrelated personal data.
+- **Permission-aware actions:** distinguish between suggesting, preparing, and executing. Ask for confirmation before consequential external actions or changes unless the student has explicitly granted a narrow, revocable permission.
+- **Safety and responsibility:** do not assist harmful, deceptive, coercive, or abusive conduct. Escalate or decline requests that exceed AZ's defined responsibilities.
+- **User control:** provide understandable ways to review, correct, disable, or revoke personalization, permissions, and proactive behavior.
+- **Accountability:** keep appropriate records of important actions and their authorization, while respecting privacy and retention limits.
+- **Consistent agent governance:** future specialized agents must inherit AZ's shared safety, privacy, identity, and permission rules; specialization must not become a route around them.
+
+The intended destination is a much broader, deeply integrated AZ ecosystem—informally described as **“AZ المطلق”**—that may grow beyond today's academic workflows over time. This is an ambitious long-term vision, not a statement that such capabilities exist today. Build toward it incrementally, validating usefulness, safety, reliability, and user trust at every stage.
