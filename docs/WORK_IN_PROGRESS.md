@@ -71,3 +71,17 @@
 - Five additional regression tests are included. No local run of these new tests or build is claimed yet.
 - PR #14 is open as a draft against PR #13's branch. It is not merged.
 
+
+
+## Planning parser and Qatar timezone — PR A1
+
+- **Current implementation branch:** `feature/planning-parser-qatar-time` (stacked on `feature/planning-todolist-redesign`; PR #15 remains separate and unmerged).
+- Reworked the rule-based Quick Add parser to normalize Arabic diacritics and common letter variants (`ا/أ/إ`, `ة/ه`, `ي/ى`) for matching while preserving the original text and removing only recognized token spans.
+- Added Arabic/English/mixed parsing for today, tomorrow, day after tomorrow, weekdays, next week (Sunday), English and Arabic month dates, Arabic-Indic digits, priority tokens, minute/hour durations, and Arabic `ساعة`.
+- Preserved unknown subject tags and unmatched words in the title. Priority encoding was checked against the existing parser contract: database value `3` = high, `2` = medium, `1` = low; `!1/!2/!3` map accordingly and values above 3 clamp to `!3` with `priorityNotice=true`.
+- Added `src/lib/qatarTime.mjs`: Qatar-local date extraction via `Intl.DateTimeFormat({ timeZone: "Asia/Qatar" })`, timezone-independent calendar-day arithmetic, Sunday-first weekday calculation, and Qatar wall-clock-to-UTC conversion for `timestamptz`.
+- Updated Planning's date grouping and date-only due timestamp conversion to use Qatar time. A date-only due date at 23:59 Qatar is stored as 20:59Z on the same calendar date; this avoids the browser-local/UTC-midnight day-shift bug.
+- Added 16 parser/timezone tests in `tests/quickAdd.test.mjs`, including the required boundary case `2026-11-15T22:30:00Z` → Qatar date `2026-11-16`.
+- **Execution evidence:** I executed the actual parser/helper source and the 16 test cases in an isolated JavaScript runtime harness; result: **16 passed, 0 failed**. This was not `npm run test:quick-add` under Node's test runner.
+- **Not yet verified:** owner-side `npm run test:quick-add`, `npm run build`, browser behavior in multiple host timezones, UI/RTL/mobile screenshots, Playwright flows, and CI. These are not claimed complete.
+- No dependency added. No task-type column, SQL migration, RLS change, live database write, merge, or deployment.
