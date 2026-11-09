@@ -1,4 +1,5 @@
 const TIME_ZONE = "Asia/Qatar";
+const NUMBERING_SYSTEM = "latn";
 const pad = value => String(value).padStart(2, "0");
 
 /** Returns the Qatar calendar date for an instant, independent of the host machine's timezone. */
@@ -27,4 +28,14 @@ export function qatarWeekday(dateKey) {
 export function qatarDateTimeToIso(dateKey, hour = 23, minute = 59, second = 0) {
   const [year, month, day] = String(dateKey).split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day, hour - 3, minute, second)).toISOString();
+}
+
+/** Formats a Qatar calendar date without allowing the host timezone to shift the day. */
+export function formatQatarDate(dateKey, locale = "en-GB", options = {}) {
+  const instant = new Date(qatarDateTimeToIso(dateKey, 12, 0));
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: TIME_ZONE,
+    numberingSystem: NUMBERING_SYSTEM,
+    ...options,
+  }).format(instant);
 }
