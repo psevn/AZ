@@ -67,7 +67,7 @@ create table if not exists public.academic_catalog_courses (
   name_ar text not null,
   name_en text not null,
   aliases text[] not null default '{}',
-  education_level text not null check (education_level in ('school','diploma','undergraduate','postgraduate','doctoral')),
+  education_level text not null check (education_level in ('school','higher','diploma','undergraduate','postgraduate','doctoral')),
   grade_level text,
   academic_year text,
   term_label text,
