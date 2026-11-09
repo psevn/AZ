@@ -1,5 +1,5 @@
 import UniverseEffects from "./components/UniverseEffects";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
