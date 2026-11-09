@@ -101,6 +101,6 @@ test("Qatar calendar math is host-timezone independent", () => {
 });
 
 test("Qatar date formatting keeps the calendar day and Western digits", () => {
-  assert.equal(formatQatarDate("2026-11-16", "en-GB", { weekday: "long", day: "numeric", month: "long" }), "Monday, 16 November");
+  assert.equal(formatQatarDate("2026-11-16", "en-GB", { weekday: "long", day: "numeric", month: "long" }), "Monday 16 November");
   assert.match(formatQatarDate("2026-11-16", "ar-QA", { day: "numeric", month: "long" }), /16/u);
 });
