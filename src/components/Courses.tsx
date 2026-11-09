@@ -1,76 +1,53 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { supabase } from "../lib/supabase";
 import "./Courses.css";
 
 type Language = "ar" | "en";
-type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null };
+type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null; catalog_course_id?: string | null };
 type Task = { id: string; title: string; status: "todo" | "doing" | "done"; due_at: string | null };
 type Document = { id: string; title: string; status: string; kind: string; created_at: string };
-
-type CatalogItem = { name: string; code?: string; level: "school" | "higher"; group: string; aliases: string[] };
-
-const catalog: CatalogItem[] = [
-  ...[
-    ["اللغة العربية","Arabic Language","العربي","Arabic"],["اللغة الإنجليزية","English Language","إنجليزي","English"],
-    ["الرياضيات","Mathematics","رياضيات","Math"],["العلوم","Science","علوم","Science"],
-    ["الفيزياء","Physics","فيزياء","Physics"],["الكيمياء","Chemistry","كيمياء","Chemistry"],
-    ["الأحياء","Biology","احياء","Biology"],["التاريخ","History","تاريخ","History"],
-    ["الجغرافيا","Geography","جغرافيا","Geography"],["التربية الإسلامية","Islamic Studies","اسلامية","Islamic"],
-    ["تاريخ قطر","Qatar History","تاريخ قطر","Qatar history"],["تقنية المعلومات","Information Technology","الحاسوب","IT"],
-    ["التربية البدنية","Physical Education","رياضة","PE"],["الفنون","Art","فنون","Art"]
-  ].map(([ar,en,a,b])=>({name:ar,code:undefined,group:"school",level:"school" as const,aliases:[en,a,b]})),
-  ...[
-    ["مقدمة في البرمجة","Introduction to Programming","CS 101","programming"],
-    ["هياكل البيانات","Data Structures","CS 201","data structures"],
-    ["الخوارزميات","Algorithms","CS 301","algorithms"],
-    ["قواعد البيانات","Database Systems","CS 2XX","database"],
-    ["الرياضيات المتقطعة","Discrete Mathematics","MATH 2XX","discrete math"],
-    ["التفاضل والتكامل","Calculus","MATH 101","calculus"],
-    ["الجبر الخطي","Linear Algebra","MATH 2XX","linear algebra"],
-    ["الإحصاء والاحتمالات","Probability and Statistics","STAT 2XX","statistics"],
-    ["الفيزياء العامة","General Physics","PHYS 1XX","physics"],
-    ["الكيمياء العامة","General Chemistry","CHEM 1XX","chemistry"],
-    ["مبادئ الاقتصاد","Principles of Economics","ECON 101","economics"],
-    ["مبادئ المحاسبة","Principles of Accounting","ACCT 101","accounting"],
-    ["التسويق","Marketing","MKT 101","marketing"],
-    ["مبادئ الإدارة","Principles of Management","MGT 101","management"],
-    ["علم النفس","Psychology","PSYC 101","psychology"],
-    ["علم الاجتماع","Sociology","SOC 101","sociology"],
-    ["التصميم الجرافيكي","Graphic Design","ART 1XX","graphic design"],
-    ["مهارات الكتابة الأكاديمية","Academic Writing","ENG 1XX","academic writing"]
-  ].map(([ar,en,code,alias])=>({name:ar,group:"higher",level:"higher" as const,code,aliases:[en,alias]}))
-];
-
-const institutions = [
-  "Qatar University","University of Doha for Science and Technology","Hamad Bin Khalifa University",
-  "Lusail University","Doha Institute for Graduate Studies","Georgetown University in Qatar",
-  "Carnegie Mellon University in Qatar","Northwestern University in Qatar","Weill Cornell Medicine–Qatar",
-  "Virginia Commonwealth University School of the Arts in Qatar","HEC Paris in Qatar"
-];
+type CatalogItem = {
+  course_id: string;
+  name_ar: string;
+  name_en: string;
+  course_code: string | null;
+  education_level: string;
+  grade_level: string | null;
+  institution_name_ar: string;
+  institution_name_en: string;
+  curriculum_name_ar: string | null;
+  curriculum_name_en: string | null;
+  aliases: string[];
+  source_url: string;
+  source_name: string;
+  source_checked_at: string;
+};
 
 const text = {
   ar: {
     eyebrow:"AZ / COURSES", title:"موادك، في مكان واحد.", intro:"كل مادة لها مساحة عمل خاصة تجمع ملفاتها ومهامها وتقدّمك الدراسي.",
-    search:"ابحث عن مادة أو رمز مقرر", institution:"المؤسسة التعليمية (اختياري)", institutionHint:"الاقتراحات الحالية عامة؛ سنربطها بمقررات كل مؤسسة بعد اعتماد بياناتها",
-    all:"الكل", school:"المدرسة", higher:"الجامعة والكلية", suggestions:"اقتراحات المواد", add:"إضافة إلى موادي",
-    empty:"ما لقينا مادة بهذا الاسم. تقدر تضيفها بنفسك.", custom:"إضافة مادة مخصصة", customPlaceholder:"اكتب اسم المادة",
+    search:"ابحث عن مادة أو رمز مقرر", institution:"المؤسسة التعليمية (اختياري)", institutionHint:"ابحث في كتالوج قطر الموثق؛ اختر المؤسسة لتضييق النتائج.",
+    all:"الكل", school:"المدرسة", higher:"الجامعة والكلية", suggestions:"نتائج الكتالوج", add:"إضافة إلى موادي",
+    empty:"ما لقينا مادة موثقة بهذا البحث. تقدر تضيفها بنفسك.", custom:"إضافة مادة مخصصة", customPlaceholder:"اكتب اسم المادة",
     mine:"موادي", noCourses:"ما أضفت مواد بعد. ابحث عن مادة وأضفها بضغطة واحدة.",
     workspace:"مساحة المادة", tasks:"المهام", files:"الملفات", noTasks:"لا توجد مهام مرتبطة بهذه المادة بعد.",
     noFiles:"لا توجد ملفات مضافة لهذه المادة بعد.", done:"مكتملة", open:"مفتوحة", back:"العودة للمواد",
-    sourceNote:"هذه اقتراحات أولية لمواد شائعة، وليست قائمة رسمية بمقررات مؤسسة بعينها. نربطها بكتالوجات المؤسسات المعتمدة تدريجياً.",
-    added:"تمت إضافة المادة.", duplicate:"هذه المادة موجودة عندك بالفعل.", loading:"جارٍ تحميل مساحة المادة..."
+    sourceNote:"النتائج مرتبطة بمصادر رسمية وتاريخ آخر تحقق. قد لا يتوفر لكل مؤسسة كتالوج مقررات كامل بعد.",
+    added:"تمت إضافة المادة.", duplicate:"هذه المادة موجودة عندك بالفعل.", loading:"جارٍ تحميل مساحة المادة...",
+    searching:"نبحث في الكتالوج الرسمي...", source:"المصدر", verified:"موثق"
   },
   en: {
     eyebrow:"AZ / COURSES", title:"Your courses. One universe.", intro:"Every course gets its own workspace for files, tasks, and learning progress.",
-    search:"Search a subject or course code", institution:"Institution (optional)", institutionHint:"Current suggestions are general; institution-specific catalogs will follow verified data.",
-    all:"All", school:"School", higher:"University & college", suggestions:"Course suggestions", add:"Add to my courses",
-    empty:"No match found. You can add this course yourself.", custom:"Add a custom course", customPlaceholder:"Course name",
+    search:"Search a subject or course code", institution:"Institution (optional)", institutionHint:"Search the verified Qatar catalog; add an institution to narrow results.",
+    all:"All", school:"School", higher:"University & college", suggestions:"Catalog results", add:"Add to my courses",
+    empty:"No verified match found. You can add this course yourself.", custom:"Add a custom course", customPlaceholder:"Course name",
     mine:"My courses", noCourses:"No courses yet. Search for a subject and add it in one click.",
     workspace:"Course workspace", tasks:"Tasks", files:"Files", noTasks:"No tasks linked to this course yet.",
     noFiles:"No files added to this course yet.", done:"Completed", open:"Open", back:"Back to courses",
-    sourceNote:"These are starter suggestions for common subjects, not an official course list for a specific institution. Verified institution catalogs will be added progressively.",
-    added:"Course added.", duplicate:"This course is already in your list.", loading:"Loading course workspace..."
+    sourceNote:"Results are linked to official sources and a last-checked date. A complete course catalog may not yet be available for every institution.",
+    added:"Course added.", duplicate:"This course is already in your list.", loading:"Loading course workspace...",
+    searching:"Searching the official catalog...", source:"Source", verified:"Verified"
   }
 };
 
@@ -82,6 +59,8 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
   const [query,setQuery] = useState("");
   const [institution,setInstitution] = useState("");
   const [level,setLevel] = useState<"all"|"school"|"higher">("all");
+  const [results,setResults] = useState<CatalogItem[]>([]);
+  const [searchLoading,setSearchLoading] = useState(false);
   const [selected,setSelected] = useState<Subject|null>(null);
   const [customName,setCustomName] = useState("");
   const [busy,setBusy] = useState(false);
@@ -90,24 +69,63 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
   const [documents,setDocuments] = useState<Document[]>([]);
   const [detailLoading,setDetailLoading] = useState(false);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase();
-    if (!q) return [];
-    return catalog.filter(item => (level === "all" || item.level === level) &&
-      [item.name,...item.aliases,item.code || ""].some(value => value.toLocaleLowerCase().includes(q)))
-      .slice(0,12);
-  },[query,level]);
+  useEffect(() => {
+    const q = query.trim();
+    if (!q || !supabase) {
+      setResults([]);
+      setSearchLoading(false);
+      return;
+    }
+    let active = true;
+    const client = supabase;
+    const timer = window.setTimeout(async () => {
+      setSearchLoading(true);
+      const {data,error} = await client.rpc("search_academic_catalog", {
+        p_query:q,
+        p_country_code:"QA",
+        p_education_level:level,
+        p_institution_query:institution.trim() || null,
+        p_limit:12
+      });
+      if (!active) return;
+      if (error) {
+        setResults([]);
+        setNotice(error.message);
+      } else {
+        setResults((data || []) as CatalogItem[]);
+        setNotice("");
+      }
+      setSearchLoading(false);
+    },250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  },[query,level,institution]);
 
-  async function addCourse(name: string, code?: string) {
+  async function addCourse(name: string, code?: string | null, catalogCourseId?: string) {
     if (!supabase) return;
-    const duplicate = subjects.some(s => s.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase());
+    const duplicate = subjects.some(s =>
+      s.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase() ||
+      Boolean(catalogCourseId && s.catalog_course_id === catalogCourseId)
+    );
     if (duplicate) { setNotice(t.duplicate); return; }
     setBusy(true); setNotice("");
     const {data,error} = await supabase.from("subjects").insert({
-      user_id:userId, name:name.trim(), course_code:code || null
-    }).select("id,name,color,created_at,course_code").single();
-    if (error) setNotice(error.message);
-    else { setNotice(t.added); setQuery(""); setCustomName(""); await onRefresh(); if (data) await openCourse(data as Subject); }
+      user_id:userId,
+      name:name.trim(),
+      course_code:code || null,
+      catalog_course_id:catalogCourseId || null
+    }).select("id,name,color,created_at,course_code,catalog_course_id").single();
+    if (error) {
+      setNotice(error.code === "23505" ? t.duplicate : error.message);
+    } else {
+      setNotice(t.added);
+      setQuery("");
+      setCustomName("");
+      await onRefresh();
+      if (data) await openCourse(data as Subject);
+    }
     setBusy(false);
   }
 
@@ -155,10 +173,19 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
     <div className="courses-heading"><span className="eyebrow">{t.eyebrow}</span><h1>{t.title}</h1><p>{t.intro}</p></div>
     <div className="courses-catalog">
       <div className="catalog-search-wrap"><span className="catalog-search-icon">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.search} aria-label={t.search}/><kbd>⌘ K</kbd></div>
-      <label className="catalog-institution"><span>{t.institution}</span><input value={institution} onChange={e=>setInstitution(e.target.value)} placeholder={ar?"مثلاً: جامعة قطر أو اسم المدرسة":"e.g. Qatar University or your school"}/><small>{t.institutionHint}</small></label>
+      <label className="catalog-institution"><span>{t.institution}</span><input value={institution} onChange={e=>setInstitution(e.target.value)} placeholder={ar?"مثلاً: جامعة قطر أو جامعة حمد بن خليفة":"e.g. Qatar University or HBKU"}/><small>{t.institutionHint}</small></label>
       <div className="catalog-level-tabs">{(["all","school","higher"] as const).map(value=><button key={value} className={level===value?"active":""} onClick={()=>setLevel(value)}>{t[value]}</button>)}</div>
-      {query.trim() && <div className="catalog-results"><div className="catalog-section-title"><span>{t.suggestions}</span><small>{results.length.toString().padStart(2,"0")}</small></div>
-        {results.length ? results.map(item=><article className="catalog-result" key={item.name}><div className="catalog-result-icon">{item.level==="school"?"⌂":"◇"}</div><div className="catalog-result-copy"><strong>{item.name}</strong><small>{item.aliases[0]}{item.code ? " · "+item.code : ""}</small></div><button disabled={busy} onClick={()=>void addCourse(item.name,item.code)}>{t.add} <span>＋</span></button></article>) : <p className="courses-muted">{t.empty}</p>}
+      {query.trim() && <div className="catalog-results">
+        <div className="catalog-section-title"><span>{t.suggestions}</span><small>{searchLoading ? "…" : results.length.toString().padStart(2,"0")}</small></div>
+        {searchLoading ? <p className="courses-muted">{t.searching}</p> : results.length ? results.map(item=><article className="catalog-result" key={item.course_id}>
+          <div className="catalog-result-icon">{item.education_level==="school"?"⌂":"◇"}</div>
+          <div className="catalog-result-copy">
+            <strong>{ar ? item.name_ar : item.name_en}</strong>
+            <small>{item.institution_name_ar && ar ? item.institution_name_ar : item.institution_name_en}{item.course_code ? " · "+item.course_code : ""}</small>
+            <small>{item.curriculum_name_ar && ar ? item.curriculum_name_ar : item.curriculum_name_en || t.verified} · {t.source}: {item.source_name} · {item.source_checked_at}</small>
+          </div>
+          <button disabled={busy} onClick={()=>void addCourse(ar ? item.name_ar : item.name_en,item.course_code,item.course_id)}>{t.add} <span>＋</span></button>
+        </article>) : <p className="courses-muted">{t.empty}</p>}
         <p className="catalog-source-note">{t.sourceNote}</p>
       </div>}
     </div>
@@ -167,7 +194,6 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
         {subjects.length ? <div className="my-course-grid">{subjects.map((subject,index)=><button className="my-course-card" key={subject.id} onClick={()=>void openCourse(subject)}><span className="my-course-index">{String(index+1).padStart(2,"0")}</span><span className="my-course-orbit">✧</span><strong>{subject.name}</strong><small>{subject.course_code || (ar?"مساحة دراسية":"Study workspace")}</small><i>↗</i></button>)}</div> : <div className="courses-empty"><span>✧</span><p>{t.noCourses}</p></div>}
       </section>
       <section className="courses-panel custom-course-panel"><div className="courses-panel-heading"><div><span className="eyebrow">{ar?"إضافة سريعة":"QUICK ADD"}</span><h2>{t.custom}</h2></div><span>＋</span></div><form onSubmit={customSubmit}><input value={customName} onChange={e=>setCustomName(e.target.value)} placeholder={t.customPlaceholder} maxLength={120}/><button className="primary-button" disabled={busy||!customName.trim()}>{t.add} ↗</button></form>{notice && <p className="courses-notice" role="status">{notice}</p>}
-        <div className="institution-suggestions"><small>{ar?"مؤسسات تعليم عالٍ في قطر":"Higher education in Qatar"}</small>{institutions.slice(0,5).map(name=><span key={name}>{name}</span>)}</div>
       </section>
     </div>
   </section>;
