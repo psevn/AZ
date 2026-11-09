@@ -59,7 +59,7 @@ function createMockClient(user: typeof USER_ONE | typeof USER_TWO): SupabaseClie
       const result = table === "projects"
         ? project
         : table === "project_documents"
-          ? document
+          ? primaryDocument
           : table === "profiles"
             ? { display_name: user.name }
             : null;
