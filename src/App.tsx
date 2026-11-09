@@ -10,7 +10,7 @@ type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
 type Section = "home" | "planning" | "az" | "community" | "me";
 type Subject = { id: string; name: string; color: string | null; exam_date: string | null; created_at: string };
-type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; completed_at?: string | null; created_at: string };
+type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; completed_at?: string | null; document_id?: string | null; created_at: string };
 
 const labels = {
   ar: { eyebrow:"مساحتك الأكاديمية", headline:"خطّط بوضوح. ادرس بتركيز.", intro:"مكان واحد يجمع خطتك ومذاكرتك وتقدّمك.", email:"البريد الإلكتروني", password:"كلمة المرور", signIn:"تسجيل الدخول", signUp:"إنشاء حساب", create:"ابدأ حسابك", have:"عندك حساب؟", none:"ما عندك حساب؟", signOut:"تسجيل الخروج", language:"English", loading:"لحظة...", config:"نحتاج إعداد الاتصال بـ Supabase", configText:"انسخ .env.example إلى .env.local وأضف رابط المشروع ومفتاح Publishable. لا تستخدم service_role في المتصفح.", checkEmail:"أرسلنا لك رسالة تأكيد. افتح بريدك ثم ارجع لتسجيل الدخول.", welcome:"تم تسجيل الدخول بنجاح.", workspace:"مساحة العمل", notebook:"دفتر الملاحظات", arena:"ARENA", az:"AZ", community:"المجتمع", me:"أنا", communityTitle:"مجتمع AZ", communityText:"مساحة تجمع الطلاب لتبادل المعرفة والتجارب. ستتوفر في مرحلة لاحقة.", meTitle:"ملفي الشخصي", meText:"إدارة حسابك وتفضيلاتك الشخصية.", account:"الحساب", appearance:"المظهر", home:"الرئيسية", planning:"التخطيط", focus:"التركيز", study:"المذاكرة", today:"مساحة اليوم", todayText:"خطوة صغيرة ومنتظمة تصنع تقدماً كبيراً.", tasks:"المهام", completed:"مكتملة", subjects:"المواد الدراسية", subjectName:"اسم المادة", addSubject:"إضافة مادة", addTask:"إضافة مهمة", taskTitle:"عنوان المهمة", chooseSubject:"المادة", noSubject:"بدون مادة", due:"تاريخ الإنجاز", minutes:"المدة بالدقائق", priority:"الأولوية", high:"عالية", medium:"متوسطة", low:"منخفضة", todo:"لم تبدأ", doing:"قيد التنفيذ", done:"مكتملة", all:"الكل", todayFilter:"اليوم", upcoming:"القادمة", overdue:"المتأخرة", start:"ابدأ التركيز", stop:"إنهاء الجلسة", focusTitle:"وقت تركيزك", focusText:"اختر مهمة وابدأ جلسة تركيز.", studyTitle:"مساحة العمل الأكاديمية", studyText:"غرفة عملياتك لتنظيم الدراسة والعمل على أدواتك الأكاديمية.", notebookTitle:"دفتر الملاحظات", notebookText:"مساحة تدوين أفكارك وملاحظاتك الأكاديمية. ستتوفر أدواتها في مرحلة لاحقة.", arenaTitle:"ARENA", arenaText:"مساحة التحديات والتنافس الأكاديمي بين الطلاب.", studyNext:"الخطوة التالية: رفع ملفات PDF واستخراج محتواها وبناء أدوات الدراسة.", empty:"لا توجد مهام هنا بعد.", emptySubjects:"لا توجد مواد بعد.", remove:"حذف", startTask:"ابدأ", finishTask:"أنجزت", reopen:"إعادة فتح", saved:"تم حفظ جلسة التركيز.", noDue:"بدون موعد", footer:"AZ — خطّط، ادرس، تطوّر." },
@@ -59,7 +59,10 @@ export default function App() {
   const [page,setPage] = useState<Page>("workspace");
   const [subjects,setSubjects] = useState<Subject[]>([]);
   const [tasks,setTasks] = useState<Task[]>([]);
+  const [taskDocumentLinkAvailable,setTaskDocumentLinkAvailable] = useState(false);
+  const [activeDocument,setActiveDocument] = useState<{id:string;title:string;url:string}|null>(null);
   const [focusTask,setFocusTask] = useState("");
+  const [finishedFocus,setFinishedFocus] = useState<{taskId:string|null;taskTitle:string;minutes:number}|null>(null);
   const [started,setStarted] = useState<number|null>(null);
   const [elapsed,setElapsed] = useState(0);
   const [busy,setBusy] = useState(false);
@@ -119,18 +122,28 @@ export default function App() {
     setLoading(true);
     const [s,initialTasks] = await Promise.all([
       supabase.from("subjects").select("id,name,color,exam_date,created_at").order("created_at"),
-      supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,completed_at,created_at").order("created_at",{ascending:false})
+      supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,completed_at,document_id,created_at").order("created_at",{ascending:false})
     ]);
     let taskError = initialTasks.error;
     let taskData = (initialTasks.data || []) as Task[];
-    if (taskError && taskError.message.toLowerCase().includes("completed_at")) {
+    let hasDocumentLink = true;
+    if (taskError && (taskError.message.toLowerCase().includes("document_id") || taskError.message.toLowerCase().includes("completed_at"))) {
+      hasDocumentLink = false;
       const fallbackTasks = await supabase
         .from("tasks")
-        .select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,created_at")
+        .select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,completed_at,created_at")
         .order("created_at", { ascending: false });
       taskError = fallbackTasks.error;
       taskData = (fallbackTasks.data || []) as Task[];
+      if (taskError && taskError.message.toLowerCase().includes("completed_at")) {
+        const legacyTasks = await supabase.from("tasks")
+          .select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,created_at")
+          .order("created_at", { ascending: false });
+        taskError = legacyTasks.error;
+        taskData = (legacyTasks.data || []) as Task[];
+      }
     }
+    setTaskDocumentLinkAvailable(hasDocumentLink);
     if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
     if (taskError) setError(taskError.message); else setTasks(taskData);
     setLoading(false);
@@ -202,11 +215,14 @@ export default function App() {
   async function stopFocus() {
     if (!supabase || !user || started===null) return;
     setBusy(true);
+    const endedAt=Date.now();
+    const task=tasks.find(x=>x.id===focusTask);
+    const duration=Math.max(0,Math.round((endedAt-started)/60000));
     const {error:e} = await supabase.from("focus_sessions").insert({
       user_id:user.id,task_id:focusTask||null,
-      started_at:new Date(started).toISOString(),ended_at:new Date().toISOString()
+      started_at:new Date(started).toISOString(),ended_at:new Date(endedAt).toISOString()
     });
-    if (e) setError(e.message); else setMessage(t.saved);
+    if (e) setError(e.message); else { setMessage(t.saved); setFinishedFocus({taskId:focusTask||null,taskTitle:task?.title??(ar?"جلسة تركيز":"Focus session"),minutes:duration}); }
     setStarted(null); setElapsed(0); setBusy(false);
   }
 
@@ -285,8 +301,8 @@ export default function App() {
               </section>
             </section>
           </div>}
-          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
-          {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
+          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} documentLinkAvailable={taskDocumentLinkAvailable} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
+          {section==="az" && page==="focus" && <section className="focus-view content-panel">{finishedFocus&&<div className="focus-finish-card"><strong>{ar?"أحسنت!":"Nice work."} {finishedFocus.minutes} {ar?"دقيقة على":"min on"} {finishedFocus.taskTitle}.</strong><div><button type="button" onClick={async()=>{if(finishedFocus.taskId){await changeTask(tasks.find(x=>x.id===finishedFocus.taskId)!, "done");}setFinishedFocus(null);}}>{ar?"وضع علامة مكتملة":"Mark done"}</button><button type="button" onClick={()=>setFinishedFocus(null)}>{ar?"ليس الآن":"Not yet"}</button></div></div>}<span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">Knowledge system / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Notebook</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
           {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Arena</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">Coming soon</span></section>}
