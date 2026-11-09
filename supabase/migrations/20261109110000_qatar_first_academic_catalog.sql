@@ -23,7 +23,7 @@ create table if not exists public.academic_catalog_curricula (
   institution_id uuid references public.academic_catalog_institutions(id) on delete set null,
   slug text not null,
   curriculum_type text not null check (curriculum_type in ('national','international','institutional')),
-  education_level text not null check (education_level in ('school','diploma','undergraduate','postgraduate','doctoral')),
+  education_level text not null check (education_level in ('school','higher','diploma','undergraduate','postgraduate','doctoral')),
   name_ar text not null,
   name_en text not null,
   version_label text,
@@ -285,7 +285,7 @@ where not exists (
 insert into public.academic_catalog_courses
   (institution_id, course_code, name_ar, name_en, aliases, education_level, academic_year, source_url, source_name, source_checked_at, verification_status)
 select
-  i.id, seed.course_code, seed.name_ar, seed.name_en, seed.aliases, 'postgraduate', '2026-2027',
+  i.id, seed.course_code, seed.name_ar, seed.name_en, seed.aliases, 'higher', '2026-2027',
   'https://catalog.hbku.edu.qa/course-descriptions/',
   'HBKU Course Descriptions 2026-2027', date '2026-11-09', 'verified'
 from (values
