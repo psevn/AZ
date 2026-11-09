@@ -1,23 +1,34 @@
 # Work in Progress — Calm Product UI
 
-## Step 1: Self-hosted fonts
+## Step 1: Self-hosted fonts and merge
 
 **Branch:** `feature/calm-ui-step1-fonts`  
-**Base:** `design/calm-ui-step1`  
-**Status:** In progress; awaiting local dependency installation and verification.
+**Merged design branch:** `design/calm-ui-step1`  
+**Status:** Code changes are on the working branch; local production build passed before the latest profile/JSX fix. Rebuild and browser verification are still required.
 
 ### Done
-- Added Inter Variable CSS import to `src/main.tsx`.
-- Added IBM Plex Sans Arabic weights 400, 500, and 600 to `src/main.tsx`.
+- Added Inter Variable and IBM Plex Sans Arabic font imports in `src/main.tsx`.
+- Installed `@fontsource-variable/inter` and `@fontsource/ibm-plex-sans-arabic`; package manifest and lockfile were updated.
+- Merged `design/calm-ui-step1` into this branch, preserving the font setup.
 - Kept the approved `public/az-mark.svg` unchanged.
-- Kept this work isolated on a child branch of `design/calm-ui-step1`.
+- Fixed the literal backslash-n text between AZ module sections in `src/App.tsx`.
+- Removed the duplicate “My profile” heading from the profile card; the page-level heading remains.
+
+### Verification
+- `npm run build` passed locally after the merge and font installation (Vite production build completed; 67 modules transformed).
+- The App.tsx fixes above were committed remotely after that build; **the build has not yet been rerun after those latest edits**.
+- Source inspection confirms the duplicate profile-card heading is removed and the literal JSX text separators are no longer present.
 
 ### Not yet done / not verified
-- `npm install @fontsource-variable/inter @fontsource/ibm-plex-sans-arabic` has not yet been run on the project environment.
-- `package.json` and `package-lock.json` have not yet been updated by npm.
-- `npm run build` has not been run for this branch; build status is unknown.
-- No browser screenshots or font-rendering checks have been produced.
-- The PNG mockup renders are present on `design/calm-product-ui`; the HTML mockup source was reviewed, but the PNG image render itself could not be inspected in this run.
+- Re-run `npm run build` after pulling the latest branch changes.
+- Browser checks for Arabic and English, dark and light themes, and responsive layouts.
+- Screenshots for Home and Me in Plain and Universe modes.
+- Performance measurement on the low-memory target device.
+- Review and implementation of the remaining Calm UI requirements: Plain corner glow, Universe star layers and 30 FPS cap, readable translucent content backing, sidebar label cleanup, and the revised Home study prompt/input experience.
+- The requested `docs/COLLABORATION.md` was not found at the repository root or under `docs/` on the checked branch; confirm its intended location if still required.
 
-### Collaboration note
-The requested `docs/COLLABORATION.md` was not found at the repository root or under `docs/` on the checked branch. Until its location is clarified, this change follows the stated constraints: isolated branch, one focused file area, and a separate PR for the step. No merge to `main`, deployment, or database changes were made.
+### Safety boundaries
+- No changes to `main`.
+- No deployment.
+- No migrations or writes to the live database.
+- No claim of completed visual QA or PR readiness until the remaining checks pass.
