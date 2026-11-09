@@ -7,6 +7,7 @@ type Language = "ar" | "en";
 type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null; catalog_course_id?: string | null };
 type Task = { id: string; title: string; status: "todo" | "doing" | "done"; due_at: string | null };
 type Document = { id: string; title: string; status: string; kind: string; created_at: string };
+type CatalogInstitution = { name_ar: string; name_en: string };
 type CatalogItem = {
   course_id: string;
   name_ar: string;
@@ -60,6 +61,7 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
   const [institution,setInstitution] = useState("");
   const [level,setLevel] = useState<"all"|"school"|"higher">("all");
   const [results,setResults] = useState<CatalogItem[]>([]);
+  const [institutions,setInstitutions] = useState<CatalogInstitution[]>([]);
   const [searchLoading,setSearchLoading] = useState(false);
   const [selected,setSelected] = useState<Subject|null>(null);
   const [customName,setCustomName] = useState("");
@@ -68,6 +70,21 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
   const [tasks,setTasks] = useState<Task[]>([]);
   const [documents,setDocuments] = useState<Document[]>([]);
   const [detailLoading,setDetailLoading] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+    void supabase.from("academic_catalog_institutions")
+      .select("name_ar,name_en")
+      .eq("country_code","QA")
+      .eq("is_active",true)
+      .order("name_en")
+      .then(({data,error}) => {
+        if (!active) return;
+        if (!error) setInstitutions((data || []) as CatalogInstitution[]);
+      });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const q = query.trim();
@@ -173,7 +190,7 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
     <div className="courses-heading"><span className="eyebrow">{t.eyebrow}</span><h1>{t.title}</h1><p>{t.intro}</p></div>
     <div className="courses-catalog">
       <div className="catalog-search-wrap"><span className="catalog-search-icon">⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={t.search} aria-label={t.search}/><kbd>⌘ K</kbd></div>
-      <label className="catalog-institution"><span>{t.institution}</span><input value={institution} onChange={e=>setInstitution(e.target.value)} placeholder={ar?"مثلاً: جامعة قطر أو جامعة حمد بن خليفة":"e.g. Qatar University or HBKU"}/><small>{t.institutionHint}</small></label>
+      <label className="catalog-institution"><span>{t.institution}</span><input list="catalog-institution-options" value={institution} onChange={e=>setInstitution(e.target.value)} placeholder={ar?"مثلاً: جامعة قطر أو جامعة حمد بن خليفة":"e.g. Qatar University or HBKU"}/><datalist id="catalog-institution-options">{institutions.map(item=><option key={item.name_en} value={ar?item.name_ar:item.name_en}/>)}</datalist><small>{t.institutionHint}</small></label>
       <div className="catalog-level-tabs">{(["all","school","higher"] as const).map(value=><button key={value} className={level===value?"active":""} onClick={()=>setLevel(value)}>{t[value]}</button>)}</div>
       {query.trim() && <div className="catalog-results">
         <div className="catalog-section-title"><span>{t.suggestions}</span><small>{searchLoading ? "…" : results.length.toString().padStart(2,"0")}</small></div>
