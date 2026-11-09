@@ -1,6 +1,19 @@
 name: Validate course catalog fix
 
 on:
+  push:
+    branches:
+      - fix/course-catalog-term-aware
+    paths:
+      - "src/**"
+      - "supabase/migrations/**"
+      - "tests/sql/**"
+      - "docs/database/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - ".github/workflows/validate-course-catalog-fix.yml"
   pull_request:
     branches:
       - feature/az-qatar-course-catalog
