@@ -82,6 +82,12 @@ export default function UniverseEffects() {
     };
 
     const animate = (time: number) => {
+      // Pause completely while the tab is hidden (saves CPU/battery).
+      if (document.hidden) {
+        previousTime = 0;
+        frame = window.requestAnimationFrame(animate);
+        return;
+      }
       const delta = Math.min(0.04, previousTime ? (time - previousTime) / 1000 : 0.016);
       previousTime = time;
       context.clearRect(0, 0, width, height);

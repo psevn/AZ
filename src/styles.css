@@ -901,10 +901,15 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 
 /* === Calm Product UI — step 1 (docs/design/AZ-WEB-UI-DIRECTION-V2.md) ===
    Neutral surfaces, brand colours from the approved logo, decoration removed. */
-.app-shell, .app-shell.theme-light { background: var(--bg); }
-.app-shell::before, .app-shell::after,
-.ambient, .universe-stage, .home-universe-visual, .home-orbit-art, .eyebrow-pulse { display: none !important; }
-.home-hero { grid-template-columns: 1fr; }
+/* Two background modes (user setting, saved in localStorage "az-background"):
+   .bg-plain    = calm solid background (default)
+   .bg-universe = animated space background (stars, comets, nebula, orbit art) */
+.app-shell.bg-plain, .app-shell.bg-plain.theme-light { background: var(--bg); }
+.app-shell.bg-plain::before, .app-shell.bg-plain::after,
+.bg-plain .ambient, .bg-plain .universe-stage, .bg-plain .home-universe-visual, .bg-plain .home-orbit-art, .bg-plain .eyebrow-pulse { display: none !important; }
+.bg-plain .home-hero { grid-template-columns: 1fr; }
+.icon-button.is-on { color: var(--accent); border-color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .bg-universe * { animation: none !important; } }
 .brand-word { letter-spacing: .04em; font-weight: 650; }
 .primary-button { background: linear-gradient(100deg, #0879E8 0%, #2520D8 62%, #8A00E8 100%); color: #fff; box-shadow: none; }
 .primary-button:hover:not(:disabled) { filter: brightness(1.08); }
