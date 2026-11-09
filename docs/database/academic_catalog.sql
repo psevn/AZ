@@ -452,3 +452,68 @@ and not exists (
   select 1 from public.academic_catalog_courses existing
   where existing.institution_id=i.id and existing.course_code='DCMP2010A'
 );
+
+-- Northwestern University in Qatar: Fall 2026 course offerings/descriptions.
+-- Section duplicates are collapsed; courses sharing a catalog number but having
+-- different seminar titles remain separate catalog entries.
+insert into public.academic_catalog_courses
+  (institution_id, course_code, name_ar, name_en, aliases, education_level,
+   academic_year, term_label, source_url, source_name, source_checked_at, verification_status)
+select
+  i.id, seed.course_code, seed.name_ar, seed.name_en, seed.aliases, 'undergraduate',
+  '2026-2027', 'Fall 2026', seed.source_url, seed.source_name,
+  date '2026-11-09', 'verified'
+from (values
+  ('GEN_CMN 201-0','مناهج البحث في الاتصال','Research Methods in Communication',array['Communication Research']::text[]),
+  ('MIT 100-0','الإعلام والمجتمع','Media and Society',array['Media Studies']::text[]),
+  ('MIT 143-0','التمثيل: التقنيات الأساسية','Acting: Basic Techniques',array['Acting']::text[]),
+  ('MIT 190-0','بناء المحتوى الإعلامي','Media Construction',array['Media Production']::text[]),
+  ('MIT 222-0','أنواع الأفلام والتلفزيون: سينما الرعب','Radio/Television/Film Genre: Horror Cinema',array['Film Studies']::text[]),
+  ('MIT 230-0','فهم السياقات الإعلامية','Understanding Media Contexts',array['Film and Media']::text[]),
+  ('MIT 260-0','أساسيات كتابة السيناريو','Foundations of Screenwriting',array['Screenwriting']::text[]),
+  ('MIT 298-0','ندوة جامعية: الذكاء الاصطناعي التوليدي ومعالجة اللغة في ابتكار الإعلام','Undergraduate Seminar: GenAI/NLP in Media Innovation',array['Generative AI','NLP']::text[]),
+  ('MIT 298-0','ندوة جامعية: البيانات الضخمة وتحليلات الإعلام','Undergraduate Seminar: Big Data & Media Analytics',array['Big Data','Media Analytics']::text[]),
+  ('MIT 298-0','ندوة جامعية: فهم الصناعات الإعلامية','Undergraduate Seminar: Understanding Media Industries',array[]::text[]),
+  ('MIT 298-0','ندوة جامعية: بحوث الإنتاج الإعلامي','Undergraduate Seminar: Production Research',array[]::text[]),
+  ('MIT 298-0','ندوة جامعية: الاتصال بين الثقافات والدولي','Undergraduate Seminar: Intercultural & International Communication',array['Intercultural Communication']::text[]),
+  ('MIT 312-0','تاريخ السينما','History of Film',array['Film History']::text[]),
+  ('MIT 325-0','السينما والإعلام والنوع الاجتماعي: ثقافة إعلام الفتيات','Film, Media & Gender: Girls'' Media Culture',array['Gender and Media']::text[]),
+  ('MIT 376-0','موضوعات في الإعلام التفاعلي: البرمجة الإبداعية بالذكاء الاصطناعي','Topics in Interactive Media: Vibe Coding',array['Creative Coding','AI']::text[]),
+  ('MIT 376-0','موضوعات في الإعلام التفاعلي: تصميم الألعاب','Topics in Interactive Media: Game Design',array['Game Design','VR','AR','XR']::text[]),
+  ('MIT 377-0','موضوعات في الإعلام غير الروائي: صانع أفلام وثائقية منفرد','Topics in Non-fiction Media: One Person Documentarian',array['Documentary']::text[]),
+  ('MIT 390-0','الإخراج: إخراج الكاميرا','Directing: Directing the Camera',array['Film Directing']::text[]),
+  ('MIT 394-0','الإنتاج الوثائقي المتقدم','Advanced Documentary Production',array['Documentary Production']::text[]),
+  ('MIT 398-0','ندوة جامعية: القيادة في شركات الإعلام','Undergraduate Seminar: Leadership in Media Companies',array['Media Leadership']::text[]),
+  ('MIT 398-0','ندوة جامعية: رواد الأعمال في الإعلام','Undergraduate Seminar: Media Entrepreneurs',array['Media Entrepreneurship']::text[]),
+  ('MIT 398-0','ندوة جامعية: الشرق الأوسط الرقمي','Undergraduate Seminar: The Digital Middle East',array['Digital Middle East']::text[]),
+  ('MIT 398-0','ندوة جامعية: الذكاء الاصطناعي والتزييف العميق والتضليل','Undergraduate Seminar: AI, Deepfake & Disinformation',array['AI','Deepfakes','Disinformation']::text[]),
+  ('MIT 398-0','ندوة جامعية: الإعلام والدبلوماسية العامة','Undergraduate Seminar: Media & Public Diplomacy',array['Public Diplomacy']::text[]),
+  ('MIT 398-0','ندوة جامعية: عولمة الرياضة في أفريقيا','Undergraduate Seminar: Sports Globalization in Africa',array['Sports']::text[]),
+  ('MIT 398-0','ندوة جامعية: الدراما التلفزيونية التركية عالمياً','Undergraduate Seminar: Global Turkish TV Drama',array['Television Studies']::text[]),
+  ('MIT 398-0','ندوة جامعية: البث الرياضي','Undergraduate Seminar: Sports Broadcasting',array['Sports Media']::text[]),
+  ('MIT 398-0','ندوة جامعية: الحرب والحكايات','Undergraduate Seminar: War (and) Stories',array['Storytelling']::text[]),
+  ('GEN_CMN 202-0','الأخبار والأرقام','News and Numbers',array['Statistics for Journalism']::text[]),
+  ('JOUR 100-0','الصحافة: الشاشات والبث','Journalism: Screens & Streams',array['Multiplatform Journalism']::text[]),
+  ('JOUR 201-0','السرد الصحفي','Journalistic Storytelling',array['Journalism']::text[]),
+  ('JOUR 305-0','البودكاست','Podcasting',array['Audio Storytelling']::text[]),
+  ('JOUR 324-0','إنتاج الفيديو: البث والويب','Video Producing: Broadcast/Web',array['Video Production']::text[]),
+  ('JOUR 325-0','الصحافة ووسائل التواصل الاجتماعي','Journalism and Social Media',array['Social Media Journalism']::text[]),
+  ('JOUR 335-0','الصحافة الآلية','Automated Journalism',array['AI Journalism','Automation']::text[]),
+  ('JOUR 370-0','قانون الإعلام وأخلاقياته','Media Law & Ethics',array['Media Ethics']::text[]),
+  ('STRATCOM 303-0','مقدمة في الاتصال الاستراتيجي','Introduction to Strategic Communication',array['Strategic Communication']::text[]),
+  ('STRATCOM 305-0','السرد المؤسسي','Corporate Storytelling',array['Public Relations','PR']::text[]),
+  ('STRATCOM 307-0','التسويق الرقمي والاجتماعي والمتنقل','Digital, Social & Mobile Marketing',array['Digital Marketing']::text[]),
+  ('STRATCOM 310-0','الجمهور ورؤى الإعلام','Audience and Media Insights',array['Audience Research']::text[])
+) as seed(course_code,name_ar,name_en,aliases)
+cross join lateral (
+  select
+    'https://my.qatar.northwestern.edu/academic-resources/courses/courses-offered/Fall-2026-Timetable-and-Course-Descriptions_July-26-2026.pdf'::text as source_url,
+    'Northwestern University in Qatar Fall 2026 Timetable and Course Information'::text as source_name
+) src
+join public.academic_catalog_institutions i on i.country_code='QA' and i.slug='northwestern-qatar'
+where not exists (
+  select 1 from public.academic_catalog_courses existing
+  where existing.institution_id=i.id
+    and existing.course_code=seed.course_code
+    and lower(existing.name_en)=lower(seed.name_en)
+);
