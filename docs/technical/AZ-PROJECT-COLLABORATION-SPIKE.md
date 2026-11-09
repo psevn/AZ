@@ -78,9 +78,9 @@ The isolated Worker and the AZ frontend editor are now connected at the code lev
 - `src/components/ProjectCollaborativeEditor.tsx` uses Tiptap, Yjs Collaboration, CollaborationCaret, Supabase Auth, and the Worker ticket endpoint. It displays connection/sync state and collaborator presence, refreshes its short-lived ticket before expiry, and uses automatic Yjs synchronization rather than replacing the whole HTML document.
 - `ProjectWorkspace` now lazy-loads the collaborative editor when the primary document tab is opened. The root environment variable `VITE_AZ_COLLABORATION_URL` points to the Worker origin.
 - The invitation migration now includes the `member_invited` event in the `project_activity` check constraint. This was dry-run inside a transaction and rolled back; no live migration was applied.
-- CI passed the root AZ type-check and Vite production build, Worker TypeScript checks, Worker health/routing and DO smoke tests, Yjs binary persistence and CRDT merge tests, and a real two-client WebSocket integration test. The integration test verifies text propagation, awareness presence, and reconnect recovery using Wrangler's `createTestHarness()`.
+- CI run #241 passed the root AZ type-check and Vite production build, Worker TypeScript checks, Worker health/routing and DO smoke tests, `POST /ticket` tests with mocked Supabase Auth/document/membership responses, Yjs binary persistence and CRDT merge tests, a real two-client WebSocket integration test, and the PostgreSQL 17 project migration/RLS contract.
 
-**What the passing integration test does not prove:** it creates a test-signed ticket and exercises the `/collab/:documentId` route. It does not test the browser UI, `POST /ticket`, live Supabase Auth/RLS, simultaneous conflicting edits through the full Tiptap editor, forced Durable Object eviction/restart, or active membership revocation.
+**What the passing tests do not prove:** the `POST /ticket` tests use mocked Supabase responses, not live Supabase Auth/RLS. The WebSocket integration test creates a test-signed ticket and exercises `/collab/:documentId`; it does not test the browser UI or simultaneous conflicting edits through the full Tiptap editor. Forced Durable Object eviction/restart and active membership revocation remain untested.
 
 **Remaining production blockers:**
 - Verify the complete browser flow against a local Worker and the AZ Supabase project.
@@ -88,7 +88,7 @@ The isolated Worker and the AZ frontend editor are now connected at the code lev
 - Implement and test prompt revocation of active WebSocket sessions when a member is removed. The current 15-minute ticket expiry is not immediate revocation; idle sockets can remain connected.
 - Test recovery after forced Durable Object eviction/restart. Current passing test covers client disconnect/reconnect only.
 - Verify Arabic RTL, English LTR, mixed-direction paragraphs, accessibility, and mobile behavior in a browser.
-- The live Supabase migration history contains project foundation migrations whose corresponding SQL files are missing from the Git repository. Recover and commit those SQL sources before a clean rebuild or production deployment.
+- Eleven older historical migration files remain missing from Git. The four AZ Projects migration sources have schema-equivalent reconstructions, but a clean database rebuild remains blocked until the remaining sources are recovered.
 - The adapter uses standard accepted WebSockets, not the Hibernation API. Cost, connection limits, and hibernation compatibility remain unverified.
 
 No Worker deployment has occurred, no live Supabase migration has been applied, and the draft PR remains targeted at `feature/az-projects-mvp`, not `main`.
