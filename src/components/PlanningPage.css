@@ -119,3 +119,20 @@
   .plan-quick-add input{font-size:16px}
 }
 @keyframes plan-sheet-in{from{transform:translateY(22px);opacity:.7}to{transform:translateY(0);opacity:1}}
+
+/* Final row containment: keep metadata chips and action menus inside the visible row. */
+.plan-task{min-width:0;overflow:visible;border-inline-start-color:transparent!important}
+.plan-task:hover{border-inline-start-color:transparent!important}
+.plan-document-chip{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;max-width:min(30%,170px);height:28px;padding:0 8px;border:1px solid rgba(140,150,170,.18);border-radius:7px;background:rgba(135,150,175,.07);color:var(--text-secondary,#a5a9b2);font:inherit;font-size:10px;cursor:pointer}
+.plan-document-chip span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan-task-actions{flex:none}
+.plan-menu-wrap{flex:none}
+@media(max-width:768px){
+  .plan-check,.plan-icon-action{width:44px;height:44px;min-width:44px;min-height:44px}
+  .plan-task{gap:6px;padding-inline:4px}
+  .plan-document-chip{max-width:27%;height:32px}
+}
+@media(max-width:420px){
+  .plan-document-chip{max-width:25%;padding-inline:5px}
+  .plan-task-main strong{font-size:12px}
+}
