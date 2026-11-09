@@ -11,7 +11,7 @@
 - Preserved existing database priority encoding: stored `3` = high, `2` = medium, `1` = low. User-facing tokens map `!1` → stored `3`, `!2` → stored `2`, `!3` → stored `1`; `!4+` is normalized visibly to `!3` / low with a three-level note.
 - Added a live preview of the exact title, subject, due date, duration, and priority sent to the existing `tasks` table. Defaults match the existing form (45 minutes, medium priority, no subject, no due date).
 - Kept the existing full task form and all existing task fields/actions. No database schema, migration, RLS, or Supabase policy changes.
-- Added Node built-in unit tests for Arabic, English, mixed-language, weekday/month dates, unknown tokens, defaults, and priority normalization.
+- Added Node built-in unit tests for Arabic, English, mixed-language, weekday/month dates, unknown tokens, defaults, and all three priority levels.\n- Executed the exact parser and test files in an isolated Node test harness: 9 tests passed, 0 failed. The full repository build and the in-repository npm script have not been run because this environment cannot clone/install the project dependencies.
 
 ### Completed in this branch
 - Added Inter Variable and IBM Plex Sans Arabic self-hosted font imports.
@@ -35,7 +35,7 @@
 - Persisted the selected light/dark theme in localStorage under `az-theme`; existing `az-language` and `az-background` persistence remains in place.
 
 ### Verification already performed
-- Added `npm run test:quick-add` using Node's built-in test runner. Parser tests are run independently in Node; the full Vite build and browser checks remain to be run locally.
+- Added `npm run test:quick-add` using Node's built-in test runner. The parser suite passed in an isolated Node harness (9/9); the full Vite build and browser checks remain unverified.
 - Source changes use only existing `tasks` columns; no database objects were changed.
 
 
