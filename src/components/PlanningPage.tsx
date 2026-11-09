@@ -5,7 +5,7 @@ import { parseQuickAdd } from "../lib/quickAdd.mjs";
 import "./PlanningPage.css";
 
 type Subject = { id: string; name: string; color: string | null; exam_date: string | null };
-type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; created_at: string; completed_at?: string | null };
+type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; created_at: string; completed_at?: string | null; document_id?: string | null };
 type Draft = { title: string; subject_id: string | null; due_at: string | null; priority: number; est_minutes: number | null; note: string | null; document_id?: string | null };
 type DocumentItem = { id: string; title: string; subject_id: string | null; status: "ready" };
 type Props = { userId: string; lang: "ar" | "en"; tasks: Task[]; subjects: Subject[]; loading: boolean; documentLinkAvailable?: boolean; initialText?: string; onInitialTextConsumed?: () => void; onRefresh: () => Promise<void>; onStartFocus: (id: string) => void; onOpenDocument: (id: string) => void };
@@ -19,7 +19,6 @@ const PALETTE = ["#20E6F2", "#8A00E8", "#0879E8", "#E59B35", "#32B887", "#D86D9B
 const keyOf = (date: Date) => date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
 const dayOf = (value: string | null) => value ? keyOf(new Date(value)) : null;
 const dueAt = (value: string) => value ? new Date(value+"T23:59:00").toISOString() : null;
-const inputDate = (value: string | null) => value ? keyOf(new Date(value)) : "";
 
 export default function PlanningPage({ userId, lang, tasks, subjects, loading, documentLinkAvailable = false, initialText = "", onInitialTextConsumed, onRefresh, onStartFocus, onOpenDocument }: Props) {
  const t=C[lang], ar=lang==="ar", input=useRef<HTMLInputElement>(null);
