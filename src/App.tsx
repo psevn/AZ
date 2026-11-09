@@ -1,3 +1,4 @@
+import UniverseEffects from "./components/UniverseEffects";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -33,6 +34,12 @@ function Universe() {
 }
 
 export default function App() {
+  const [universe,setUniverse] = useState<boolean>(() => {
+    try { return window.localStorage.getItem("az-background") === "universe"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("az-background", universe ? "universe" : "plain"); } catch { /* storage unavailable */ }
+  }, [universe]);
   const [lang,setLang] = useState<Language>(() => {
     try {
       const saved = window.localStorage.getItem("az-language");
@@ -229,13 +236,14 @@ export default function App() {
   const sectionNav:Section[] = ["home","planning","az","community","me"];
   const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",community:"◎",me:"◌"};
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
-  return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
+  return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")} dir={ar?"rtl":"ltr"} lang={lang}>
+    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>{universe && <UniverseEffects />}
     <header className="topbar">
       {user && <button className="mobile-nav-toggle" type="button" onClick={()=>setMobileNavOpen(v=>!v)} aria-label={mobileNavOpen?(ar?"إغلاق القائمة":"Close navigation"):(ar?"فتح القائمة":"Open navigation")} aria-expanded={mobileNavOpen}>{mobileNavOpen?"×":"☰"}</button>}
       <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
       <div className="top-actions">
         <button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button>
+        <button className={"icon-button"+(universe?" is-on":"")} onClick={()=>setUniverse(v=>!v)} aria-pressed={universe} aria-label={ar?"خلفية الكون":"Universe background"} title={ar?"خلفية الكون":"Universe background"}>✦</button>
         <button className="icon-button" onClick={()=>setDark(v=>!v)} aria-label="Toggle theme">{dark?"☼":"☾"}</button>
         {user && <button className="quiet-button signout-button" onClick={signOut} disabled={busy}>{t.signOut}</button>}
       </div>
