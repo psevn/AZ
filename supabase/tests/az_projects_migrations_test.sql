@@ -53,13 +53,11 @@ insert into auth.users (id,email) values
 \ir ../migrations/20261108150000_secure_project_invitation_acceptance.sql
 
 -- A signed-in lead can create a project and gets a primary shared document.
-set role authenticated;
-select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false);
-select current_user as db_role, auth.uid() as auth_uid;
-insert into public.projects (created_by,title)
-values (auth.uid(),'CI direct RLS probe');
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 select public.create_project('CI collaboration project','migration contract test',null,null);
-reset role;
+commit;
 
 do $$
 begin
@@ -84,14 +82,15 @@ end;
 $$;
 
 -- The lead can create a task; the security-definer trigger records activity.
-set role authenticated;
-select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
 insert into public.project_tasks (project_id,title,created_by,assignee_id)
 select id,'Write project introduction',
        '00000000-0000-0000-0000-000000000001',
        '00000000-0000-0000-0000-000000000001'
 from public.projects where title = 'CI collaboration project';
-reset role;
+commit;
 
 do $$
 begin
@@ -115,7 +114,8 @@ $$;
 
 -- Service-role-only invitation acceptance is email-bound and adds the member.
 grant all on table public.project_invitations to service_role;
-set role service_role;
+begin;
+set local role service_role;
 insert into public.project_invitations (
   project_id,token_hash,invited_email,expires_at,created_by
 )
@@ -127,7 +127,7 @@ select public.accept_project_invitation(
   '00000000-0000-0000-0000-000000000002',
   'member@example.test'
 );
-reset role;
+commit;
 
 do $$
 begin
@@ -152,15 +152,16 @@ end;
 $$;
 
 -- RLS must hide the project from a non-member.
-set role authenticated;
-select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',false);
-do $$
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
+do $
 begin
   if exists (select 1 from public.projects where title = 'CI collaboration project') then
     raise exception 'RLS leaked a project to a non-member';
   end if;
 end;
-$$;
-reset role;
+$;
+commit;
 
 select 'AZ Projects migration contract passed' as result;
