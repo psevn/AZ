@@ -162,13 +162,13 @@ $$;
 begin;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
-do $
+do $rls_check$
 begin
   if exists (select 1 from public.projects where title = 'CI collaboration project') then
     raise exception 'RLS leaked a project to a non-member';
   end if;
 end;
-$;
+$rls_check$;
 commit;
 
 select 'AZ Projects migration contract passed' as result;
