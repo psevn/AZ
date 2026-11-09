@@ -1055,3 +1055,199 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
     line-height: 1;
   }
 }
+
+
+/* Calm UI refinement — shared hierarchy, surfaces, controls and Home layout. */
+.eyebrow,
+.rail-label,
+.subnav-label,
+.home-kicker,
+.home-metrics span,
+.coming-soon-label {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: 500;
+}
+.eyebrow { font-size: 12px; color: var(--muted); }
+.eyebrow-pulse { display: none; }
+
+/* A quiet, flat navigation rail with a neutral active destination. */
+.workspace-rail {
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.rail-topline { margin-bottom: 18px; }
+.rail-collapse { border-color: transparent; background: transparent; }
+.rail-new-session {
+  border: 1px solid var(--line) !important;
+  border-radius: 9px !important;
+  color: var(--text) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.rail-new-session:hover { border-color: var(--border-strong) !important; background: var(--surface-2) !important; }
+.rail-new-session span:first-child { color: var(--text); }
+.rail-account {
+  border-color: transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+}
+.rail-account:hover { border-color: var(--line) !important; background: var(--surface-2) !important; }
+.rail-account-avatar {
+  border: 0 !important;
+  color: var(--text) !important;
+  background: var(--surface-2) !important;
+}
+.primary-nav button.active,
+.theme-light .primary-nav button.active,
+.primary-nav-item .workspace-nav button.active {
+  color: var(--text-strong) !important;
+  border-color: transparent !important;
+  border-inline-start: 0 !important;
+  background: var(--surface-2) !important;
+  box-shadow: none !important;
+}
+.primary-nav button.active i,
+.primary-nav-item .workspace-nav button.active i { display: none !important; }
+.primary-nav button.active .nav-glyph,
+.primary-nav-item .workspace-nav button.active .module-glyph { color: var(--text-strong) !important; }
+.primary-nav button:hover,
+.primary-nav-item .workspace-nav button:hover { background: var(--surface-2); }
+
+/* Remove decorative gradient borders and heavy elevation from content cards. */
+.content-panel,
+.home-progress-panel,
+.home-next-panel,
+.home-progress-panel,
+.home-next-panel,
+.home-dashboard-card {
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  background: var(--panel-solid) !important;
+  box-shadow: none !important;
+}
+.task-row,
+.subject-row { border-color: var(--line) !important; box-shadow: none !important; }
+.progress-orbit-icon { border-color: var(--line); box-shadow: none; }
+
+/* Home is a centered study launcher, not a promotional hero card. */
+.workspace-heading:has(+ .home-view) { display: none; }
+.home-view { gap: 22px; }
+.home-hero {
+  min-height: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  padding: 44px 20px 26px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.home-hero::before { display: none !important; }
+.home-hero-copy { width: min(100%, 780px); max-width: 780px; text-align: center; }
+.home-date { margin: 0 0 8px; color: var(--muted); }
+.home-greeting { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+.home-hero-title {
+  max-width: none !important;
+  margin: 0 0 22px !important;
+  color: var(--text-strong) !important;
+  font-size: clamp(25px, 3vw, 36px) !important;
+  font-weight: 580 !important;
+  line-height: 1.35 !important;
+  letter-spacing: normal !important;
+}
+.home-study-input {
+  width: min(100%, 740px) !important;
+  min-height: 68px;
+  margin: 0 auto !important;
+  padding: 8px !important;
+  border-color: var(--line) !important;
+  border-radius: 14px !important;
+  background: var(--panel-solid) !important;
+  box-shadow: none !important;
+}
+.home-study-input input { padding: 14px 16px !important; font-size: 15px !important; }
+.home-study-input .primary-button { min-height: 48px; padding-inline: 18px; font-size: 13px; }
+.home-hero-actions { justify-content: center; margin-top: 16px !important; }
+.home-secondary-action { color: var(--muted); }
+.home-universe-visual {
+  position: absolute !important;
+  inset-block-start: 4px !important;
+  inset-inline-end: 2% !important;
+  width: 180px !important;
+  height: 180px !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  opacity: .2;
+  transform: scale(.7);
+  transform-origin: top right;
+  z-index: 0;
+  pointer-events: none;
+}
+.home-hero-copy { z-index: 2; }
+.home-dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.home-dashboard-card {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 18px;
+}
+.home-dashboard-card > span { color: var(--muted); font-size: 13px; }
+.home-dashboard-card > strong { color: var(--text-strong); font-size: 25px; font-weight: 580; }
+.home-dashboard-card > small { color: var(--muted); font-size: 12px; }
+.home-dashboard-card > button {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 5px 0;
+  border: 0;
+  color: var(--text-strong);
+  background: transparent;
+  font-size: 12px;
+}
+.home-overview { grid-template-columns: minmax(230px,.72fr) minmax(0,1.5fr); }
+
+/* Clear disabled controls and consistent, readable form labels. */
+.primary-button:disabled,
+button.primary-button:disabled,
+.home-study-input .primary-button:disabled {
+  color: var(--muted) !important;
+  border: 1px solid var(--line) !important;
+  background: var(--surface-2) !important;
+  box-shadow: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+}
+.task-form label,
+.focus-select,
+.task-form label span,
+.profile-actions button,
+.profile-details span { font-size: 13px !important; }
+.task-form { gap: 16px; }
+.task-form label,.focus-select { gap: 8px; }
+.task-form input,.task-form select,.subject-form input,.focus-select select { font-size: 13px !important; }
+.panel-heading { align-items: center; }
+.count-pill { min-width: 34px; height: 34px; border-radius: 9px; color: var(--muted); font-size: 13px; }
+
+@media (max-width:1000px) {
+  .home-dashboard-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width:680px) {
+  .home-hero { padding: 36px 0 20px !important; }
+  .home-hero-copy { width: 100%; }
+  .home-study-input { min-height: 0; }
+  .home-dashboard-cards { grid-template-columns: 1fr; }
+  .home-dashboard-card { grid-template-columns: 1fr auto; align-items: center; }
+  .home-dashboard-card > small { grid-column: 1; }
+  .home-dashboard-card > button { grid-column: 2; grid-row: 1 / span 2; }
+  .home-universe-visual { width: 120px !important; height: 120px !important; opacity: .13; }
+}
