@@ -114,7 +114,7 @@ $$;
 
 -- Service-role-only invitation acceptance is email-bound and adds the member.
 select id as ci_project_id from public.projects
-where title = 'CI collaboration project' \\gset
+where title = 'CI collaboration project' \gset
 
 grant all on table public.project_invitations to service_role;
 begin;
