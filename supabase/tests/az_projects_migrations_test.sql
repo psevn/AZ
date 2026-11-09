@@ -55,6 +55,9 @@ insert into auth.users (id,email) values
 -- A signed-in lead can create a project and gets a primary shared document.
 set role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false);
+select current_user as db_role, auth.uid() as auth_uid;
+insert into public.projects (created_by,title)
+values (auth.uid(),'CI direct RLS probe');
 select public.create_project('CI collaboration project','migration contract test',null,null);
 reset role;
 
