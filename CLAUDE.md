@@ -21,3 +21,8 @@ Before changing product structure, UX, or branding, read:
 - The AZI character direction is documented there. It is a working creative direction only: no final character artwork has been generated or approved yet.
 
 Do not contradict these decisions or invent implementation that is not present in the codebase. Inspect the existing architecture before proposing or making technical changes. Keep API secrets out of browser code.
+
+- The approved AZ V1 primary navigation has exactly five destinations, in order: Home, Planning, AZ Intelligence, AZ Projects, and the student's profile represented by their chosen profile picture/avatar (not a visible “Me” label). Older primary-navigation proposals such as Study or More are superseded.
+- AZI is available across AZ, not only inside the AZ Intelligence section. It may navigate between the five primary destinations and relevant existing internal screens while respecting the student's access and current context. Navigation does not itself authorize edits or other consequential actions.
+- AZI may be explicitly invoked into an optional voice-conversation session (for example, by pressing AZI). Voice must never start listening automatically on page load or silently in the background. Show clear microphone permission, listening/speaking, mute, and end-session states; keep text interaction available if voice is unavailable.
+- Voice and cross-section navigation are approved product directions, not proof of implementation. Inspect the codebase and implement incrementally; do not claim capabilities exist until verified.
