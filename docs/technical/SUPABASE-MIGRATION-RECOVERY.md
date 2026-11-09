@@ -20,9 +20,10 @@ Two existing files had migration timestamps that did not match Supabase's migrat
 
 ## Verification
 
-- The four reconstructed migrations, the existing project-document/task trigger migrations, the atomic project-creation RPC, and the invitation/audit-hardening migration were run inside a transaction against the connected database and rolled back.
+- The four reconstructed migrations, the atomic project-creation correction, and the invitation/audit-hardening migration were run inside a transaction against the connected database and rolled back. The two trigger-creation migrations were excluded from this live dry-run because their triggers already exist; they are exercised in the disposable PostgreSQL CI test.
 - Post-rollback checks confirmed that the invitation RPC was not left behind, the original activity insert policy remained, the task activity trigger function remained invoker-security, and the original activity event constraint was unchanged.
-- A disposable PostgreSQL 17 CI test now exercises the recovered migrations, project creation, primary-document creation, task activity, email-bound invitation acceptance, and non-member RLS isolation. Its first run is pending.
+- The first disposable PostgreSQL 17 CI run exposed a real mismatch: the earlier atomic-create migration used `INSERT ... RETURNING`, while the live `create_project` function pre-generates its UUID and avoids `RETURNING` under member-only SELECT RLS. The later recovery migration now restores the live, RLS-compatible function definition.
+- A disposable PostgreSQL 17 CI test exercises the recovered migrations, project creation, primary-document creation, task activity, email-bound invitation acceptance, and non-member RLS isolation. The updated test is awaiting its next CI run.
 
 **No live migration was applied.** The transaction above was explicitly rolled back.
 
