@@ -162,3 +162,115 @@ The first version is event-driven, not always-on:
 - Start from the current Planning work branch only as a separate child branch; do not modify or merge the open Planning draft PR.
 - Keep AZI implementation isolated in `feature/azi-intelligence-core`; retain `feature/azi-low-cost-foundation` as the original documentation-only foundation branch.
 - No changes to `main`, no PR merge, no database execution, no deployment, and no paid-service activation without explicit owner approval.
+
+## 11. Unified Academic Intelligence — product architecture decision
+
+**Decision:** AZI is designed from the beginning as one unified intelligence system for both individual students and collaborative teams. Team Intelligence is not a bolt-on assistant for project leaders, and AZI must not be architected as a personal-only assistant that is later retrofitted for collaboration.
+
+The unified system has four connected dimensions:
+
+### 11.1 Personal Intelligence
+
+Understand each student's academic context using only data that is available, relevant, authorized, and permitted by that student. Depending on verified product data, this may include:
+
+- The student's goals, subjects, deadlines, tasks, focus activity, and academic timetable.
+- The student's own responsibilities within each AZ Project.
+- Their progress on assigned project work and dependencies that affect their tasks.
+- Explicitly provided preferences, such as preferring shorter work sessions, only where the preference is available and the student has agreed to its use.
+
+Do not infer motivation, personality, laziness, or intent from task status. An incomplete task is evidence only that the task is not recorded as complete; it is not evidence that the student did no work.
+
+### 11.2 Team Intelligence
+
+Understand the collaborative project as a shared work system, while preserving each member's individual privacy.
+
+- Understand project membership, each member's assigned responsibilities, task status, deadlines, dependencies, and project-level progress only where the AZ Projects schema and authorization rules explicitly permit access.
+- Communicate with every member individually in the context of their own role and assigned work; AZI is not limited to the group leader.
+- Give a member useful, personal guidance about their own responsibilities and next steps.
+- Give the project leader a factual project-level overview: recorded progress, incomplete or overdue project tasks, dependency blockers, and risks to the delivery date.
+- Never expose a member's private Planning, personal timetable, exams, private notes, or unrelated academic circumstances to the project leader or other members.
+- Never label a member as lazy, inactive, or uncooperative based only on an incomplete task or missing activity record. Describe the observable project fact and its limits.
+
+AZI must use the same project membership, role, and row-level authorization boundaries as the product itself. AZI does not receive privileged access merely because it is an assistant. Do not assume project data or access is available until the actual schema, backend enforcement, and RLS have been audited.
+
+### 11.3 Academic Intelligence
+
+Connect the student's academic workload and AZ Projects responsibilities to identify useful relationships, opportunities, and conflicts, for example:
+
+- A project deadline approaching while assigned work remains incomplete.
+- A proposed work session conflicting with a class, exam, or another commitment visible to that student.
+- A project task whose delay affects dependent tasks or the team's delivery risk.
+- A more suitable time to work when the student's own schedule indicates an upcoming exam or a heavy academic period.
+
+Cross-domain reasoning must use only the minimum authorized data needed. A team-level recommendation may take account of a student's availability only through a privacy-preserving result or consented signal; it must not reveal the underlying private schedule to teammates.
+
+### 11.4 Action Intelligence
+
+Turn insights into useful, controlled next steps:
+
+- Explain what AZI observed and the evidence behind its suggestion.
+- Offer to discuss a task, break it into steps, or prepare a proposed Planning item or focus session.
+- Suggest a suitable time using the student's own available schedule, when that schedule is available and authorized.
+- Show the proposed task/time and obtain the student's explicit confirmation before adding or changing anything in personal Planning.
+- Recheck authorization and relevant state when the action is executed. A suggestion or navigation intent never grants permission to mutate data.
+- Keep consequential actions attributable and auditable.
+
+## 12. Proactive team-member experience and notification principles
+
+AZI should not wait for a student to ask when a timely, evidence-backed intervention would genuinely help. This is controlled initiative, not continuous surveillance or interruption.
+
+A suitable future example:
+
+> A project delivery date is approaching. AZI notices that a task assigned to this member is not yet recorded as started or completed. It explains the remaining time and asks whether the student wants to plan a work session. If the student agrees, AZI considers the student's permitted availability, proposes a time, and asks for confirmation before adding it to personal Planning.
+
+This is a product scenario, not a claim that the feature currently exists.
+
+Requirements:
+
+- Personalize the message to the member's role, assigned work, verified progress, deadline, dependencies, and permitted academic context. Do not send the same generic message to every member.
+- Use personal timetable and exam information only for that student's own recommendation. Do not reveal those details to the team.
+- Use prior work-pattern preferences only when there is sufficient reliable data and the student has consented to that personalization. Otherwise, do not guess.
+- Make notifications useful, limited, non-duplicative, and dismissible. The student controls notification preferences and timing.
+- Prefer in-app notifications in the initial product. External channels require separate design and permission.
+- Do not continuously poll or run always-on AI. The low-cost foundation remains event-driven; proactive delivery can be introduced later through carefully scoped events and schedules after reliability, cost, and consent controls are designed.
+- If the data is missing, stale, or ambiguous, say so and avoid pressure or unsupported claims.
+- Never add, reschedule, or otherwise modify personal Planning without explicit student confirmation.
+
+## 13. Unified architecture and staged delivery
+
+The four dimensions share common foundations rather than becoming separate assistants:
+
+- **Identity and permissions:** authenticated student identity, project membership, roles, RLS, and action-time authorization.
+- **Context:** current screen and relevant personal or project context, selected by purpose and permission.
+- **Data access:** separate, narrowly scoped personal-data and project-data readers. Team readers must enforce project membership and role boundaries on the backend.
+- **Analytics:** deterministic calculations for personal workload, focus, project progress, deadlines, and task dependencies where verified data exists.
+- **Insights:** evidence-backed explanations that distinguish observed facts from hypotheses and include freshness/limitations.
+- **Action contracts:** typed navigation and proposed actions, with confirmation for personal Planning changes and other consequential operations.
+- **Delivery:** controlled in-app notifications with student preferences, deduplication, and frequency limits.
+- **Optional language reasoning:** a provider-neutral, server-side model interface only in the separately approved, budget-limited phase. Model output never grants access or authorization.
+
+Suggested staged implementation:
+
+1. **Personal foundation:** complete deterministic analytics and evidence-backed insights using verified personal data; no paid model calls.
+2. **Shared contracts:** define common identity, context, insight, action, and notification contracts so personal and team intelligence fit one system.
+3. **AZ Projects audit and integration:** inspect the actual project schema, membership/role model, task dependencies, backend enforcement, RLS, and deployment status before reading or acting on team data. Do not merge a separate Projects branch or apply migrations as part of this step without explicit approval.
+4. **Team Intelligence:** add member-specific and leader-level project insights, each restricted to its permitted project scope.
+5. **Academic Intelligence:** connect permitted personal academic context to project planning without disclosing private schedule details.
+6. **Action Intelligence:** add proposed Planning sessions and task actions with explicit confirmation, reauthorization, and auditability.
+7. **Controlled proactive delivery:** introduce event-driven in-app notifications with user controls, deduplication, and frequency limits.
+8. **Optional text reasoning and voice:** only after a demonstrated need and separate approval. Voice remains deferred; no always-on microphone.
+
+The stages are an implementation sequence, not separate product identities. The architecture and data contracts should support all four dimensions from the start, while each capability is released only when its data, security, UX, and tests are ready.
+
+## 14. Additional acceptance criteria for unified intelligence
+
+- Personal and team intelligence share one AZI architecture and consistent evidence/permission contracts.
+- A project member receives guidance only about their own permitted responsibilities and project context.
+- A project leader sees project-scoped facts only, never another member's private Planning or personal academic timetable.
+- An incomplete task is never represented as proof that its owner did no work or lacks commitment.
+- Personalized timing uses only available, current, authorized data and does not disclose private schedule details.
+- AZI never creates or changes a personal Planning item without the student's explicit confirmation.
+- Notifications are limited, dismissible, preference-controlled, and do not rely on always-on surveillance.
+- Project access is enforced by backend authorization and RLS, not by hiding UI elements or trusting client-supplied IDs.
+- If project schema, membership, dependency, or permission evidence is unavailable, AZI reports the limitation and does not invent team insights.
+- Tests cover cross-member isolation, leader/member permission differences, missing or stale data, notification deduplication, and confirmation before writes.
