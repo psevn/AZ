@@ -461,7 +461,7 @@ insert into public.academic_catalog_courses
    academic_year, term_label, source_url, source_name, source_checked_at, verification_status)
 select
   i.id, seed.course_code, seed.name_ar, seed.name_en, seed.aliases, 'undergraduate',
-  '2026-2027', 'Fall 2026', seed.source_url, seed.source_name,
+  '2026-2027', 'Fall 2026', src.source_url, src.source_name,
   date '2026-11-09', 'verified'
 from (values
   ('GEN_CMN 201-0','مناهج البحث في الاتصال','Research Methods in Communication',array['Communication Research']::text[]),
