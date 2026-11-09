@@ -157,3 +157,56 @@ Core commitments:
 - **Consistent agent governance:** future specialized agents must inherit AZ's shared safety, privacy, identity, and permission rules; specialization must not become a route around them.
 
 The intended destination is a much broader, deeply integrated AZ ecosystem—informally described as **“AZ المطلق”**—that may grow beyond today's academic workflows over time. This is an ambitious long-term vision, not a statement that such capabilities exist today. Build toward it incrementally, validating usefulness, safety, reliability, and user trust at every stage.
+
+
+## 11. AZ V1 navigation and AZI cross-section interaction
+
+### Approved V1 primary navigation
+
+The approved primary navigation for AZ V1 consists of exactly five destinations, in this order:
+
+1. **Home**
+2. **Planning**
+3. **AZ Intelligence**
+4. **AZ Projects**
+5. **Student profile** — represented by the student's selected profile picture/avatar instead of a text label such as “Me”.
+
+The fifth item is an avatar-based navigation control. Selecting it opens the student's profile/account area. If the student has not selected an image, show a polished default avatar. Do not add a sixth primary destination or bring back “Me” as the visible navigation label without a new product decision.
+
+This is the current V1 navigation decision and supersedes older navigation proposals that used Study, More, or other labels as the primary five items. Internal tools and screens (such as Workspace, Notebook, and Focus) may remain accessible within their relevant product flows; they are not additional top-level buttons in this five-item navigation.
+
+### AZI is available across the product
+
+AZI is not confined to the AZ Intelligence page. AZI may navigate between the five main sections and relevant internal screens as part of helping the student. It should understand the current section and relevant context, then take the student to the appropriate destination when useful or requested.
+
+Navigation behavior:
+- AZI may open or switch to Home, Planning, AZ Intelligence, AZ Projects, and the student's profile area.
+- AZI may navigate to a relevant task, project, document, study workspace, or other screen when that destination exists and the student has access.
+- AZI should explain or make clear where it is taking the student when the transition is not obvious.
+- Navigation itself is distinct from performing an action. Opening a page or focusing a screen does not authorize AZI to edit, submit, delete, share, or otherwise change data.
+- Any consequential action remains subject to the existing permission and confirmation rules. AZI must not bypass role permissions, project membership, RLS, or user consent.
+- Never claim a destination or action is available until it exists in the implemented product.
+
+### Optional voice conversation
+
+The student may directly invoke AZI's voice experience—for example, by pressing AZI—to start a voice conversation. The intended experience is a conversational session in which the student can speak naturally and AZI can respond by voice, with the ability to end the session clearly.
+
+Product requirements:
+- Voice is an optional interaction mode, not a requirement to use AZ.
+- Do not activate the microphone or begin recording merely because the student opened AZ or navigated between sections. The student must deliberately initiate voice.
+- Make listening, processing, speaking, muted, and ended states understandable to the student.
+- Provide an obvious way to mute/stop listening and end the conversation.
+- Request and respect operating-system/browser microphone permission. If permission is denied or unavailable, explain the limitation and retain text interaction.
+- Keep the conversation aware of the current AZ section only to the extent needed and authorized; preserve the same privacy, data-minimization, and permission boundaries as text interaction.
+- Do not imply that AZI is continuously listening in the background or can place/receive phone calls unless a separately approved and implemented capability explicitly supports that.
+- Voice-triggered navigation may be performed when the student's intent is clear. Voice-triggered consequential edits or external actions still require the applicable confirmation.
+
+### Delivery approach
+
+Treat cross-section navigation and voice as distinct capabilities that can be delivered incrementally:
+1. Establish AZI's shared entry point and reliable navigation to existing AZ routes.
+2. Pass the minimum relevant screen context to AZI and verify that it does not leak context across users or unauthorized projects.
+3. Add an explicitly initiated voice session with clear permission and session controls.
+4. Expand conversational continuity and voice-triggered actions only after the underlying navigation, context, and authorization behavior is reliable.
+
+The product direction is approved; this section does not claim that navigation orchestration, voice sessions, or any associated AI capabilities have already been implemented.
