@@ -13,6 +13,17 @@ type StarLayer = {
   speed: number;
 };
 
+type Comet = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  length: number;
+  opacity: number;
+  remaining: number;
+  delay: number;
+};
+
 function makeLayer(width: number, height: number, count: number, speed: number, radius: number): StarLayer {
   return {
     speed,
@@ -23,6 +34,21 @@ function makeLayer(width: number, height: number, count: number, speed: number, 
       opacity: 0.18 + Math.random() * 0.42,
       drift: (Math.random() - 0.5) * 0.12
     }))
+  };
+}
+
+function makeComet(width: number, height: number, delay = Math.random() * 2.5): Comet {
+  const angle = 0.42 + Math.random() * 0.28;
+  const speed = 190 + Math.random() * 90;
+  return {
+    x: Math.random() * width * 0.88,
+    y: Math.random() * height * 0.72,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    length: 58 + Math.random() * 46,
+    opacity: 0.22 + Math.random() * 0.18,
+    remaining: 1.8 + Math.random() * 1.2,
+    delay
   };
 }
 
@@ -43,6 +69,7 @@ export default function UniverseEffects() {
     let frame = 0;
     let previousTime = 0;
     let layers: StarLayer[] = [];
+    let comets: Comet[] = [];
 
     const draw = () => {
       context.clearRect(0, 0, width, height);
@@ -54,13 +81,34 @@ export default function UniverseEffects() {
           context.fill();
         }
       }
+
+      // Draw sparse, low-opacity comets after the stars but on the same
+      // background canvas, so all application content remains above them.
+      for (const comet of comets) {
+        if (comet.delay > 0 || comet.remaining <= 0) continue;
+        const tailX = comet.x - (comet.vx / Math.hypot(comet.vx, comet.vy)) * comet.length;
+        const tailY = comet.y - (comet.vy / Math.hypot(comet.vx, comet.vy)) * comet.length;
+        const gradient = context.createLinearGradient(tailX, tailY, comet.x, comet.y);
+        gradient.addColorStop(0, "rgba(32,230,242,0)");
+        gradient.addColorStop(0.72, `rgba(32,230,242,${comet.opacity * 0.42})`);
+        gradient.addColorStop(1, `rgba(224,250,255,${comet.opacity})`);
+        context.strokeStyle = gradient;
+        context.lineWidth = 1.15;
+        context.beginPath();
+        context.moveTo(tailX, tailY);
+        context.lineTo(comet.x, comet.y);
+        context.stroke();
+        context.fillStyle = `rgba(230,250,255,${comet.opacity * 0.78})`;
+        context.beginPath();
+        context.arc(comet.x, comet.y, 1.35, 0, Math.PI * 2);
+        context.fill();
+      }
     };
 
     const resize = () => {
       const rect = shell.getBoundingClientRect();
       width = Math.max(1, rect.width);
       height = Math.max(1, rect.height);
-      // Keep the canvas inexpensive on integrated graphics and low-memory devices.
       pixelRatio = Math.min(window.devicePixelRatio || 1, 1.1);
       canvas.width = Math.round(width * pixelRatio);
       canvas.height = Math.round(height * pixelRatio);
@@ -75,6 +123,9 @@ export default function UniverseEffects() {
         makeLayer(width, height, Math.round(21 * scale), 5.2, 1.05),
         makeLayer(width, height, Math.round(30 * scale), 9.5, 1.35)
       ];
+      comets = Array.from({ length: compact ? 2 : 3 }, (_, index) =>
+        makeComet(width, height, index * 0.8 + Math.random() * 0.35)
+      );
       draw();
     };
 
@@ -106,6 +157,20 @@ export default function UniverseEffects() {
           }
           if (star.x < -2) star.x = width + 2;
           else if (star.x > width + 2) star.x = -2;
+        }
+      }
+
+      for (let index = 0; index < comets.length; index += 1) {
+        const comet = comets[index];
+        if (comet.delay > 0) {
+          comet.delay -= delta;
+          continue;
+        }
+        comet.x += comet.vx * delta;
+        comet.y += comet.vy * delta;
+        comet.remaining -= delta;
+        if (comet.remaining <= 0 || comet.x > width + comet.length || comet.y > height + comet.length) {
+          comets[index] = makeComet(width, height, 1.1 + Math.random() * 2.2);
         }
       }
       draw();
