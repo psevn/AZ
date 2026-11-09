@@ -113,15 +113,22 @@ end;
 $$;
 
 -- Service-role-only invitation acceptance is email-bound and adds the member.
-grant all on table public.projects, public.project_members, public.project_activity, public.project_invitations to service_role;
+select id as ci_project_id from public.projects
+where title = 'CI collaboration project' \\gset
+
+grant all on table public.project_invitations to service_role;
 begin;
 set local role service_role;
 insert into public.project_invitations (
   project_id,token_hash,invited_email,expires_at,created_by
 )
-select id,repeat('a',64),'member@example.test',now() + interval '1 day',
-       '00000000-0000-0000-0000-000000000001'
-from public.projects where title = 'CI collaboration project';
+values (
+  :'ci_project_id'::uuid,
+  repeat('a',64),
+  'member@example.test',
+  now() + interval '1 day',
+  '00000000-0000-0000-0000-000000000001'
+);
 select public.accept_project_invitation(
   repeat('a',64),
   '00000000-0000-0000-0000-000000000002',
