@@ -90,3 +90,10 @@ This SQL is a reviewed schema/seed draft, not a migration applied to the hosted 
 5. Apply to the hosted project only after explicit approval.
 
 The Courses UI now expects `search_academic_catalog` and `subjects.catalog_course_id`; therefore, deploy the reviewed migration before enabling this UI in a live environment.
+
+
+### Onboarding institution selection
+
+- The academic onboarding identity step loads the Qatar institution directory from `academic_catalog_institutions` and offers an Arabic/English datalist for universities, colleges, and higher-education providers. Students can type to filter or keep a custom institution name if it is not listed.
+- For school learners, the school name remains optional so setup is not blocked by manual entry. AZ uses the Ministry-backed Qatar National Curriculum dataset for the school-subject starter catalog. The onboarding links to the Ministry's official school directory for students who want to identify their exact school.
+- The picker depends on the catalog schema being applied. Until then, the field remains usable as a manual text entry; the hosted Supabase database has not been changed.
