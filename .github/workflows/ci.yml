@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/az-projects-mvp
+      - "fix/**"
   pull_request:
     branches:
       - main
