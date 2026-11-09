@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   sync-editor-lockfile:
-    if: github.event_name == 'pull_request' && github.head_ref == 'fix/az-projects-collaboration-p0'
+    if: github.event_name == 'pull_request' && (github.head_ref == 'fix/az-projects-collaboration-p0' || startsWith(github.head_ref, 'verify/az-projects-migrations-ci-'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -117,6 +117,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
