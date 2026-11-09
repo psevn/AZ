@@ -52,7 +52,7 @@ const institutions = [
 const text = {
   ar: {
     eyebrow:"AZ / COURSES", title:"موادك، في مكان واحد.", intro:"كل مادة لها مساحة عمل خاصة تجمع ملفاتها ومهامها وتقدّمك الدراسي.",
-    search:"ابحث عن مادة أو رمز مقرر", institution:"المؤسسة التعليمية (اختياري)", institutionHint:"اكتب اسم مدرستك أو جامعتك لتضييق البحث لاحقاً",
+    search:"ابحث عن مادة أو رمز مقرر", institution:"المؤسسة التعليمية (اختياري)", institutionHint:"الاقتراحات الحالية عامة؛ سنربطها بمقررات كل مؤسسة بعد اعتماد بياناتها",
     all:"الكل", school:"المدرسة", higher:"الجامعة والكلية", suggestions:"اقتراحات المواد", add:"إضافة إلى موادي",
     empty:"ما لقينا مادة بهذا الاسم. تقدر تضيفها بنفسك.", custom:"إضافة مادة مخصصة", customPlaceholder:"اكتب اسم المادة",
     mine:"موادي", noCourses:"ما أضفت مواد بعد. ابحث عن مادة وأضفها بضغطة واحدة.",
@@ -63,7 +63,7 @@ const text = {
   },
   en: {
     eyebrow:"AZ / COURSES", title:"Your courses. One universe.", intro:"Every course gets its own workspace for files, tasks, and learning progress.",
-    search:"Search a subject or course code", institution:"Institution (optional)", institutionHint:"Add your school or university to narrow future catalog results",
+    search:"Search a subject or course code", institution:"Institution (optional)", institutionHint:"Current suggestions are general; institution-specific catalogs will follow verified data.",
     all:"All", school:"School", higher:"University & college", suggestions:"Course suggestions", add:"Add to my courses",
     empty:"No match found. You can add this course yourself.", custom:"Add a custom course", customPlaceholder:"Course name",
     mine:"My courses", noCourses:"No courses yet. Search for a subject and add it in one click.",
@@ -104,11 +104,10 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
     if (duplicate) { setNotice(t.duplicate); return; }
     setBusy(true); setNotice("");
     const {data,error} = await supabase.from("subjects").insert({
-      user_id:userId, name:name.trim(), course_code:code || null,
-      description: institution.trim() ? "Institution: " + institution.trim() : null
+      user_id:userId, name:name.trim(), course_code:code || null
     }).select("id,name,color,created_at,course_code").single();
     if (error) setNotice(error.message);
-    else { setNotice(t.added); setQuery(""); setCustomName(""); await onRefresh(); if (data) setSelected(data as Subject); }
+    else { setNotice(t.added); setQuery(""); setCustomName(""); await onRefresh(); if (data) await openCourse(data as Subject); }
     setBusy(false);
   }
 
