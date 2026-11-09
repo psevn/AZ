@@ -113,7 +113,7 @@ end;
 $$;
 
 -- Service-role-only invitation acceptance is email-bound and adds the member.
-grant all on table public.project_invitations to service_role;
+grant all on table public.projects, public.project_members, public.project_activity, public.project_invitations to service_role;
 begin;
 set local role service_role;
 insert into public.project_invitations (
