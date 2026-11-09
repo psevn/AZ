@@ -288,6 +288,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
   const [meetingType, setMeetingType] = useState<SessionDraft["meeting_type"]>("lecture");
   const [location, setLocation] = useState("");
   const [sessions, setSessions] = useState<SessionDraft[]>([]);
+  const [savedSessionCount, setSavedSessionCount] = useState(0);
   const [studyTime, setStudyTime] = useState("evening");
   const [studyHours, setStudyHours] = useState("2");
   const [primaryGoal, setPrimaryGoal] = useState("organize");
@@ -328,6 +329,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
         setStudyHours(savedProfile.study_hours_per_day || "2");
         setPrimaryGoal(savedProfile.primary_goal || "organize");
       }
+      if (setupData?.current_step === "term") setStep("term");
       if (setupData?.current_step === "subjects") setStep("courses");
       if (setupData?.current_step === "timetable") setStep("schedule");
       if (setupData?.current_step === "review") setStep("review");
@@ -468,6 +470,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
     }));
     const { error: insertError } = await supabase.from("class_meetings").insert(payload);
     if (insertError) throw insertError;
+    setSavedSessionCount(current => current + sessions.length);
     setSessions([]);
   }
 
@@ -634,7 +637,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
           <div><span>{t.levelLabel}</span><strong>{levelLabel} · {gradeOrYear || t.noSpecialization}</strong></div>
           <div><span>{t.termLabel}</span><strong>{termName || t.noTerm}</strong></div>
           <div><span>{t.subjectLabel}</span><strong>{allSubjects.length}</strong></div>
-          <div><span>{t.sessionLabel}</span><strong>{sessions.length}</strong></div>
+          <div><span>{t.sessionLabel}</span><strong>{(savedSessionCount + sessions.length).toString().padStart(2, "0")}</strong></div>
           <div><span>{t.profileLabel}</span><strong>{t[studyTime as "morning" | "afternoon" | "evening" | "flexible"]} · {studyHours}h/day</strong></div>
           <div className="academic-setup-review-subjects">{allSubjects.map(subject => <span key={subject.id}>{subject.name}</span>)}</div>
         </div>}
