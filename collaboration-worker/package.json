@@ -21,6 +21,8 @@
     "vitest": "~4.1.0",
     "@cloudflare/vitest-plugin": "1.6.0",
     "@hocuspocus/provider": "4.1.0",
-    "ws": "8.22.1"
+    "ws": "8.22.1",
+    "@msw/cloudflare": "^0.2.0",
+    "msw": "^3.0.4"
   }
 }
