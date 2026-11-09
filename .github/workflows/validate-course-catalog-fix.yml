@@ -1,0 +1,84 @@
+name: Validate course catalog fix
+
+on:
+  push:
+    branches:
+      - fix/course-catalog-term-aware
+    paths:
+      - "src/**"
+      - "supabase/migrations/**"
+      - "tests/sql/**"
+      - "docs/database/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - ".github/workflows/validate-course-catalog-fix.yml"
+  pull_request:
+    branches:
+      - feature/az-qatar-course-catalog
+    paths:
+      - "src/**"
+      - "supabase/migrations/**"
+      - "tests/sql/**"
+      - "docs/database/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - ".github/workflows/validate-course-catalog-fix.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Type-check and build
+        run: npm run build
+
+  migration-and-term-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: az_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d az_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Prepare isolated Supabase-compatible baseline
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d az_test -v ON_ERROR_STOP=1 -f tests/sql/bootstrap.sql
+      - name: Apply academic planning prerequisite migration
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d az_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261105160000_add_academic_planning_foundation.sql
+      - name: Apply course catalog migration
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d az_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261109130000_qatar_first_academic_catalog.sql
+      - name: Verify term-aware uniqueness and ownership constraints
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d az_test -v ON_ERROR_STOP=1 -f tests/sql/course-catalog-term-aware.sql

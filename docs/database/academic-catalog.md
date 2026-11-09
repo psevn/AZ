@@ -13,6 +13,7 @@ A student adds a catalog course by creating a private `subjects` row with `catal
 - `academic_catalog_programs`: institution-specific degree or study programs.
 - `academic_catalog_courses`: verified courses with optional institution program/curriculum links, course code, Arabic/English names, aliases, level/grade, academic year, and source provenance.
 - `subjects.catalog_course_id`: optional link from a student's private subject to the shared catalog.
+- `subjects.term_id`: link to the student's academic term. The Courses UI requires an active term before adding a catalog course; the same catalog course can be added once per term, and a later term creates a separate private subject row. The database column remains nullable for compatibility with existing/custom subjects and legacy rows.
 
 The schema is country-neutral. Qatar is the first dataset, not a hard-coded country restriction. School curricula can be linked to the relevant curriculum without assuming every Qatar school follows the national curriculum. For the initial Qatar school dataset, use the Ministry of Education and Higher Education as the sole authority/source family; do not build separate school-by-school or private-school curriculum imports in this phase.
 
@@ -81,7 +82,7 @@ The Ministry page also identifies teaching locations for specific higher-educati
 
 ## Migration workflow
 
-This SQL is a reviewed schema/seed draft, not a migration applied to the hosted project. Before applying it:
+This SQL is the reviewed schema/seed source for the generated migration `20261109130000_qatar_first_academic_catalog.sql`. It has not been applied to the hosted project. Before applying it:
 
 1. Generate the migration filename with the installed Supabase CLI in the local repository: `supabase migration new qatar_first_academic_catalog`.
 2. Copy the SQL from `academic_catalog.sql` into the generated migration file.
@@ -89,7 +90,7 @@ This SQL is a reviewed schema/seed draft, not a migration applied to the hosted 
 4. Run type checks, app tests, and Supabase security/performance advisors.
 5. Apply to the hosted project only after explicit approval.
 
-The Courses UI now expects `search_academic_catalog` and `subjects.catalog_course_id`; therefore, deploy the reviewed migration before enabling this UI in a live environment.
+The Courses UI expects `search_academic_catalog`, `subjects.catalog_course_id`, and the optional `subjects.term_id`. Apply the reviewed catalog migration before enabling this UI in a live environment.
 
 
 ### Onboarding institution selection

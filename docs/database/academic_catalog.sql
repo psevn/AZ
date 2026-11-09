@@ -108,9 +108,16 @@ create index if not exists subjects_catalog_course_id_idx
   on public.subjects (catalog_course_id)
   where catalog_course_id is not null;
 
-create unique index if not exists subjects_user_catalog_course_uidx
+-- A catalog course may be taken again in a different academic term.
+-- Within one term, each student can add the same catalog course only once.
+create unique index if not exists subjects_user_term_catalog_course_uidx
+  on public.subjects (user_id, term_id, catalog_course_id)
+  where catalog_course_id is not null and term_id is not null;
+
+-- Preserve duplicate protection for catalog-linked subjects that have no active term.
+create unique index if not exists subjects_user_catalog_course_no_term_uidx
   on public.subjects (user_id, catalog_course_id)
-  where catalog_course_id is not null;
+  where catalog_course_id is not null and term_id is null;
 
 alter table public.academic_catalog_institutions enable row level security;
 alter table public.academic_catalog_curricula enable row level security;
