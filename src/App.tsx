@@ -48,7 +48,7 @@ export default function App() {
       return "ar";
     }
   });
-  const [dark,setDark] = useState(true);
+  const [dark,setDark] = useState<boolean>(() => { try { return window.localStorage.getItem("az-theme") !== "light"; } catch { return true; } });
   const [user,setUser] = useState<User|null>(null);
   const [authLoading,setAuthLoading] = useState(true);
   const [mode,setMode] = useState<"signin"|"signup">("signin");
@@ -80,6 +80,12 @@ export default function App() {
   const [error,setError] = useState("");
   const t = labels[lang];
   const ar = lang === "ar";
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("az-theme",dark ? "dark" : "light");
+    } catch { /* storage unavailable */ }
+  },[dark]);
 
   useEffect(() => {
     try {
@@ -239,16 +245,6 @@ export default function App() {
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")} dir={ar?"rtl":"ltr"} lang={lang}>
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/>{universe && <UniverseEffects />}
-    <header className="topbar">
-      {user && <button className="mobile-nav-toggle" type="button" onClick={()=>setMobileNavOpen(v=>!v)} aria-label={mobileNavOpen?(ar?"إغلاق القائمة":"Close navigation"):(ar?"فتح القائمة":"Open navigation")} aria-expanded={mobileNavOpen}>{mobileNavOpen?"×":"☰"}</button>}
-      <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
-      <div className="top-actions">
-        <button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button>
-        <button className={"icon-button"+(universe?" is-on":"")} onClick={()=>setUniverse(v=>!v)} aria-pressed={universe} aria-label={ar?"خلفية الكون":"Universe background"} title={ar?"خلفية الكون":"Universe background"}>✦</button>
-        <button className="icon-button" onClick={()=>setDark(v=>!v)} aria-label="Toggle theme">{dark?"☼":"☾"}</button>
-        {user && <button className="quiet-button signout-button" onClick={signOut} disabled={busy}>{t.signOut}</button>}
-      </div>
-    </header>
     <section className="main-content">
       {!supabaseConfigReady ? <div className="auth-layout">
         <div className="hero-copy"><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{t.headline}</h1><p>{t.intro}</p><Universe/></div>
@@ -266,6 +262,7 @@ export default function App() {
           <p className="switch-mode">{mode==="signin"?t.none:t.have}<button type="button" onClick={()=>setMode(mode==="signin"?"signup":"signin")}>{mode==="signin"?t.signUp:t.signIn}</button></p>
         </section>
       </div> : <div className="az-workspace">
+        <button className="mobile-nav-toggle workspace-menu-toggle" type="button" onClick={()=>setMobileNavOpen(v=>!v)} aria-label={mobileNavOpen?(ar?"إغلاق القائمة":"Close navigation"):(ar?"فتح القائمة":"Open navigation")} aria-expanded={mobileNavOpen}>{mobileNavOpen?"×":"☰"}</button>
         {mobileNavOpen && <button className="mobile-nav-backdrop" type="button" aria-label={ar?"إغلاق القائمة":"Close navigation"} onClick={()=>setMobileNavOpen(false)}/>}
         <aside className={"workspace-rail"+(sidebarCollapsed?" is-collapsed":"")+(mobileNavOpen?" is-mobile-open":"")}>
           <div className="rail-topline"><div className="rail-label"><img className="rail-logo" src="/az-mark.svg" alt="AZ"/></div><button className="rail-collapse" type="button" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?(ar?"توسيع القائمة":"Expand sidebar"):(ar?"طي القائمة":"Collapse sidebar")}>{sidebarCollapsed?"⇤":"⇥"}</button></div><button className="rail-new-session" type="button" onClick={()=>{setSection("az");setPage("focus");setMessage("");setMobileNavOpen(false);}}><span aria-hidden="true">＋</span><span>{ar?"جلسة جديدة":"New session"}</span></button>
@@ -273,7 +270,7 @@ export default function App() {
           <div className="rail-bottom"><button className="rail-account" type="button" onClick={()=>{setSection("me");setMessage("");setMobileNavOpen(false);}}><span className="rail-account-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</span><span className="rail-account-copy"><small>{ar?"الحساب":"Account"}</small><strong>{user.email}</strong></span></button></div>
         </aside>
         <div className="workspace-main">
-          <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div><div className="workspace-meta"><span className="status-dot"/>{user.email}</div></div>
+          <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div></div>
           {section==="home" && <div className="home-view">
             <section className="home-hero">
               <div className="home-hero-copy">
@@ -342,7 +339,7 @@ export default function App() {
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / NOTEBOOK</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
           {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / ARENA</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">COMING SOON</span></section>}
           {section==="community" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / COMMUNITY</span><h2>{t.communityTitle}</h2><p>{t.communityText}</p><span className="coming-soon-label">{ar?"قريبًا":"COMING IN A LATER PHASE"}</span></section>}
-          {section==="me" && <section className="profile-view content-panel"><div className="profile-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</div><span className="eyebrow">AZ / PERSONAL SPACE</span><p>{t.meText}</p><div className="profile-details"><div><span>{t.account}</span><strong>{user.email}</strong></div><div><span>{t.appearance}</span><strong>{dark?(ar?"داكن":"Dark"):(ar?"فاتح":"Light")}</strong></div></div><div className="profile-actions"><button className="quiet-button" onClick={()=>setDark(v=>!v)}>{ar?"تغيير المظهر":"Change appearance"}</button><button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button><button className="quiet-button" onClick={()=>setShowAcademicSetup(true)}>{ar?"إعداد المساحة الأكاديمية":"Academic setup"}</button><button className="primary-button" onClick={signOut} disabled={busy}>{t.signOut}</button></div></section>}
+          {section==="me" && <section className="profile-view content-panel"><div className="profile-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</div><span className="eyebrow">AZ / PERSONAL SPACE</span><p>{t.meText}</p><div className="profile-details"><div><span>{t.account}</span><strong>{user.email}</strong></div><div><span>{t.appearance}</span><strong>{dark?(ar?"داكن":"Dark"):(ar?"فاتح":"Light")}</strong></div><div><span>{ar?"الخلفية":"Background"}</span><strong>{universe?(ar?"الكون":"Universe"):(ar?"سادة":"Plain")}</strong></div><div><span>{ar?"اللغة":"Language"}</span><strong>{ar?"العربية":"English"}</strong></div></div><div className="profile-actions"><button className="quiet-button" onClick={()=>setDark(v=>!v)}>{ar?"تبديل الإضاءة":"Toggle light / dark"}</button><button className="quiet-button" onClick={()=>setUniverse(v=>!v)}>{ar?"تبديل الخلفية":"Toggle Plain / Universe"}</button><button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{ar?"English":"العربية"}</button><button className="quiet-button" onClick={()=>setShowAcademicSetup(true)}>{ar?"إعداد المساحة الأكاديمية":"Academic setup"}</button><button className="primary-button" onClick={signOut} disabled={busy}>{t.signOut}</button></div></section>}
         </div>
       </div>}
       {showAcademicSetup && setupChecked && !loading && user && <AcademicSetup userId={user.id} lang={lang} existingSubjects={subjects} onComplete={()=>{setShowAcademicSetup(false); void loadData();}} />}

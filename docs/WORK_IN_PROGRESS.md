@@ -20,6 +20,8 @@
 - Reworked the Home hero into a welcome and study prompt with quick task capture; submitting the prompt opens Planning with the text prefilled, while existing focus and planning shortcuts remain available.
 - Added responsive styling for the Home study prompt in narrow layouts.
 - Simplified the sidebar: replaced decorative uppercase rail copy with the AZ mark, added a New session shortcut to Focus, and added an Account shortcut; the logo remains visible when the rail is collapsed.
+- Removed the application topbar and its duplicate logo/settings controls; moved language, background, theme, and sign-out controls into Me. The floating email capsule was removed; account email remains in the sidebar and Me.
+- Persisted the selected light/dark theme in localStorage under `az-theme`; existing `az-language` and `az-background` persistence remains in place.
 
 ### Verification already performed
 - Before the latest UI edits, `npm run build` passed locally after the merge and font installation (Vite production build completed; 67 modules transformed).
@@ -28,6 +30,7 @@
 ### Verification still required
 - Pull the latest commits from this branch and rerun `npm run build`; the build has **not** been rerun after the recent App, canvas, and CSS changes.
 - Browser checks for Arabic and English, dark and light themes, and responsive layouts.
+- Verify the compact mobile menu button remains accessible and that all Me preference controls work and persist after refresh.
 - Screenshots for Home and Me in Plain and Universe modes.
 - Measure rendering performance on the low-memory target device.
 - Check text contrast (WCAG AA) on all cards and overlays in both themes.

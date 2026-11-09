@@ -1031,3 +1031,27 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   .workspace-rail.is-collapsed .rail-new-session { padding:9px 12px; }
   .workspace-rail.is-collapsed .rail-account { justify-content:flex-start; padding:9px 7px; }
 }
+
+
+/* Topbar removal: all account preferences live in Me. */
+.topbar { display: none !important; }
+.workspace-menu-toggle { display: none; }
+@media (max-width:760px) {
+  .workspace-menu-toggle {
+    display: grid;
+    position: fixed;
+    z-index: 28;
+    inset-block-start: 12px;
+    inset-inline-start: 12px;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text);
+    background: var(--panel-solid);
+    font-size: 17px;
+    line-height: 1;
+  }
+}
