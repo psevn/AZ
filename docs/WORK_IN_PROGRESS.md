@@ -15,7 +15,7 @@
 - Removed the duplicate profile-card title while retaining the page-level Me heading.
 - Restored sparse ambient comets alongside the three-layer starfield in UniverseEffects; comets render on the existing background canvas behind application content.
 - Capped animation at 30 FPS, reduced canvas backing resolution, and stop/resume both stars and comets when the document is hidden/visible; both respect `prefers-reduced-motion`.
-- Added static, low-opacity corner glows to Plain mode for dark and light themes.
+- Added one static, low-opacity cyan corner glow (7%) to Plain mode for dark and light themes; the background remains fixed.
 - Added subtle backdrop blur to key Universe-mode surfaces.
 - Reworked the Home hero into a welcome and study prompt with quick task capture; submitting the prompt opens Planning with the text prefilled, while existing focus and planning shortcuts remain available.
 - Added responsive styling for the Home study prompt in narrow layouts.
@@ -38,7 +38,7 @@
 - Verify the compact mobile menu button remains accessible and that all Me preference controls work and persist after refresh.
 - Screenshots for Home and Me in Plain and Universe modes, including two Universe screenshots at least two seconds apart to verify comet movement.
 - Measure rendering performance on the low-memory target device, including the restored comet layer.
-- Check text contrast (WCAG AA) on all cards and overlays in both themes.
+- Check text contrast (WCAG AA) on all cards and overlays in both themes; AA has not yet been measured.
 - Review the Home redesign visually in the browser and confirm keyboard/mobile behavior; quick capture currently pre-fills the Planning task title and does not create a task until the user submits the Planning form.
 - Confirm that the topbar controls moved to Me work and persist across refresh; verify the mobile drawer trigger.
 - Capture two Universe screenshots at least two seconds apart to verify comet motion; verify reduced-motion and hidden-tab pause behavior.
