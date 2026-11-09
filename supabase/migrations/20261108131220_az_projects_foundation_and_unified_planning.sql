@@ -102,7 +102,7 @@ create table if not exists public.project_activity (
     'task_assigned','task_reassigned','task_status_changed','task_completed',
     'document_created','document_edited','deadline_changed','project_completed',
     'project_archived','attachment_uploaded'
-  ]::text[]),
+  ]::text[])),
   constraint project_activity_payload_check check (jsonb_typeof(payload) = 'object')
 );
 
