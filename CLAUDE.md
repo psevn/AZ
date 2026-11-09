@@ -16,6 +16,8 @@ Before changing product structure, UX, or branding, read:
 - Its long-term direction combines student context/data, deterministic analysis algorithms, AI via a secure server-side API, and an action layer for student-approved recommendations.
 - AZ Intelligence may later support specialized agents (for example study, planning, research, and performance). These are future concepts, not features to assume are already implemented. AZI remains the primary companion and guide.
 - Follow the trust, privacy, evidence, consent, and student-approval requirements in the product identity document.
+- AZI should interact naturally and flexibly with people, but never have unlimited autonomy: follow AZ's explicit safety, privacy, permission, transparency, user-control, and accountability commitments. Confirm consequential actions unless narrowly pre-authorized.
+- Treat “AZ المطلق” as a long-term vision only, not as a claim about current capabilities. Build toward it incrementally.
 - The AZI character direction is documented there. It is a working creative direction only: no final character artwork has been generated or approved yet.
 
 Do not contradict these decisions or invent implementation that is not present in the codebase. Inspect the existing architecture before proposing or making technical changes. Keep API secrets out of browser code.
