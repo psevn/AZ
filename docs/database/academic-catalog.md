@@ -13,7 +13,7 @@ A student adds a catalog course by creating a private `subjects` row with `catal
 - `academic_catalog_programs`: institution-specific degree or study programs.
 - `academic_catalog_courses`: verified courses with optional institution program/curriculum links, course code, Arabic/English names, aliases, level/grade, academic year, and source provenance.
 - `subjects.catalog_course_id`: optional link from a student's private subject to the shared catalog.
-- `subjects.term_id`: optional link to the student's active academic term. The same catalog course can be added once per term; a later term creates a separate private subject row.
+- `subjects.term_id`: link to the student's academic term. The Courses UI requires an active term before adding a catalog course; the same catalog course can be added once per term, and a later term creates a separate private subject row. The database column remains nullable for compatibility with existing/custom subjects and legacy rows.
 
 The schema is country-neutral. Qatar is the first dataset, not a hard-coded country restriction. School curricula can be linked to the relevant curriculum without assuming every Qatar school follows the national curriculum. For the initial Qatar school dataset, use the Ministry of Education and Higher Education as the sole authority/source family; do not build separate school-by-school or private-school curriculum imports in this phase.
 
