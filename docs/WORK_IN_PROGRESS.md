@@ -13,8 +13,8 @@
 - Kept the approved `public/az-mark.svg` unchanged.
 - Removed the literal backslash-n text between AZ module sections in `src/App.tsx`.
 - Removed the duplicate profile-card title while retaining the page-level Me heading.
-- Replaced the animated comet canvas with a lightweight three-layer starfield.
-- Capped starfield rendering at 30 FPS, reduced canvas backing resolution, and stop/resume the animation when the document is hidden/visible.
+- Restored sparse ambient comets alongside the three-layer starfield in UniverseEffects; comets render on the existing background canvas behind application content.
+- Capped animation at 30 FPS, reduced canvas backing resolution, and stop/resume both stars and comets when the document is hidden/visible; both respect `prefers-reduced-motion`.
 - Added static, low-opacity corner glows to Plain mode for dark and light themes.
 - Added subtle backdrop blur to key Universe-mode surfaces.
 - Reworked the Home hero into a welcome and study prompt with quick task capture; submitting the prompt opens Planning with the text prefilled, while existing focus and planning shortcuts remain available.
@@ -31,8 +31,8 @@
 - Pull the latest commits from this branch and rerun `npm run build`; the build has **not** been rerun after the recent App, canvas, and CSS changes.
 - Browser checks for Arabic and English, dark and light themes, and responsive layouts.
 - Verify the compact mobile menu button remains accessible and that all Me preference controls work and persist after refresh.
-- Screenshots for Home and Me in Plain and Universe modes.
-- Measure rendering performance on the low-memory target device.
+- Screenshots for Home and Me in Plain and Universe modes, including two Universe screenshots at least two seconds apart to verify comet movement.
+- Measure rendering performance on the low-memory target device, including the restored comet layer.
 - Check text contrast (WCAG AA) on all cards and overlays in both themes.
 - Review the Home redesign visually in the browser and confirm keyboard/mobile behavior; quick capture currently pre-fills the Planning task title and does not create a task until the user submits the Planning form.
 - Verify sidebar behavior visually in expanded/collapsed desktop mode and on mobile, including keyboard focus and account email truncation.
