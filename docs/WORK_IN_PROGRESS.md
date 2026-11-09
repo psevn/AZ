@@ -2,9 +2,16 @@
 
 ## Current branch
 
-**Branch:** `feature/calm-ui-step1-fonts`  
+**Branch:** `feature/planning-quick-add`  
 **Merged design branch:** `design/calm-ui-step1`  
 **Status:** Iterative UI refinements are committed to stacked draft PRs. A fresh local build and browser/device verification are still required.
+
+### Planning — Quick Add (PR 1)
+- Added a deterministic, dependency-free quick-add parser for Arabic and English dates, subject tags, priority ranks, and duration tokens. Unknown words and unmatched subject tags remain in the task title.
+- Preserved existing database priority encoding: stored `3` = high, `2` = medium, `1` = low. User-facing tokens map `!1` → stored `3`, `!2` → stored `2`, `!3` → stored `1`; `!4+` is normalized visibly to `!3` / low with a three-level note.
+- Added a live preview of the exact title, subject, due date, duration, and priority sent to the existing `tasks` table. Defaults match the existing form (45 minutes, medium priority, no subject, no due date).
+- Kept the existing full task form and all existing task fields/actions. No database schema, migration, RLS, or Supabase policy changes.
+- Added Node built-in unit tests for Arabic, English, mixed-language, weekday/month dates, unknown tokens, defaults, and priority normalization.
 
 ### Completed in this branch
 - Added Inter Variable and IBM Plex Sans Arabic self-hosted font imports.
@@ -28,11 +35,15 @@
 - Persisted the selected light/dark theme in localStorage under `az-theme`; existing `az-language` and `az-background` persistence remains in place.
 
 ### Verification already performed
+- Added `npm run test:quick-add` using Node's built-in test runner. Parser tests are run independently in Node; the full Vite build and browser checks remain to be run locally.
+- Source changes use only existing `tasks` columns; no database objects were changed.
+
+
 - Before the latest UI edits, `npm run build` passed locally after the merge and font installation (Vite production build completed; 67 modules transformed).
 - Source inspection after the profile/JSX fix confirmed no remaining literal backslash-n sequences in `src/App.tsx` and confirmed the duplicate title is removed.
 
 ### Verification still required
-- Pull the latest commits from this branch and rerun `npm run build`; the build has **not** been rerun after the recent App, canvas, and CSS changes.
+- Run `npm run build` locally on this branch; the GitHub connector cannot execute the repository build or browser. Build result remains unverified.
 - Browser checks for Arabic and English, dark and light themes, and responsive layouts.
 - Verify the Home prompt hierarchy and the Today/Focus/Upcoming exam cards; confirm the exam placeholder is clear and does not imply an exam has been scheduled.
 - Verify the compact mobile menu button remains accessible and that all Me preference controls work and persist after refresh.
@@ -49,4 +60,4 @@
 - No changes to `main`.
 - No deployment.
 - No migrations or writes to the live database.
-- No PR opened and no claim of completed visual QA until the remaining checks pass.
+- PR 1 is a draft; no merge to `main`.\n- No claim of completed browser/visual QA until the remaining checks pass.
