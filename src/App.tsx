@@ -75,6 +75,7 @@ export default function App() {
   const [showAcademicSetup,setShowAcademicSetup] = useState(false);
   const [sidebarCollapsed,setSidebarCollapsed] = useState(false);
   const [mobileNavOpen,setMobileNavOpen] = useState(false);
+  const [homePrompt,setHomePrompt] = useState("");
   const [message,setMessage] = useState("");
   const [error,setError] = useState("");
   const t = labels[lang];
@@ -276,12 +277,16 @@ export default function App() {
           {section==="home" && <div className="home-view">
             <section className="home-hero">
               <div className="home-hero-copy">
-                <span className="home-kicker"><span className="eyebrow-pulse"/>{ar?"AZ — عالمك الأكاديمي":"AZ — THE ACADEMIC UNIVERSE"}</span>
+                <span className="home-kicker"><span className="eyebrow-pulse"/>{ar?"مساحتك الأكاديمية":"YOUR ACADEMIC SPACE"}</span>
                 <p className="home-date">{todayLabel}</p>
-                <h2>{ar?"مسارك يبدأ من هنا.":"Your next chapter starts here."}</h2>
-                <p className="home-hero-description">{ar?"حوّل أهدافك إلى خطوات واضحة، وتقدّم في دراستك بإيقاعك الخاص.":"Turn your goals into clear steps, and move your learning forward at your own pace."}</p>
+                <h2>{ar?"أهلاً بعودتك.":"Welcome back."}</h2>
+                <p className="home-hero-description">{ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"}</p>
+                <form className="home-study-input" onSubmit={event=>{event.preventDefault();if(!homePrompt.trim())return;setTitle(homePrompt.trim());setHomePrompt("");setSection("planning");}}>
+                  <input value={homePrompt} onChange={event=>setHomePrompt(event.target.value)} placeholder={ar?"اكتب ما تريد إنجازه أو مراجعته...":"Add a topic or task to work on..."} aria-label={ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"} />
+                  <button className="primary-button" type="submit" disabled={!homePrompt.trim()}>{ar?"أضف إلى خطتي":"Add to plan"} <span>↗</span></button>
+                </form>
                 <div className="home-hero-actions">
-                  <button className="primary-button" onClick={()=>setSection("planning")}>{ar?"افتح خطتك":"Open your plan"} <span>↗</span></button>
+                  <button className="home-secondary-action" onClick={()=>setSection("planning")}>{ar?"افتح خطتك":"Open your plan"} <span>↗</span></button>
                   <button className="home-secondary-action" onClick={()=>{setSection("az");setPage("focus");}}><span className="play-mark">▶</span>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</button>
                 </div>
               </div>
