@@ -1,0 +1,34 @@
+name: Validate course catalog fix
+
+on:
+  pull_request:
+    branches:
+      - feature/az-qatar-course-catalog
+    paths:
+      - "src/**"
+      - "supabase/migrations/**"
+      - "docs/database/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - ".github/workflows/validate-course-catalog-fix.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Type-check and build
+        run: npm run build
