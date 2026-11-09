@@ -243,7 +243,7 @@ export default function App() {
                 <p className="home-date">{todayLabel}</p>
                 <p className="home-greeting">{ar?"أهلاً بعودتك.":"Welcome back."}</p>
                 <h2 className="home-hero-title">{ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"}</h2>
-                <form className="home-study-input" onSubmit={event=>{event.preventDefault();if(!homePrompt.trim())return;setHomePrompt("");setSection("planning");}}>
+                <form className="home-study-input" onSubmit={event=>{event.preventDefault();if(!homePrompt.trim())return;setSection("planning");}}>
                   <input value={homePrompt} onChange={event=>setHomePrompt(event.target.value)} placeholder={ar?"اكتب ما تريد إنجازه أو مراجعته...":"Add a topic or task to work on..."} aria-label={ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"} />
                   <button className="primary-button" type="submit" disabled={!homePrompt.trim()}>{ar?"تابع إلى خطتك":"Continue to plan"} <span>↗</span></button>
                 </form>
@@ -279,7 +279,7 @@ export default function App() {
               </section>
             </section>
           </div>}
-          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
+          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
           {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">Knowledge system / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Notebook</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
