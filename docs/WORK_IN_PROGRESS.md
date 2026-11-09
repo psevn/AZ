@@ -17,6 +17,8 @@
 - Capped starfield rendering at 30 FPS, reduced canvas backing resolution, and stop/resume the animation when the document is hidden/visible.
 - Added static, low-opacity corner glows to Plain mode for dark and light themes.
 - Added subtle backdrop blur to key Universe-mode surfaces.
+- Reworked the Home hero into a welcome and study prompt with quick task capture; submitting the prompt opens Planning with the text prefilled, while existing focus and planning shortcuts remain available.
+- Added responsive styling for the Home study prompt in narrow layouts.
 
 ### Verification already performed
 - Before the latest UI edits, `npm run build` passed locally after the merge and font installation (Vite production build completed; 67 modules transformed).
@@ -28,7 +30,7 @@
 - Screenshots for Home and Me in Plain and Universe modes.
 - Measure rendering performance on the low-memory target device.
 - Check text contrast (WCAG AA) on all cards and overlays in both themes.
-- Complete the Home redesign: greeting, “What do you want to study today?” prompt, input, and quick actions while preserving existing functionality.
+- Review the Home redesign visually in the browser and confirm keyboard/mobile behavior; quick capture currently pre-fills the Planning task title and does not create a task until the user submits the Planning form.
 - Review sidebar details against the approved direction: logo, new-session entry, navigation, account area, and removal of decorative uppercase labels.
 - Confirm the intended location of `docs/COLLABORATION.md`; it was not found at the repository root or under `docs/` on the checked branch.
 
