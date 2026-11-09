@@ -124,17 +124,20 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
     if (!supabase) return;
     setBusy(true); setNotice("");
     try {
-      const { data: activeTerm, error: termError } = await supabase
-        .from("academic_terms")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (termError) throw termError;
-      const termId = activeTerm?.id ?? null;
+      let termId: string | null = null;
+      if (catalogCourseId) {
+        const { data: activeTerm, error: termError } = await supabase
+          .from("academic_terms")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (termError) throw termError;
+        termId = activeTerm?.id ?? null;
+      }
       const duplicate = subjects.some(s => catalogCourseId
         ? s.catalog_course_id === catalogCourseId && (s.term_id ?? null) === termId
-        : !s.catalog_course_id && s.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()
+        : s.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()
       );
       if (duplicate) { setNotice(t.duplicate); return; }
       const {data,error} = await supabase.from("subjects").insert({
