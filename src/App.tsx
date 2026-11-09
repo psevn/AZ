@@ -9,7 +9,7 @@ import UniverseEffects from "./components/UniverseEffects";
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
 type Section = "home" | "planning" | "courses" | "az" | "community" | "me";
-type Subject = { id: string; name: string; color: string | null; created_at: string };
+type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null };
 type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; created_at: string };
 
 const labels = {
@@ -113,7 +113,7 @@ export default function App() {
     if (!supabase || !user) return;
     setLoading(true);
     const [s,q] = await Promise.all([
-      supabase.from("subjects").select("id,name,color,created_at").order("created_at"),
+      supabase.from("subjects").select("id,name,color,created_at,course_code").order("created_at"),
       supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,created_at").order("created_at",{ascending:false})
     ]);
     if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
@@ -266,7 +266,7 @@ export default function App() {
           <div className="rail-bottom"><span className="rail-orbit"/> <span className="rail-motto">PLAN · STUDY · GROW</span></div>
         </aside>
         <div className="workspace-main">
-          <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="courses"?t.subjects:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="courses"?(ar?"ابحث عن موادك وافتح مساحة عمل مستقلة لكل مادة.":"Find your courses and open a dedicated workspace for each."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div><div className="workspace-meta"><span className="status-dot"/>{user.email}</div></div>
+          <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="courses"?t.subjects:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="courses"?t.subjects:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="courses"?(ar?"ابحث عن موادك وافتح مساحة عمل مستقلة لكل مادة.":"Find your courses and open a dedicated workspace for each."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div><div className="workspace-meta"><span className="status-dot"/>{user.email}</div></div>
           {section==="home" && <div className="home-view">
             <section className="home-hero">
               <div className="home-hero-copy">
