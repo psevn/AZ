@@ -28,7 +28,7 @@ function normalizeWithMap(input) {
       .replace(/ى/gu, "ي")
       .replace(/[٠-٩]/gu, digit => String(ARABIC_DIGITS.indexOf(digit)))
       .toLocaleLowerCase();
-    if (!normalized && /[\\u0300-\\u036f\\u064b-\\u065f\\u0670\\u06d6-\\u06ed]/u.test(character) && ends.length) {
+    if (!normalized && /\p{M}/u.test(character) && ends.length) {
       ends[ends.length - 1] = offset + length;
     }
     for (const part of normalized) {
