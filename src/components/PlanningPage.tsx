@@ -7,7 +7,7 @@ import "./PlanningPage.css";
 type Subject = { id: string; name: string; color: string | null; exam_date: string | null };
 type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; created_at: string; completed_at?: string | null };
 type Draft = { title: string; subject_id: string | null; due_at: string | null; priority: number; est_minutes: number | null; note: string | null };
-type Props = { userId: string; lang: "ar" | "en"; tasks: Task[]; subjects: Subject[]; loading: boolean; onRefresh: () => Promise<void>; onStartFocus: (id: string) => void };
+type Props = { userId: string; lang: "ar" | "en"; tasks: Task[]; subjects: Subject[]; loading: boolean; initialText?: string; onInitialTextConsumed?: () => void; onRefresh: () => Promise<void>; onStartFocus: (id: string) => void };
 type Tab = "inbox" | "today" | "upcoming" | "done";
 
 const C = {
@@ -20,7 +20,7 @@ const dayOf = (value: string | null) => value ? keyOf(new Date(value)) : null;
 const dueAt = (value: string) => value ? new Date(value+"T23:59:00").toISOString() : null;
 const inputDate = (value: string | null) => value ? keyOf(new Date(value)) : "";
 
-export default function PlanningPage({ userId, lang, tasks, subjects, loading, onRefresh, onStartFocus }: Props) {
+export default function PlanningPage({ userId, lang, tasks, subjects, loading, initialText = "", onInitialTextConsumed, onRefresh, onStartFocus }: Props) {
  const t=C[lang], ar=lang==="ar", input=useRef<HTMLInputElement>(null);
  const [text,setText]=useState(""), [tab,setTab]=useState<Tab>("today"), [subjectFilter,setSubjectFilter]=useState<string|null>(null);
  const [subjectOpen,setSubjectOpen]=useState(false), [subjectName,setSubjectName]=useState("");
@@ -57,7 +57,8 @@ export default function PlanningPage({ userId, lang, tasks, subjects, loading, o
  function examLabel(s:Subject){if(!s.exam_date)return null;const n=Math.ceil((new Date(s.exam_date+"T12:00:00").getTime()-new Date(today+"T12:00:00").getTime())/86400000);if(n<0)return null;return n===0?t.examToday:t.exam+" "+n+" "+t.days;}
  function taskRow(x:Task){const s=subjectFor(x.subject_id),over=!!x.due_at&&(dayOf(x.due_at)??"")<today;const p=x.priority===3?"p1":x.priority===2?"p2":x.priority===1?"p3":"p0";return <article className={"plan-task-wrap "+(x.status==="done"?"done-row":"")+(completing===x.id?" is-completing":"")} key={x.id}><div className={"plan-task priority-"+p}><button className={"plan-check "+(x.status==="done"?"checked":"")} type="button" aria-label={t.completed} onClick={()=>void complete(x,x.status!=="done")}><span/></button><button className="plan-task-main" type="button" onClick={()=>setSelected(x)}><strong>{x.title}</strong><small>{s&&<span className="plan-meta-subject" style={{"--subject-color":s.color??"#20E6F2"} as CSSProperties}>{s.name}</span>}{s&&<i>·</i>}{x.due_at&&<span className={over?"is-overdue":""}>{over?t.overdue:dateLabel(x.due_at)}</span>}{x.est_minutes&&<><i>·</i><span>{x.est_minutes}{t.min}</span></>}</small></button><div className="plan-task-actions"><button type="button" className="plan-icon-action" title={t.focus} aria-label={t.focus} onClick={()=>onStartFocus(x.id)}>▶</button><div className="plan-menu-wrap"><button type="button" className="plan-icon-action more" aria-label="More" onClick={()=>setMenu(menu===x.id?null:x.id)}>···</button>{menu===x.id&&<div className="plan-menu"><button type="button" onClick={()=>{setSelected(x);setMenu(null);}}>{t.edit}</button><button type="button" onClick={()=>void remove(x)}>{t.delete}</button></div>}</div></div></div></article>;}
 
- useEffect(()=>{if(!loading&&!visible.length)input.current?.focus();},[loading,tab,visible.length]);
+ useEffect(()=>{if(initialText.trim()){setText(initialText);onInitialTextConsumed?.();}},[initialText,onInitialTextConsumed]);
+ useEffect(()=>{if(!loading&&!visible.length&&!initialText.trim())input.current?.focus();},[loading,tab,visible.length,initialText]);
  return <div className="planning-page" dir={ar?"rtl":"ltr"}>
   <header className="planning-topline"><h1>{t.planning}</h1><div className="plan-daily-progress"><span className="plan-progress-ring" style={{"--progress":ratio} as CSSProperties}><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15"/><circle className="plan-ring-value" cx="18" cy="18" r="15"/></svg></span><span><strong>{done} {ar?"من":"of"} {total}</strong><small>{t.doneToday}</small></span></div></header>
   <form className="plan-quick-add" onSubmit={addTask}><span className="plan-add-symbol">＋</span><input ref={input} value={text} onChange={e=>setText(e.target.value)} placeholder={t.placeholder} maxLength={300} aria-label={t.placeholder}/><kbd>↵</kbd></form>
