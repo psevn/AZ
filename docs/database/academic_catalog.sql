@@ -17,6 +17,12 @@ create table if not exists public.academic_catalog_institutions (
   unique (country_code, slug)
 );
 
+alter table public.academic_catalog_institutions
+  drop constraint if exists academic_catalog_institutions_institution_type_check;
+alter table public.academic_catalog_institutions
+  add constraint academic_catalog_institutions_institution_type_check
+  check (institution_type in ('ministry','school','university','college','institute','academy'));
+
 create table if not exists public.academic_catalog_curricula (
   id uuid primary key default gen_random_uuid(),
   country_code text not null check (country_code ~ '^[A-Z]{2}$'),
@@ -234,6 +240,47 @@ values
   ('QA','qatar-university','university','جامعة قطر','Qatar University','https://www.qu.edu.qa/en-us/students/resources/Pages/catalogs.aspx','Qatar University Student Catalogs',date '2026-11-09'),
   ('QA','hbku','university','جامعة حمد بن خليفة','Hamad Bin Khalifa University','https://catalog.hbku.edu.qa/course-descriptions/','HBKU Course Descriptions 2026-2027',date '2026-11-09'),
   ('QA','udst','university','جامعة الدوحة للعلوم والتكنولوجيا','University of Doha for Science and Technology','https://www.udst.edu.qa/about-udst/institutional-excellence-ie/policies-and-procedures/academic-scheduling-procedure','UDST Academic Scheduling Procedure',date '2026-11-09')
+on conflict (country_code, slug) do update set
+  institution_type = excluded.institution_type,
+  name_ar = excluded.name_ar,
+  name_en = excluded.name_en,
+  source_url = excluded.source_url,
+  source_name = excluded.source_name,
+  source_checked_at = excluded.source_checked_at,
+  updated_at = now();
+
+-- Official ministry directory for 2026-2027: 7 public and 19 private institutions.
+-- Military sub-academies are also indexed separately under the military university umbrella.
+insert into public.academic_catalog_institutions
+  (country_code, slug, institution_type, name_ar, name_en, source_url, source_name, source_checked_at)
+values
+  ('QA','community-college-qatar','college','كلية المجتمع في قطر','Community College of Qatar','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','qatar-aeronautical-academy','academy','أكاديمية قطر لعلوم الطيران','Qatar Aeronautical Academy','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','tamim-military-university','university','جامعة تميم بن حمد للعلوم العسكرية والتقنية','Tamim Bin Hamad University for Military Science and Technology','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','joaan-defense-academy','academy','أكاديمية جوعان بن جاسم للدراسات الدفاعية','Joaan Bin Jassim Academy for Defense Studies','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','police-academy','academy','أكاديمية الشرطة','Police Academy','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','ahmed-bin-mohamed-military-college','college','كلية أحمد بن محمد العسكرية','Ahmed Bin Mohamed Military College','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','al-zaeem-air-college','college','كلية الزعيم محمد بن عبد الله العطية الجوية','Al-Zaeem Mohammed Bin Abdullah Al-Attiyah Air College','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','mohammed-bin-ghanim-naval-academy','academy','أكاديمية محمد بن غانم الغانم البحرية','Mohammed Bin Ghanim Al-Ghanim Naval Academy','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','cyber-space-academy','academy','أكاديمية الفضاء السيبراني','Cyber Space Academy','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','georgetown-qatar','university','جامعة جورجتاون في قطر','Georgetown University in Qatar','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','northwestern-qatar','university','جامعة نورث وسترن في قطر','Northwestern University in Qatar','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','vcuarts-qatar','university','جامعة فرجينيا كومنولث كلية فنون التصميم في قطر','Virginia Commonwealth University School of the Arts in Qatar','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','weill-cornell-qatar','college','كلية طب وايل كورنيل في قطر','Weill Cornell Medicine - Qatar','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','carnegie-mellon-qatar','university','جامعة كارنيجي ميلون في قطر','Carnegie Mellon University in Qatar','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','hec-paris-doha','institute','جامعة الدراسات العليا لإدارة الأعمال HEC Paris الدوحة','HEC Paris in Qatar','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','doha-institute','institute','معهد الدوحة للدراسات العليا','Doha Institute for Graduate Studies','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','lusail-university','university','جامعة لوسيل','Lusail University','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','al-rayyan-international-university-college','college','كلية الريان الجامعية الدولية','Al Rayyan International University College - University of Derby partnership','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','afg-aberdeen','college','كلية AFG بالشراكة مع جامعة أبردين','AFG College - University of Aberdeen partnership','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','university-foundation-college','college','كلية التأسيس الجامعي','University Foundation College','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','city-university-qatar','university','سيتي يونيفرسيتي قطر بالشراكة مع جامعة أولستر','City University Qatar - Ulster University partnership','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','oryx-university','university','جامعة أوريكس بالشراكة مع جامعة ليفربول جون مورس','Oryx University - Liverpool John Moores University partnership','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','global-studies-institute','institute','المعهد العالمي للدراسات','Global Studies Institute (GSI)','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','mie-sppu','institute','معهد MIE-SPPU للتعليم العالي','MIE-SPPU Higher Education Institute','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','ukm-qatar','university','الجامعة الوطنية الماليزية - قطر','The National University of Malaysia - Qatar (UKM Qatar)','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','barzan-university-college','college','كلية برزان الجامعية','Barzan University College - Swinburne University partnership','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09'),
+  ('QA','qatar-finance-business-academy','academy','أكاديمية قطر للمال والأعمال','Qatar Finance and Business Academy - Northumbria University partnership','https://www.edu.gov.qa/en/Content/HigherEducationinQatar','Qatar Ministry - Higher Education in Qatar 2026-2027',date '2026-11-09')
 on conflict (country_code, slug) do update set
   institution_type = excluded.institution_type,
   name_ar = excluded.name_ar,
