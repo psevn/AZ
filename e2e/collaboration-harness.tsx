@@ -26,7 +26,7 @@ const project = {
   status: "active",
   created_at: "2026-11-09T08:00:00.000Z",
 };
-const document = {
+const primaryDocument = {
   id: DOCUMENT_ID,
   title: "Shared project document",
   document_type: "report",
