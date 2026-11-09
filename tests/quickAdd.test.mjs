@@ -39,3 +39,8 @@ test("explicit !3 maps to the existing low-priority database value",()=>{
  const r=parseQuickAdd("Review notes !3",[],now);
  assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,false);
 });
+
+test("normalizes an explicit !4+ token without leaving punctuation in the title",()=>{
+ const r=parseQuickAdd("Review notes !4+",[],now);
+ assert.equal(r.title,"Review notes"); assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,true);
+});
