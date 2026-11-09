@@ -34,13 +34,36 @@ test("defaults match existing task form",()=>{
 test("unsupported !0 stays in title",()=>{
  const r=parseQuickAdd("Review !0 later",[],now); assert.equal(r.title,"Review !0 later"); assert.equal(r.priority,2);
 });
-
 test("explicit !3 maps to the existing low-priority database value",()=>{
  const r=parseQuickAdd("Review notes !3",[],now);
  assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,false);
 });
-
 test("normalizes an explicit !4+ token without leaving punctuation in the title",()=>{
  const r=parseQuickAdd("Review notes !4+",[],now);
  assert.equal(r.title,"Review notes"); assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,true);
+});
+
+// Date parsing regressions: the preview receives an ISO calendar date instead of falling back to "No due date".
+test("Arabic today and tomorrow produce preview dates",()=>{
+ assert.equal(parseQuickAdd("مراجعة اليوم",[],now).dueDate,"2026-11-09");
+ assert.equal(parseQuickAdd("مراجعة غداً",[],now).dueDate,"2026-11-10");
+});
+test("day after tomorrow works in Arabic and English",()=>{
+ assert.equal(parseQuickAdd("تسليم بعد غد",[],now).dueDate,"2026-11-11");
+ assert.equal(parseQuickAdd("Submit day after tomorrow",[],now).dueDate,"2026-11-11");
+});
+test("bare Thursday and this Thursday are parsed and removed from the title",()=>{
+ const arabic=parseQuickAdd("مراجعة الخميس",[],now);
+ const english=parseQuickAdd("Review this Thursday",[],now);
+ assert.equal(arabic.title,"مراجعة"); assert.equal(arabic.dueDate,"2026-11-12");
+ assert.equal(english.title,"Review"); assert.equal(english.dueDate,"2026-11-12");
+});
+test("mixed Arabic and English date phrases are parsed",()=>{
+ const r=parseQuickAdd("حل assignment بعد غد #Math 30m",subjects,now);
+ assert.equal(r.title,"حل assignment"); assert.equal(r.subjectId,"calc-id"); assert.equal(r.dueDate,"2026-11-11");
+});
+test("next weekday advances a week when today is that weekday",()=>{
+ const thursday=new Date(2026,10,12,12,0,0);
+ assert.equal(parseQuickAdd("Review next Thursday",[],thursday).dueDate,"2026-11-19");
+ assert.equal(parseQuickAdd("مراجعة الخميس القادم",[],thursday).dueDate,"2026-11-19");
 });

@@ -12,7 +12,7 @@
 - Added a live preview of the exact title, subject, due date, duration, and priority sent to the existing `tasks` table. Defaults match the existing form (45 minutes, medium priority, no subject, no due date).
 - Kept the existing full task form and all existing task fields/actions. No database schema, migration, RLS, or Supabase policy changes.
 - Added Node built-in unit tests for Arabic, English, mixed-language, weekday/month dates, unknown tokens, defaults, and all three priority levels.
-- Executed the exact parser and test files in an isolated Node test harness: 10 tests passed, 0 failed. The full repository build and the in-repository npm script have not been run because this environment cannot clone/install the project dependencies.
+- Owner verified the parent Quick Add branch on Windows on 2026-11-09: `npm run test:quick-add` passed 10/10 and `npm run build` completed successfully.
 
 ### Completed in this branch
 - Added Inter Variable and IBM Plex Sans Arabic self-hosted font imports.
@@ -36,7 +36,7 @@
 - Persisted the selected light/dark theme in localStorage under `az-theme`; existing `az-language` and `az-background` persistence remains in place.
 
 ### Verification already performed
-- Added `npm run test:quick-add` using Node's built-in test runner. The parser suite passed in an isolated Node harness (10/10); the full Vite build and browser checks remain unverified.
+- Added `npm run test:quick-add` using Node's built-in test runner. The owner ran the script locally on Windows (10/10 passed) and confirmed the parent branch's Vite production build succeeded. The new A1 parser additions still require a fresh run.
 - Source changes use only existing `tasks` columns; no database objects were changed.
 
 
@@ -44,7 +44,7 @@
 - Source inspection after the profile/JSX fix confirmed no remaining literal backslash-n sequences in `src/App.tsx` and confirmed the duplicate title is removed.
 
 ### Verification still required
-- Run `npm run build` locally on this branch; the GitHub connector cannot execute the repository build or browser. Build result remains unverified.
+- Run `npm run test:quick-add` and `npm run build` locally on `feature/planning-quick-add-date-parser`; the parent branch passed, but this branch adds parser and test changes.
 - Browser checks for Arabic and English, dark and light themes, and responsive layouts.
 - Verify the Home prompt hierarchy and the Today/Focus/Upcoming exam cards; confirm the exam placeholder is clear and does not imply an exam has been scheduled.
 - Verify the compact mobile menu button remains accessible and that all Me preference controls work and persist after refresh.
@@ -62,3 +62,12 @@
 - No deployment.
 - No migrations or writes to the live database.
 - PR 1 is a draft; no merge to `main`.\n- No claim of completed browser/visual QA until the remaining checks pass.
+
+
+## Planning A1 — date parser follow-up (PR #14)
+- Branch: `feature/planning-quick-add-date-parser`, stacked on `feature/planning-quick-add`.
+- Added day-after-tomorrow parsing in Arabic and English (`بعد غد`, `day after tomorrow`), weekday phrase handling (`الخميس`, `this Thursday`, `الخميس القادم`), and tests for Arabic, English, and mixed-language input.
+- The existing Quick Add preview reads `quickPreview.dueDate`; the parser returns the normalized ISO calendar date and removes the recognized date phrase from the title. The date display formatting remains unchanged and is tracked separately in A3.
+- Five additional regression tests are included. No local run of these new tests or build is claimed yet.
+- PR #14 is open as a draft against PR #13's branch. It is not merged.
+
