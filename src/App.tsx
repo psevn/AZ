@@ -9,7 +9,7 @@ import UniverseEffects from "./components/UniverseEffects";
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
 type Section = "home" | "planning" | "courses" | "az" | "community" | "me";
-type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null };
+type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null; catalog_course_id?: string | null };
 type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; created_at: string };
 
 const labels = {
@@ -113,7 +113,7 @@ export default function App() {
     if (!supabase || !user) return;
     setLoading(true);
     const [s,q] = await Promise.all([
-      supabase.from("subjects").select("id,name,color,created_at,course_code").order("created_at"),
+      supabase.from("subjects").select("id,name,color,created_at,course_code,catalog_course_id").order("created_at"),
       supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,created_at").order("created_at",{ascending:false})
     ]);
     if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
