@@ -283,7 +283,7 @@ export default function App() {
                 <p className="home-hero-description">{ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"}</p>
                 <form className="home-study-input" onSubmit={event=>{event.preventDefault();if(!homePrompt.trim())return;setTitle(homePrompt.trim());setHomePrompt("");setSection("planning");}}>
                   <input value={homePrompt} onChange={event=>setHomePrompt(event.target.value)} placeholder={ar?"اكتب ما تريد إنجازه أو مراجعته...":"Add a topic or task to work on..."} aria-label={ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"} />
-                  <button className="primary-button" type="submit" disabled={!homePrompt.trim()}>{ar?"أضف إلى خطتي":"Add to plan"} <span>↗</span></button>
+                  <button className="primary-button" type="submit" disabled={!homePrompt.trim()}>{ar?"تابع إلى خطتك":"Continue to plan"} <span>↗</span></button>
                 </form>
                 <div className="home-hero-actions">
                   <button className="home-secondary-action" onClick={()=>setSection("planning")}>{ar?"افتح خطتك":"Open your plan"} <span>↗</span></button>
