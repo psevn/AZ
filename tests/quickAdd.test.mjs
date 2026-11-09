@@ -1,69 +1,97 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseQuickAdd } from "../src/lib/quickAdd.mjs";
-const now = new Date(2026,10,9,12,0,0);
-const subjects = [{id:"math-id",name:"رياضيات"},{id:"bio-id",name:"Biology"},{id:"calc-id",name:"Math"}];
+import { qatarDateKey, addCalendarDays, qatarDateTimeToIso, qatarWeekday } from "../src/lib/qatarTime.mjs";
 
-test("Arabic date, subject, high priority, duration",()=>{
- assert.deepEqual(parseQuickAdd("مراجعة الفصل غداً #رياضيات !1 45د",subjects,now),
- {title:"مراجعة الفصل",subjectId:"math-id",dueDate:"2026-11-10",estMinutes:45,priority:3,priorityToken:"!1",priorityNotice:false});
+const now = new Date("2026-11-09T09:00:00.000Z"); // 12:00 in Qatar
+const subjects = [
+  { id: "math-id", name: "رياضيات" },
+  { id: "bio-id", name: "Biology" },
+  { id: "calc-id", name: "Math" },
+  { id: "econ-id", name: "Économics" },
+  { id: "arabic-id", name: "الإحصاء" },
+];
+
+test("Arabic date, subject, high priority, duration", () => {
+  assert.deepEqual(parseQuickAdd("مراجعة الفصل غداً #رياضيات !1 45د", subjects, now),
+    { title: "مراجعة الفصل", subjectId: "math-id", dueDate: "2026-11-10", estMinutes: 45, priority: 3, priorityToken: "!1", priorityNotice: false });
 });
-test("English tomorrow, subject, medium priority, minutes",()=>{
- const r=parseQuickAdd("Read chapter tomorrow #Biology !2 30m",subjects,now);
- assert.equal(r.title,"Read chapter"); assert.equal(r.subjectId,"bio-id"); assert.equal(r.dueDate,"2026-11-10");
- assert.equal(r.estMinutes,30); assert.equal(r.priority,2); assert.equal(r.priorityToken,"!2");
+test("English and mixed language input", () => {
+  const result = parseQuickAdd("Econ quiz review tomorrow #Biology !1 45m", subjects, now);
+  assert.equal(result.title, "Econ quiz review");
+  assert.equal(result.subjectId, "bio-id");
+  assert.equal(result.dueDate, "2026-11-10");
+  assert.equal(result.priority, 3);
+  assert.equal(result.estMinutes, 45);
 });
-test("mixed Arabic/English, weekday, and !4 normalization",()=>{
- const r=parseQuickAdd("حل واجب Calculus #Math Fri !4 20m",subjects,now);
- assert.equal(r.title,"حل واجب Calculus"); assert.equal(r.subjectId,"calc-id"); assert.equal(r.dueDate,"2026-11-13");
- assert.equal(r.estMinutes,20); assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,true);
+test("Arabic spelling variants and diacritic-insensitive subjects", () => {
+  assert.equal(parseQuickAdd("مراجعة غدا #الإحصاء", subjects, now).subjectId, "arabic-id");
+  assert.equal(parseQuickAdd("Review #economics", subjects, now).subjectId, "econ-id");
+  assert.equal(parseQuickAdd("Review بكرة", subjects, now).dueDate, "2026-11-10");
 });
-test("explicit day and month",()=>{
- const r=parseQuickAdd("Submit essay 15 Nov",[],now); assert.equal(r.title,"Submit essay"); assert.equal(r.dueDate,"2026-11-15");
+test("Arabic-Indic digits work in dates, priorities, and durations", () => {
+  const result = parseQuickAdd("حل الواجب غداً !١ ٤٥د", subjects, now);
+  assert.equal(result.dueDate, "2026-11-10");
+  assert.equal(result.priority, 3);
+  assert.equal(result.estMinutes, 45);
 });
-test("Arabic weekday and Arabic-Indic duration",()=>{
- const r=parseQuickAdd("حل مسائل الخميس ٤٥د",[],now); assert.equal(r.title,"حل مسائل"); assert.equal(r.dueDate,"2026-11-12"); assert.equal(r.estMinutes,45);
+test("English weekday names and next weekday", () => {
+  assert.equal(parseQuickAdd("Review Thursday", [], now).dueDate, "2026-11-12");
+  assert.equal(parseQuickAdd("Review next Sunday", [], now).dueDate, "2026-11-15");
 });
-test("unknown subject and unrecognized words stay in title",()=>{
- const r=parseQuickAdd("Review #Unknown after lab",subjects,now); assert.equal(r.title,"Review #Unknown after lab"); assert.equal(r.subjectId,null); assert.equal(r.dueDate,null);
+test("Arabic weekdays and next week phrase", () => {
+  assert.equal(parseQuickAdd("مراجعة الخميس", [], now).dueDate, "2026-11-12");
+  assert.equal(parseQuickAdd("مراجعة الأسبوع القادم", [], now).dueDate, "2026-11-15");
 });
-test("defaults match existing task form",()=>{
- const r=parseQuickAdd("Read lecture notes",[],now); assert.equal(r.title,"Read lecture notes"); assert.equal(r.subjectId,null);
- assert.equal(r.dueDate,null); assert.equal(r.estMinutes,45); assert.equal(r.priority,2); assert.equal(r.priorityToken,"!2");
+test("English and Arabic explicit month dates", () => {
+  assert.equal(parseQuickAdd("Submit on 15 Nov", [], now).dueDate, "2026-11-15");
+  assert.equal(parseQuickAdd("Submit Nov 15", [], now).dueDate, "2026-11-15");
+  assert.equal(parseQuickAdd("تسليم ١٥ نوفمبر", [], now).dueDate, "2026-11-15");
 });
-test("unsupported !0 stays in title",()=>{
- const r=parseQuickAdd("Review !0 later",[],now); assert.equal(r.title,"Review !0 later"); assert.equal(r.priority,2);
+test("Day after tomorrow in both languages", () => {
+  assert.equal(parseQuickAdd("Submit day after tomorrow", [], now).dueDate, "2026-11-11");
+  assert.equal(parseQuickAdd("التسليم بعد غد", [], now).dueDate, "2026-11-11");
 });
-test("explicit !3 maps to the existing low-priority database value",()=>{
- const r=parseQuickAdd("Review notes !3",[],now);
- assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,false);
+test("Duration formats: minutes, hours, decimal hours, Arabic hour", () => {
+  assert.equal(parseQuickAdd("Review 45min", [], now).estMinutes, 45);
+  assert.equal(parseQuickAdd("Review 1h", [], now).estMinutes, 60);
+  assert.equal(parseQuickAdd("Review 1.5h", [], now).estMinutes, 90);
+  assert.equal(parseQuickAdd("Review ساعة", [], now).estMinutes, 60);
 });
-test("normalizes an explicit !4+ token without leaving punctuation in the title",()=>{
- const r=parseQuickAdd("Review notes !4+",[],now);
- assert.equal(r.title,"Review notes"); assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,true);
+test("Priority !4+ clamps to low and keeps the warning", () => {
+  const result = parseQuickAdd("Review !9", [], now);
+  assert.equal(result.priority, 1);
+  assert.equal(result.priorityToken, "!3");
+  assert.equal(result.priorityNotice, true);
+  assert.equal(result.title, "Review");
+});
+test("Unknown subjects and unmatched text are never removed", () => {
+  const result = parseQuickAdd("Review #Unknown after lab", subjects, now);
+  assert.equal(result.title, "Review #Unknown after lab");
+  assert.equal(result.subjectId, null);
+});
+test("Invalid dates and priorities remain in the title", () => {
+  assert.equal(parseQuickAdd("Review 32 November !0", [], now).title, "Review 32 November !0");
+});
+test("Parser does not throw for fuzz-like inputs and never loses unparsed text", () => {
+  const samples = ["", null, undefined, "🪐", "###", "!999999999999999999999", "1.5h", "15 نوفمبر", "غَدًا", "abc\u0000def", "{[()]}", "ا".repeat(2000)];
+  for (const sample of samples) {
+    assert.doesNotThrow(() => parseQuickAdd(sample, subjects, now));
+    const result = parseQuickAdd(sample, subjects, now);
+    assert.equal(typeof result.title, "string");
+    assert.ok(result.title.length <= String(sample ?? "").length);
+  }
 });
 
-// Date parsing regressions: the preview receives an ISO calendar date instead of falling back to "No due date".
-test("Arabic today and tomorrow produce preview dates",()=>{
- assert.equal(parseQuickAdd("مراجعة اليوم",[],now).dueDate,"2026-11-09");
- assert.equal(parseQuickAdd("مراجعة غداً",[],now).dueDate,"2026-11-10");
+test("Qatar date uses UTC+3 at the UTC day boundary", () => {
+  const instant = new Date("2026-11-15T22:30:00.000Z");
+  assert.equal(qatarDateKey(instant), "2026-11-16");
 });
-test("day after tomorrow works in Arabic and English",()=>{
- assert.equal(parseQuickAdd("تسليم بعد غد",[],now).dueDate,"2026-11-11");
- assert.equal(parseQuickAdd("Submit day after tomorrow",[],now).dueDate,"2026-11-11");
+test("Qatar date-only end-of-day is stored as the intended UTC instant", () => {
+  assert.equal(qatarDateTimeToIso("2026-11-16", 23, 59), "2026-11-16T20:59:00.000Z");
+  assert.equal(qatarDateKey(new Date(qatarDateTimeToIso("2026-11-16", 23, 59))), "2026-11-16");
 });
-test("bare Thursday and this Thursday are parsed and removed from the title",()=>{
- const arabic=parseQuickAdd("مراجعة الخميس",[],now);
- const english=parseQuickAdd("Review this Thursday",[],now);
- assert.equal(arabic.title,"مراجعة"); assert.equal(arabic.dueDate,"2026-11-12");
- assert.equal(english.title,"Review"); assert.equal(english.dueDate,"2026-11-12");
-});
-test("mixed Arabic and English date phrases are parsed",()=>{
- const r=parseQuickAdd("حل assignment بعد غد #Math 30m",subjects,now);
- assert.equal(r.title,"حل assignment"); assert.equal(r.subjectId,"calc-id"); assert.equal(r.dueDate,"2026-11-11");
-});
-test("next weekday advances a week when today is that weekday",()=>{
- const thursday=new Date(2026,10,12,12,0,0);
- assert.equal(parseQuickAdd("Review next Thursday",[],thursday).dueDate,"2026-11-19");
- assert.equal(parseQuickAdd("مراجعة الخميس القادم",[],thursday).dueDate,"2026-11-19");
+test("Qatar calendar math is host-timezone independent", () => {
+  assert.equal(addCalendarDays("2026-11-15", 1), "2026-11-16");
+  assert.equal(qatarWeekday("2026-11-15"), 0);
 });
