@@ -272,7 +272,8 @@ from (values
   ('التربية الإسلامية','Islamic Studies',array['Islamic Education','Islamic','التربية الاسلامية']::text[]),
   ('اللغة الإنجليزية','English Language',array['English','إنجليزي']::text[]),
   ('الرياضيات','Mathematics',array['Math','رياضيات']::text[]),
-  ('العلوم','Science',array['General Science','علوم']::text[])
+  ('العلوم','Science',array['General Science','علوم']::text[]),
+  ('المهارات الحياتية والمهنية','Life and Vocational Skills',array['Life Skills','Vocational Skills']::text[])
 ) as seed(name_ar,name_en,aliases)
 join public.academic_catalog_institutions i on i.country_code='QA' and i.slug='qa-moehe'
 join public.academic_catalog_curricula cur on cur.country_code='QA' and cur.slug='qa-national-curriculum' and cur.version_label='2026-2027'
