@@ -3,7 +3,6 @@ import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
-import UniverseEffects from "./components/UniverseEffects";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
@@ -231,7 +230,7 @@ export default function App() {
   const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",community:"◎",me:"◌"};
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/><UniverseEffects />
+    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
     <header className="topbar">
       {user && <button className="mobile-nav-toggle" type="button" onClick={()=>setMobileNavOpen(v=>!v)} aria-label={mobileNavOpen?(ar?"إغلاق القائمة":"Close navigation"):(ar?"فتح القائمة":"Open navigation")} aria-expanded={mobileNavOpen}>{mobileNavOpen?"×":"☰"}</button>}
       <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
