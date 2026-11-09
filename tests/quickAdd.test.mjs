@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseQuickAdd } from "../src/lib/quickAdd.mjs";
-import { qatarDateKey, addCalendarDays, qatarDateTimeToIso, qatarWeekday } from "../src/lib/qatarTime.mjs";
+import { qatarDateKey, addCalendarDays, qatarDateTimeToIso, qatarWeekday, formatQatarDate } from "../src/lib/qatarTime.mjs";
 
 const now = new Date("2026-11-09T09:00:00.000Z"); // 12:00 in Qatar
 const subjects = [
@@ -98,4 +98,9 @@ test("Qatar date-only end-of-day is stored as the intended UTC instant", () => {
 test("Qatar calendar math is host-timezone independent", () => {
   assert.equal(addCalendarDays("2026-11-15", 1), "2026-11-16");
   assert.equal(qatarWeekday("2026-11-15"), 0);
+});
+
+test("Qatar date formatting keeps the calendar day and Western digits", () => {
+  assert.equal(formatQatarDate("2026-11-16", "en-GB", { weekday: "long", day: "numeric", month: "long" }), "Monday, 16 November");
+  assert.match(formatQatarDate("2026-11-16", "ar-QA", { day: "numeric", month: "long" }), /16/u);
 });
