@@ -1251,3 +1251,18 @@ button.primary-button:disabled,
   .home-dashboard-card > button { grid-column: 2; grid-row: 1 / span 2; }
   .home-universe-visual { width: 120px !important; height: 120px !important; opacity: .13; }
 }
+
+
+/* Plain mode uses one restrained corner glow only; the base remains fixed. */
+.app-shell.bg-plain,
+.app-shell.bg-plain.theme-light {
+  background:
+    radial-gradient(ellipse at 8% 8%, rgba(32,230,242,.07), transparent 34%),
+    var(--bg) !important;
+}
+.auth-card label,
+.auth-card label span,
+.setup-card label,
+.subject-form input,
+.focus-select,
+.profile-details span { font-size: 13px; }
