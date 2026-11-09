@@ -133,3 +133,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Test the real browser workspace against a local Worker and mock Supabase
         run: npm run test:e2e
+      - name: Upload Playwright traces and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: az-projects-browser-e2e-results
+          path: test-results/
+          if-no-files-found: ignore
