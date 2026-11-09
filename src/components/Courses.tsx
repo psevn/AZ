@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import "./Courses.css";
 
 type Language = "ar" | "en";
-type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null; catalog_course_id?: string | null };
+type Subject = { id: string; name: string; color: string | null; created_at: string; course_code?: string | null; catalog_course_id?: string | null; term_id?: string | null };
 type Task = { id: string; title: string; status: "todo" | "doing" | "done"; due_at: string | null };
 type Document = { id: string; title: string; status: string; kind: string; created_at: string };
 type CatalogInstitution = { name_ar: string; name_en: string };
@@ -122,28 +122,42 @@ export default function Courses({ userId, lang, subjects, onRefresh }: Props) {
 
   async function addCourse(name: string, code?: string | null, catalogCourseId?: string) {
     if (!supabase) return;
-    const duplicate = subjects.some(s =>
-      s.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase() ||
-      Boolean(catalogCourseId && s.catalog_course_id === catalogCourseId)
-    );
-    if (duplicate) { setNotice(t.duplicate); return; }
     setBusy(true); setNotice("");
-    const {data,error} = await supabase.from("subjects").insert({
-      user_id:userId,
-      name:name.trim(),
-      course_code:code || null,
-      catalog_course_id:catalogCourseId || null
-    }).select("id,name,color,created_at,course_code,catalog_course_id").single();
-    if (error) {
-      setNotice(error.code === "23505" ? t.duplicate : error.message);
-    } else {
-      setNotice(t.added);
-      setQuery("");
-      setCustomName("");
-      await onRefresh();
-      if (data) await openCourse(data as Subject);
+    try {
+      const { data: activeTerm, error: termError } = await supabase
+        .from("academic_terms")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (termError) throw termError;
+      const termId = activeTerm?.id ?? null;
+      const duplicate = subjects.some(s => catalogCourseId
+        ? s.catalog_course_id === catalogCourseId && (s.term_id ?? null) === termId
+        : !s.catalog_course_id && s.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase()
+      );
+      if (duplicate) { setNotice(t.duplicate); return; }
+      const {data,error} = await supabase.from("subjects").insert({
+        user_id:userId,
+        name:name.trim(),
+        course_code:code || null,
+        catalog_course_id:catalogCourseId || null,
+        term_id:termId
+      }).select("id,name,color,created_at,course_code,catalog_course_id,term_id").single();
+      if (error) {
+        setNotice(error.code === "23505" ? t.duplicate : error.message);
+      } else {
+        setNotice(t.added);
+        setQuery("");
+        setCustomName("");
+        await onRefresh();
+        if (data) await openCourse(data as Subject);
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function openCourse(subject: Subject) {
