@@ -371,7 +371,6 @@ from (values
   ('AIE 660','دراسة موجهة','Tutorial',array[]::text[],3::numeric,'One-on-one supervised reading and discussion of key writings in Islamic Ethics.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027'),
   ('AIE 661','تدريب عملي','Internship',array[]::text[],3::numeric,'A tailored internship program connected to students’ future work plans and approved institutions.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027'),
   ('AIE 695','ساعات رسالة الماجستير','Master''s Thesis Hours',array['Thesis']::text[],null::numeric,'Master’s thesis research hours.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027'),
-  ('BIOL 101','الأحياء','Biology',array['Biological Sciences']::text[],3::numeric,'An introduction to fundamental principles of biology, with a focus on biochemistry and molecular biology for undergraduate engineering students.','https://catalog.hbku.edu.qa/course-descriptions/biol/','HBKU Academic Catalog')
 ) as seed(course_code,name_ar,name_en,aliases,credit_hours,description_en,source_url,source_name)
 join public.academic_catalog_institutions i on i.country_code='QA' and i.slug='hbku'
 where not exists (
@@ -433,4 +432,23 @@ join public.academic_catalog_institutions i on i.country_code='QA' and i.slug='q
 where not exists (
   select 1 from public.academic_catalog_courses existing
   where existing.institution_id=i.id and existing.course_code=seed.course_code
+);
+
+-- UDST: verified individual course from the official 2026-2027 catalog.
+insert into public.academic_catalog_courses
+  (institution_id, course_code, name_ar, name_en, aliases, education_level,
+   academic_year, credit_hours, description_en, source_url, source_name,
+   source_checked_at, verification_status)
+select
+  i.id, 'DCMP2010A', 'مقدمة في الصحافة', 'Introduction to Journalism',
+  array['Journalism','Digital Communication']::text[], 'undergraduate',
+  '2026-2027', 3,
+  'Covers the foundations of journalism, interviewing techniques, digital practices, media literacy, research, reporting, writing, and editing.',
+  'https://udst.elumenapp.com/catalog/Catalog2026-2027/course/dcmp2010a',
+  'UDST Academic Catalog 2026-2027', date '2026-11-09', 'verified'
+from public.academic_catalog_institutions i
+where i.country_code='QA' and i.slug='udst'
+and not exists (
+  select 1 from public.academic_catalog_courses existing
+  where existing.institution_id=i.id and existing.course_code='DCMP2010A'
 );
