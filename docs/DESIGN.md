@@ -1,4 +1,6 @@
 # AZ Design Direction
+> **2026-11-09 update:** a new direction, *Calm Product UI*, is proposed in `docs/design/AZ-WEB-UI-DIRECTION-V2.md` (mockups included). If approved it supersedes the cosmic-atmosphere expression below; the AZ identity (monogram, gradient, dark-first) stays.
+
 **Status:** Approved design direction — foundation for future UI implementation  
 **Scope:** AZ Web MVP and the design system that will extend across the product  
 **Last updated:** 2026-11-05

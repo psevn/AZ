@@ -47,3 +47,6 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 - Dev machine: Windows 10, ~3.76 GB RAM — keep tooling light; check Windows 10 security update status.
 - Launch target: web launch early Feb 2027, beta before it. Gated by quality, not date.
 - Name: PSEVN confirmed (the "qvfc" handle in the handoff pack is not used).
+
+## 2026-11-09 — Web UI direction (proposed, pending mockup approval)
+PSEVN finds the current UI "cheap/ordinary" versus Claude/ChatGPT/Gemini and wants the same calm product feel, slightly more advanced. Proposal: Calm Product UI (see `docs/design/AZ-WEB-UI-DIRECTION-V2.md`). Not applied to the app yet.
