@@ -17,16 +17,19 @@ const cloneDate = (date) => new Date(date.getFullYear(),date.getMonth(),date.get
 
 function extractDate(source, now) {
   const today = cloneDate(now);
-  for (const item of [
+  const relativeDates = [
+    { pattern:/\b(?:day\s+after\s+tomorrow|after\s+tomorrow)\b|بعد\s+(?:غد(?:اً|ًا)?|بكرة)/iu, offset:2 },
     { pattern:/\b(today)\b|اليوم/iu, offset:0 },
     { pattern:/\b(tomorrow)\b|غدًا|غداً|غدا|بكرة/iu, offset:1 },
-  ]) {
+  ];
+  for (const item of relativeDates) {
     const match = item.pattern.exec(source);
     if (match) {
       const date = new Date(today); date.setDate(date.getDate()+item.offset);
       return { date:dateKey(date), token:match[0] };
     }
   }
+
   const explicit = /(?<!\d)(\d{1,2})\s+([a-z]{3,9})(?![a-z])/iu.exec(source);
   if (explicit) {
     const month = MONTHS.get(explicit[2].toLowerCase()), day = Number(explicit[1]);
@@ -37,12 +40,20 @@ function extractDate(source, now) {
       return { date:dateKey(date), token:explicit[0] };
     }
   }
+
   for (const [name,weekday] of WEEKDAYS) {
-    const pattern = /[\u0600-\u06ff]/u.test(name) ? new RegExp(name,"iu") : new RegExp("\\b"+name+"\\b","iu");
+    const isArabic = /[\u0600-\u06ff]/u.test(name);
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = isArabic
+      ? new RegExp("(?:(?:هذا|هذه|يوم)\\s+)?"+escaped+"(?:\\s+القادم)?","iu")
+      : new RegExp("(?:(?:this|next|on)\\s+)?\\b"+escaped+"\\b","iu");
     const match = pattern.exec(source);
     if (match) {
       const date = new Date(today);
-      date.setDate(date.getDate()+((weekday-date.getDay()+7)%7));
+      let offset = (weekday-date.getDay()+7)%7;
+      const explicitNext = /^(?:next)\s+/iu.test(match[0]) || /القادم$/u.test(match[0]);
+      if (explicitNext && offset===0) offset=7;
+      date.setDate(date.getDate()+offset);
       return { date:dateKey(date), token:match[0] };
     }
   }
