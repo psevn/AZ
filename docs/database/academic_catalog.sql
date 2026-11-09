@@ -272,8 +272,7 @@ from (values
   ('التربية الإسلامية','Islamic Studies',array['Islamic Education','Islamic','التربية الاسلامية']::text[]),
   ('اللغة الإنجليزية','English Language',array['English','إنجليزي']::text[]),
   ('الرياضيات','Mathematics',array['Math','رياضيات']::text[]),
-  ('العلوم','Science',array['General Science','علوم']::text[]),
-  ('المهارات الحياتية والمهنية','Life and Vocational Skills',array['Life Skills','Vocational Skills']::text[])
+  ('العلوم','Science',array['General Science','علوم']::text[])
 ) as seed(name_ar,name_en,aliases)
 join public.academic_catalog_institutions i on i.country_code='QA' and i.slug='qa-moehe'
 join public.academic_catalog_curricula cur on cur.country_code='QA' and cur.slug='qa-national-curriculum' and cur.version_label='2026-2027'
@@ -282,6 +281,23 @@ where not exists (
   where existing.institution_id=i.id and existing.curriculum_id=cur.id
     and lower(existing.name_en)=lower(seed.name_en)
 );
+
+insert into public.academic_catalog_courses
+  (institution_id, curriculum_id, course_code, name_ar, name_en, aliases, education_level, academic_year, source_url, source_name, source_checked_at, verification_status)
+select
+  i.id, cur.id, null, 'المهارات الحياتية والمهنية', 'Life and Vocational Skills',
+  array['Life Skills','Vocational Skills']::text[], 'school', '2026-2027',
+  'https://www.edu.gov.qa/en/News/Details/18921000',
+  'Qatar Ministry - Updated Subjects for 2026-2027', date '2026-11-09', 'verified'
+from public.academic_catalog_institutions i
+join public.academic_catalog_curricula cur
+  on cur.country_code='QA' and cur.slug='qa-national-curriculum' and cur.version_label='2026-2027'
+where i.country_code='QA' and i.slug='qa-moehe'
+  and not exists (
+    select 1 from public.academic_catalog_courses existing
+    where existing.institution_id=i.id and existing.curriculum_id=cur.id
+      and lower(existing.name_en)=lower('Life and Vocational Skills')
+  );
 
 insert into public.academic_catalog_courses
   (institution_id, course_code, name_ar, name_en, aliases, education_level, academic_year, source_url, source_name, source_checked_at, verification_status)
