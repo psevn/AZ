@@ -2,11 +2,15 @@
 
 **Status:** Initial strategic framework — hypotheses to research and validate  
 **Product:** AZ by EZORD  
-**Initial market:** Qatar  
-**Long-term ambition:** Build a repeatable, ethical student-growth system that can expand internationally  
+**First launch market:** Qatar  
+**Product ambition:** Build AZ as a globally capable academic platform from the beginning, launching first in Qatar and expanding across the Arab world and internationally as readiness and evidence allow  
 **Last updated:** 2026-11-05
 
 > This is a living strategy document, not an approved launch plan. Ideas below are hypotheses and options for research. They do not automatically enter the V1 product scope or authorize spending.
+
+## Product and market principle
+
+**Global by Design, Launching from Qatar.** Qatar is the first go-to-market beachhead, not the product's permanent geographic boundary or the template every other country must follow. Product foundations should support international learners without requiring a redesign for each new market. Market expansion remains staged: Qatar beta, Gulf markets, wider Arab markets, then selected global markets. These stages guide distribution and validation; they do not mean the product should be technically restricted to one region between launches.
 
 ## 1. Growth ambition
 
@@ -25,7 +29,7 @@ The aim is not attention for its own sake. Growth should bring in students who r
 3. **Reward quality, not raw sign-ups.** Incentives should be tied to verified, meaningful milestones.
 4. **Respect students and institutions.** No spam, forced contact uploads, or unauthorized use of university names/logos.
 5. **Measure incrementality and economics.** Track whether a campaign brings genuinely new, retained, paying students at a sustainable cost.
-6. **Start narrow, learn, then expand.** Validate in Qatar before scaling across regions.
+6. **Launch narrow; design globally.** Validate the first launch in Qatar, but do not hard-code Qatar's institutions, academic calendar, language, currency, or assumptions into shared product foundations. Prepare the product architecture for multiple countries from the start.
 7. **Protect the MVP.** Growth experiments should not delay core learning workflows or become V1 requirements without an explicit scope decision.
 
 ## 3. University Ambassador Program — working concept
