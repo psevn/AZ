@@ -10,6 +10,8 @@ const subjects = [
   { id: "calc-id", name: "Math" },
   { id: "econ-id", name: "Économics" },
   { id: "arabic-id", name: "الإحصاء" },
+  { id: "school-id", name: "مدرسة" },
+  { id: "boy-id", name: "فتى" },
 ];
 
 test("Arabic date, subject, high priority, duration", () => {
@@ -25,7 +27,9 @@ test("English and mixed language input", () => {
   assert.equal(result.estMinutes, 45);
 });
 test("Arabic spelling variants and diacritic-insensitive subjects", () => {
-  assert.equal(parseQuickAdd("مراجعة غدا #الإحصاء", subjects, now).subjectId, "arabic-id");
+  assert.equal(parseQuickAdd("مراجعة غدا #الاحصاء", subjects, now).subjectId, "arabic-id");
+  assert.equal(parseQuickAdd("مراجعة #مدرسه", subjects, now).subjectId, "school-id");
+  assert.equal(parseQuickAdd("مراجعة #فتي", subjects, now).subjectId, "boy-id");
   assert.equal(parseQuickAdd("Review #economics", subjects, now).subjectId, "econ-id");
   assert.equal(parseQuickAdd("Review بكرة", subjects, now).dueDate, "2026-11-10");
 });
