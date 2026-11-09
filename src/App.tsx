@@ -117,10 +117,14 @@ export default function App() {
   async function loadData() {
     if (!supabase || !user) return;
     setLoading(true);
-    const [s,q] = await Promise.all([
+    const [s,initialTasks] = await Promise.all([
       supabase.from("subjects").select("id,name,color,exam_date,created_at").order("created_at"),
-      supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,created_at").order("created_at",{ascending:false})
+      supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,completed_at,created_at").order("created_at",{ascending:false})
     ]);
+    let q = initialTasks;
+    if (q.error && q.error.message.toLowerCase().includes("completed_at")) {
+      q = await supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,created_at").order("created_at",{ascending:false});
+    }
     if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
     if (q.error) setError(q.error.message); else setTasks((q.data||[]) as Task[]);
     setLoading(false);
