@@ -33,6 +33,7 @@ const copy = {
     identity: "هويتك الأكاديمية",
     identityHint: "اختر مرحلتك التعليمية. ستبقى تجربة AZ واحدة، وتتغير البيانات والمصطلحات فقط.",
     level: "المرحلة التعليمية",
+    levelRequired: "اختر مرحلتك التعليمية للمتابعة.",
     school: "المدرسة",
     university: "الجامعة",
     college: "الكلية / الدبلوم",
@@ -135,6 +136,7 @@ const copy = {
     identity: "Your academic identity",
     identityHint: "Choose your education level. The AZ experience stays the same; only the data and terminology change.",
     level: "Education level",
+    levelRequired: "Choose your education level to continue.",
     school: "School",
     university: "University",
     college: "College / Diploma",
@@ -267,7 +269,7 @@ const weekdayNumbers = [1, 2, 3, 4, 5, 6, 7];
 export default function AcademicSetup({ userId, lang, existingSubjects, onComplete }: Props) {
   const t = copy[lang];
   const [step, setStep] = useState<Step>("identity");
-  const [educationLevel, setEducationLevel] = useState<EducationLevel>("university");
+  const [educationLevel, setEducationLevel] = useState<EducationLevel | null>(null);
   const [institution, setInstitution] = useState("");
   const [gradeOrYear, setGradeOrYear] = useState("");
   const [specialization, setSpecialization] = useState("");
@@ -300,7 +302,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
   const steps: Step[] = ["identity", "term", "courses", "schedule", "preferences", "review"];
   const stepNumber = steps.indexOf(step) + 1;
   const profile = useMemo<AcademicProfile>(() => ({
-    education_level: educationLevel,
+    education_level: educationLevel || "university",
     institution: institution.trim(),
     grade_or_year: gradeOrYear,
     specialization: specialization.trim(),
@@ -481,6 +483,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
     setBusy(true); setError("");
     try {
       if (step === "identity") {
+        if (!educationLevel) { setError(t.levelRequired); setBusy(false); return; }
         await saveProfile();
         await saveProgress("term");
         setStep("term");
@@ -537,7 +540,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
     }
   }
 
-  const levelLabel = levelOptions[lang].find(option => option.value === educationLevel)?.label || t.university;
+  const levelLabel = levelOptions[lang].find(option => option.value === educationLevel)?.label || t.level;
   const subjectName = (id: string) => allSubjects.find(subject => subject.id === id)?.name || "";
   const weekdayLabel = (day: number) => t.days[day - 1] || "";
 
@@ -562,7 +565,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
           </div>
           <label><span>{t.institution}</span><input value={institution} onChange={event => setInstitution(event.target.value)} maxLength={160} placeholder={t.institutionPlaceholder} /></label>
           <div className="academic-setup-fields">
-            <label><span>{t.grade}</span><select value={gradeOrYear} onChange={event => setGradeOrYear(event.target.value)}><option value="">{t.gradePlaceholder}</option>{gradeOptions[lang][educationLevel].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+            <label><span>{t.grade}</span><select value={gradeOrYear} onChange={event => setGradeOrYear(event.target.value)} disabled={!educationLevel}><option value="">{t.gradePlaceholder}</option>{educationLevel ? gradeOptions[lang][educationLevel].map(value => <option key={value} value={value}>{value}</option>) : null}</select></label>
             <label><span>{t.specialization}</span><input value={specialization} onChange={event => setSpecialization(event.target.value)} maxLength={160} placeholder={t.specializationPlaceholder} /></label>
           </div>
           <div className="academic-setup-note">{t.identityHint}</div>
