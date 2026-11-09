@@ -9,8 +9,13 @@ test("two real browser sessions edit the same AZ Projects document", async ({ br
   });
   const leadPage = await leadContext.newPage();
   const memberPage = await memberContext.newPage();
+  leadPage.on("console", (message) => console.log("[lead console]", message.type(), message.text()));
+  leadPage.on("pageerror", (error) => console.log("[lead pageerror]", error.stack || error.message));
+  memberPage.on("console", (message) => console.log("[member console]", message.type(), message.text()));
+  memberPage.on("pageerror", (error) => console.log("[member pageerror]", error.stack || error.message));
 
   await leadPage.goto("/e2e/collaboration-harness.html?user=1&lang=en");
+  console.log("[lead body]", (await leadPage.locator("body").innerText()).slice(0, 3000));
   await expect(leadPage.getByRole("heading", { name: "AZ Shared Document E2E" })).toBeVisible();
   await leadPage.getByRole("button", { name: "Main document" }).click();
   await expect(leadPage.locator(".project-collab-status")).toContainText("Connected");
