@@ -313,12 +313,14 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
     let active = true;
     async function restore() {
       if (!supabase) return;
-      const [{ data: authData }, { data: setupData }, { data: termData }] = await Promise.all([
+      const [{ data: authData }, { data: setupData }, { data: termData }, { data: meetingData }] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from("academic_setup").select("current_step").eq("user_id", userId).maybeSingle(),
         supabase.from("academic_terms").select("id,name,start_date,end_date").eq("user_id", userId).eq("is_active", true).maybeSingle(),
+        supabase.from("class_meetings").select("id").eq("user_id", userId),
       ]);
       if (!active) return;
+      setSavedSessionCount(meetingData?.length || 0);
       const savedProfile = authData.user?.user_metadata?.az_academic_profile as Partial<AcademicProfile> | undefined;
       if (savedProfile) {
         if (savedProfile.education_level && ["school", "university", "college", "postgraduate"].includes(savedProfile.education_level)) setEducationLevel(savedProfile.education_level);
