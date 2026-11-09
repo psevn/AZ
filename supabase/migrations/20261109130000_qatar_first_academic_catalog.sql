@@ -116,7 +116,7 @@ alter table public.subjects
 
 -- term_id is introduced by 20261105160000_add_academic_planning_foundation.sql.
 -- Fail explicitly before defining term-aware indexes if migration order/schema drift is wrong.
-do $
+do $$
 begin
   if not exists (
     select 1
@@ -128,7 +128,7 @@ begin
     raise exception 'subjects.term_id is required; apply 20261105160000_add_academic_planning_foundation.sql first';
   end if;
 end;
-$;
+$$;
 
 create index if not exists subjects_catalog_course_id_idx
   on public.subjects (catalog_course_id)
@@ -227,7 +227,7 @@ language sql
 stable
 security invoker
 set search_path = public
-as $
+as $$
   with search_terms as (
     select
       replace(replace(replace(trim(coalesce(p_query, '')), E'\\', E'\\\\'), '%', E'\\%'), '_', E'\\_') as q,
@@ -287,7 +287,7 @@ as $
     i.name_en,
     c.name_en
   limit least(greatest(coalesce(p_limit, 20), 1), 50);
-$;
+$$;
 
 revoke all on function public.search_academic_catalog(text,text,text,text,integer) from public, anon;
 grant execute on function public.search_academic_catalog(text,text,text,text,integer) to authenticated;
