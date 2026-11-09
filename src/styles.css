@@ -1020,6 +1020,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   display:block; max-width:155px; overflow:hidden; color:var(--text-strong);
   font-size:10px; font-weight:550; text-overflow:ellipsis; white-space:nowrap;
 }
+.workspace-rail.is-collapsed .rail-label { display:flex; justify-content:center; }
 .workspace-rail.is-collapsed .rail-new-session { padding-inline:4px; }
 .workspace-rail.is-collapsed .rail-new-session span:last-child,
 .workspace-rail.is-collapsed .rail-account-copy { display:none; }
