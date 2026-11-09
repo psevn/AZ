@@ -61,7 +61,7 @@ export function parseQuickAdd(input, subjects=[], now=new Date()) {
     if (subject) { subjectId=subject.id; title=title.replace(subjectMatch[0]," "); }
   }
   let priority=2, priorityToken="!2", priorityNotice=false;
-  const priorityMatch = /!(\d+)/u.exec(title);
+  const priorityMatch = /!(\d+)\+?/u.exec(title);
   if (priorityMatch) {
     const rank=Number(priorityMatch[1]);
     if (rank>=1 && rank<=3) {
