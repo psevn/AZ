@@ -580,7 +580,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
           <div className="academic-setup-methods">
             {(["manual", "upload", "smart"] as const).map(value => <button type="button" key={value} className={"academic-setup-method" + (method === value ? " active" : "")} onClick={() => { setMethod(value); setError(""); }}>
               <span className="academic-setup-method-icon">{value === "manual" ? "＋" : value === "upload" ? "▤" : "✧"}</span>
-              <strong>{t[value]}</strong><small>{t[value + "Hint" as "manualHint" | "uploadHint" | "smartHint"]}</small>
+              <strong>{t[value]}</strong><small>{value === "manual" ? t.manualHint : value === "upload" ? t.uploadHint : t.smartHint}</small>
               <i>{method === value ? "✓" : "↗"}</i>
             </button>)}
           </div>
