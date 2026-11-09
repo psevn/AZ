@@ -1,16 +1,16 @@
 import UniverseEffects from "./components/UniverseEffects";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
-import { parseQuickAdd } from "./lib/quickAdd.mjs";
+import PlanningPage from "./components/PlanningPage";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
 type Section = "home" | "planning" | "az" | "community" | "me";
-type Subject = { id: string; name: string; color: string | null; created_at: string };
-type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; created_at: string };
+type Subject = { id: string; name: string; color: string | null; exam_date: string | null; created_at: string };
+type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; completed_at?: string | null; document_id?: string | null; created_at: string };
 
 const labels = {
   ar: { eyebrow:"مساحتك الأكاديمية", headline:"خطّط بوضوح. ادرس بتركيز.", intro:"مكان واحد يجمع خطتك ومذاكرتك وتقدّمك.", email:"البريد الإلكتروني", password:"كلمة المرور", signIn:"تسجيل الدخول", signUp:"إنشاء حساب", create:"ابدأ حسابك", have:"عندك حساب؟", none:"ما عندك حساب؟", signOut:"تسجيل الخروج", language:"English", loading:"لحظة...", config:"نحتاج إعداد الاتصال بـ Supabase", configText:"انسخ .env.example إلى .env.local وأضف رابط المشروع ومفتاح Publishable. لا تستخدم service_role في المتصفح.", checkEmail:"أرسلنا لك رسالة تأكيد. افتح بريدك ثم ارجع لتسجيل الدخول.", welcome:"تم تسجيل الدخول بنجاح.", workspace:"مساحة العمل", notebook:"دفتر الملاحظات", arena:"ARENA", az:"AZ", community:"المجتمع", me:"أنا", communityTitle:"مجتمع AZ", communityText:"مساحة تجمع الطلاب لتبادل المعرفة والتجارب. ستتوفر في مرحلة لاحقة.", meTitle:"ملفي الشخصي", meText:"إدارة حسابك وتفضيلاتك الشخصية.", account:"الحساب", appearance:"المظهر", home:"الرئيسية", planning:"التخطيط", focus:"التركيز", study:"المذاكرة", today:"مساحة اليوم", todayText:"خطوة صغيرة ومنتظمة تصنع تقدماً كبيراً.", tasks:"المهام", completed:"مكتملة", subjects:"المواد الدراسية", subjectName:"اسم المادة", addSubject:"إضافة مادة", addTask:"إضافة مهمة", taskTitle:"عنوان المهمة", chooseSubject:"المادة", noSubject:"بدون مادة", due:"تاريخ الإنجاز", minutes:"المدة بالدقائق", priority:"الأولوية", high:"عالية", medium:"متوسطة", low:"منخفضة", todo:"لم تبدأ", doing:"قيد التنفيذ", done:"مكتملة", all:"الكل", todayFilter:"اليوم", upcoming:"القادمة", overdue:"المتأخرة", start:"ابدأ التركيز", stop:"إنهاء الجلسة", focusTitle:"وقت تركيزك", focusText:"اختر مهمة وابدأ جلسة تركيز.", studyTitle:"مساحة العمل الأكاديمية", studyText:"غرفة عملياتك لتنظيم الدراسة والعمل على أدواتك الأكاديمية.", notebookTitle:"دفتر الملاحظات", notebookText:"مساحة تدوين أفكارك وملاحظاتك الأكاديمية. ستتوفر أدواتها في مرحلة لاحقة.", arenaTitle:"ARENA", arenaText:"مساحة التحديات والتنافس الأكاديمي بين الطلاب.", studyNext:"الخطوة التالية: رفع ملفات PDF واستخراج محتواها وبناء أدوات الدراسة.", empty:"لا توجد مهام هنا بعد.", emptySubjects:"لا توجد مواد بعد.", remove:"حذف", startTask:"ابدأ", finishTask:"أنجزت", reopen:"إعادة فتح", saved:"تم حفظ جلسة التركيز.", noDue:"بدون موعد", footer:"AZ — خطّط، ادرس، تطوّر." },
@@ -59,16 +59,10 @@ export default function App() {
   const [page,setPage] = useState<Page>("workspace");
   const [subjects,setSubjects] = useState<Subject[]>([]);
   const [tasks,setTasks] = useState<Task[]>([]);
-  const [subjectName,setSubjectName] = useState("");
-  const [title,setTitle] = useState("");
-  const [quickText,setQuickText] = useState("");
-  const [subjectId,setSubjectId] = useState("");
-  const [due,setDue] = useState("");
-  const [minutes,setMinutes] = useState("45");
-  const [priority,setPriority] = useState("2");
-  const [filter,setFilter] = useState<"all"|"todo"|"doing"|"done">("all");
-  const [scope,setScope] = useState<"today"|"upcoming"|"overdue">("today");
+  const [taskDocumentLinkAvailable,setTaskDocumentLinkAvailable] = useState(false);
+  const [activeDocument,setActiveDocument] = useState<{id:string;title:string;url:string}|null>(null);
   const [focusTask,setFocusTask] = useState("");
+  const [finishedFocus,setFinishedFocus] = useState<{taskId:string|null;taskTitle:string;minutes:number}|null>(null);
   const [started,setStarted] = useState<number|null>(null);
   const [elapsed,setElapsed] = useState(0);
   const [busy,setBusy] = useState(false);
@@ -126,12 +120,32 @@ export default function App() {
   async function loadData() {
     if (!supabase || !user) return;
     setLoading(true);
-    const [s,q] = await Promise.all([
-      supabase.from("subjects").select("id,name,color,created_at").order("created_at"),
-      supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,created_at").order("created_at",{ascending:false})
+    const [s,initialTasks] = await Promise.all([
+      supabase.from("subjects").select("id,name,color,exam_date,created_at").order("created_at"),
+      supabase.from("tasks").select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,completed_at,document_id,created_at").order("created_at",{ascending:false})
     ]);
+    let taskError = initialTasks.error;
+    let taskData = (initialTasks.data || []) as Task[];
+    let hasDocumentLink = true;
+    if (taskError && (taskError.message.toLowerCase().includes("document_id") || taskError.message.toLowerCase().includes("completed_at"))) {
+      hasDocumentLink = false;
+      const fallbackTasks = await supabase
+        .from("tasks")
+        .select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,completed_at,created_at")
+        .order("created_at", { ascending: false });
+      taskError = fallbackTasks.error;
+      taskData = (fallbackTasks.data || []) as Task[];
+      if (taskError && taskError.message.toLowerCase().includes("completed_at")) {
+        const legacyTasks = await supabase.from("tasks")
+          .select("id,user_id,subject_id,title,due_at,priority,est_minutes,status,note,created_at")
+          .order("created_at", { ascending: false });
+        taskError = legacyTasks.error;
+        taskData = (legacyTasks.data || []) as Task[];
+      }
+    }
+    setTaskDocumentLinkAvailable(hasDocumentLink);
     if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
-    if (q.error) setError(q.error.message); else setTasks((q.data||[]) as Task[]);
+    if (taskError) setError(taskError.message); else setTasks(taskData);
     setLoading(false);
   }
   useEffect(() => { if (user) void loadData(); else { setSubjects([]); setTasks([]); } },[user]);
@@ -169,16 +183,7 @@ export default function App() {
   },[started]);
 
   const today = new Date().toLocaleDateString("en-CA");
-  const visible = useMemo(() => tasks.filter(task => {
-    if (filter !== "all" && task.status !== filter) return false;
-    if (!task.due_at) return scope === "today";
-    const date = new Date(task.due_at).toLocaleDateString("en-CA");
-    if (scope === "today") return date === today;
-    if (scope === "upcoming") return date > today && task.status !== "done";
-    return date < today && task.status !== "done";
-  }),[tasks,filter,scope,today]);
   const subjectFor = (id:string|null) => subjects.find(s=>s.id===id)?.name || t.noSubject;
-  const quickPreview = useMemo(() => parseQuickAdd(quickText, subjects), [quickText, subjects]);
   const completedCount = tasks.filter(task=>task.status==="done").length;
   const completionRate = tasks.length ? Math.round(completedCount/tasks.length*100) : 0;
   const openTasks = tasks.filter(task=>task.status!=="done");
@@ -202,62 +207,35 @@ export default function App() {
     if (e) setError(e.message); else { setUser(null); setTasks([]); setSubjects([]); }
     setBusy(false);
   }
-  async function addSubject(event:FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (!supabase || !user || !subjectName.trim()) return;
-    setBusy(true);
-    const {error:e} = await supabase.from("subjects").insert({name:subjectName.trim(),user_id:user.id});
-    if (e) setError(e.message); else { setSubjectName(""); await loadData(); }
-    setBusy(false);
-  }
-  async function addTask(event:FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (!supabase || !user || !title.trim()) return;
-    setBusy(true); setError("");
-    const {error:e} = await supabase.from("tasks").insert({
-      user_id:user.id, subject_id:subjectId||null, title:title.trim(),
-      due_at:due ? new Date(due+"T23:59:00").toISOString() : null,
-      priority:Number(priority), est_minutes:Math.max(5,Number(minutes)||45), status:"todo"
-    });
-    if (e) setError(e.message);
-    else { setTitle(""); setDue(""); setMinutes("45"); setPriority("2"); await loadData(); }
-    setBusy(false);
-  }
-  async function addQuickTask(event:FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!supabase || !user || !quickPreview.title.trim()) return;
-    setBusy(true); setError("");
-    const { error: insertError } = await supabase.from("tasks").insert({
-      user_id:user.id, subject_id:quickPreview.subjectId, title:quickPreview.title.trim(),
-      due_at:quickPreview.dueDate ? new Date(quickPreview.dueDate+"T23:59:00").toISOString() : null,
-      priority:quickPreview.priority, est_minutes:quickPreview.estMinutes, status:"todo"
-    });
-    if (insertError) setError(insertError.message);
-    else { setQuickText(""); await loadData(); }
-    setBusy(false);
-  }
-
   async function changeTask(task:Task,status:Task["status"]) {
     if (!supabase) return;
     const {error:e} = await supabase.from("tasks").update({status}).eq("id",task.id);
     if (e) setError(e.message); else await loadData();
   }
-  async function removeTask(task:Task) {
-    if (!supabase) return;
-    const {error:e} = await supabase.from("tasks").delete().eq("id",task.id);
-    if (e) setError(e.message); else await loadData();
+  async function openDocument(documentId:string) {
+    if (!supabase || !user) return;
+    const {data,error:e}=await supabase.from("documents").select("id,title,storage_path").eq("id",documentId).eq("user_id",user.id).eq("status","ready").single();
+    if(e||!data){setError(e?.message??(ar?"تعذر فتح المستند":"Could not open document"));return;}
+    const {data:signed,error:signError}=await supabase.storage.from("documents").createSignedUrl(data.storage_path,3600);
+    if(signError||!signed){setError(signError?.message??"Could not create document link");return;}
+    setActiveDocument({id:data.id,title:data.title,url:signed.signedUrl});setSection("az");setPage("workspace");
   }
   async function stopFocus() {
     if (!supabase || !user || started===null) return;
     setBusy(true);
+    const endedAt=Date.now();
+    const task=tasks.find(x=>x.id===focusTask);
+    const duration=Math.max(0,Math.round((endedAt-started)/60000));
     const {error:e} = await supabase.from("focus_sessions").insert({
       user_id:user.id,task_id:focusTask||null,
-      started_at:new Date(started).toISOString(),ended_at:new Date().toISOString()
+      started_at:new Date(started).toISOString(),ended_at:new Date(endedAt).toISOString()
     });
-    if (e) setError(e.message); else setMessage(t.saved);
+    if (e) setError(e.message); else { setMessage(t.saved); setFinishedFocus({taskId:focusTask||null,taskTitle:task?.title??(ar?"جلسة تركيز":"Focus session"),minutes:duration}); }
     setStarted(null); setElapsed(0); setBusy(false);
   }
 
   const workspaceNav:Page[] = ["workspace","notebook","focus","arena"];
-  const sectionNav:Section[] = ["home","planning","az","community","me"];
+  const sectionNav:Section[] = ["home","planning","az","me"];
   const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",community:"◎",me:"◌"};
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")} dir={ar?"rtl":"ltr"} lang={lang}>
@@ -287,7 +265,7 @@ export default function App() {
           <div className="rail-bottom"><button className="rail-account" type="button" onClick={()=>{setSection("me");setMessage("");setMobileNavOpen(false);}}><span className="rail-account-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</span><span className="rail-account-copy"><small>{ar?"الحساب":"Account"}</small><strong>{user.email}</strong></span></button></div>
         </aside>
         <div className="workspace-main">
-          {section!=="home" && <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="planning"?t.planning:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div></div>}
+          {section!=="home" && section!=="planning" && <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div></div>}
           {section==="home" && <div className="home-view">
             <section className="home-hero">
               <div className="home-hero-copy">
@@ -295,7 +273,7 @@ export default function App() {
                 <p className="home-date">{todayLabel}</p>
                 <p className="home-greeting">{ar?"أهلاً بعودتك.":"Welcome back."}</p>
                 <h2 className="home-hero-title">{ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"}</h2>
-                <form className="home-study-input" onSubmit={event=>{event.preventDefault();if(!homePrompt.trim())return;setTitle(homePrompt.trim());setHomePrompt("");setSection("planning");}}>
+                <form className="home-study-input" onSubmit={event=>{event.preventDefault();if(!homePrompt.trim())return;setSection("planning");}}>
                   <input value={homePrompt} onChange={event=>setHomePrompt(event.target.value)} placeholder={ar?"اكتب ما تريد إنجازه أو مراجعته...":"Add a topic or task to work on..."} aria-label={ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"} />
                   <button className="primary-button" type="submit" disabled={!homePrompt.trim()}>{ar?"تابع إلى خطتك":"Continue to plan"} <span>↗</span></button>
                 </form>
@@ -331,47 +309,9 @@ export default function App() {
               </section>
             </section>
           </div>}
-          {section==="planning" && <div className="planning-view">
-            <section className="content-panel quick-add-panel">
-              <div className="panel-heading"><div><span className="eyebrow">{ar?"إضافة سريعة":"Quick capture"}</span><h2>{ar?"أضف مهمة بجملة واحدة":"Add a task in one line"}</h2></div><span className="panel-symbol">＋</span></div>
-              <form className="quick-add-form" onSubmit={addQuickTask}>
-                <input type="text" value={quickText} onChange={event=>setQuickText(event.target.value)} maxLength={300}
-                  placeholder={ar?"مثال: مراجعة الفصل غداً #رياضيات !1 45د":"e.g. Review chapter tomorrow #Biology !1 45m"}
-                  aria-label={ar?"اكتب المهمة":"Describe the task"} />
-                <button className="primary-button" type="submit" disabled={busy||!quickPreview.title.trim()}>{busy?t.loading:(ar?"إضافة المهمة":"Add task")} <span>↗</span></button>
-              </form>
-              {quickText.trim() && <div className="quick-add-preview" aria-live="polite">
-                <div><span>{ar?"العنوان":"Title"}</span><strong>{quickPreview.title||(ar?"أضف عنواناً للمهمة":"Add a task title")}</strong></div>
-                <div><span>{t.chooseSubject}</span><strong>{subjectFor(quickPreview.subjectId)}</strong></div>
-                <div><span>{t.due}</span><strong>{quickPreview.dueDate?new Date(quickPreview.dueDate+"T12:00:00").toLocaleDateString(ar?"ar-QA":"en-US"):t.noDue}</strong></div>
-                <div><span>{t.minutes}</span><strong>{quickPreview.estMinutes} {ar?"دقيقة":"min"}</strong></div>
-                <div><span>{t.priority}</span><strong>{quickPreview.priorityToken} · {quickPreview.priority===3?t.high:quickPreview.priority===2?t.medium:t.low}</strong></div>
-                {quickPreview.priorityNotice && <p className="quick-add-note">{ar?"الأولوية بثلاث درجات":"Priority has three levels"}</p>}
-              </div>}
-              <p className="quick-add-help">{ar?"التاريخ: اليوم، غداً، أيام الأسبوع أو 15 Nov · المادة: #اسم · الأولوية: !1 إلى !3 · المدة: 45د أو 45m":"Date: today, tomorrow, weekdays or 15 Nov · Subject: #name · Priority: !1 to !3 · Duration: 45m"}</p>
-            </section>
-            <div className="planning-grid">
-              <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">{ar?"أنشئ خطتك":"Create your plan"}</span><h2>{t.addTask}</h2></div><span className="panel-symbol">＋</span></div>
-                <form className="task-form" onSubmit={addTask}>
-                  <label><span>{t.taskTitle}</span><input value={title} onChange={e=>setTitle(e.target.value)} maxLength={180} required/></label>
-                  <label><span>{t.chooseSubject}</span><select value={subjectId} onChange={e=>setSubjectId(e.target.value)}><option value="">{t.noSubject}</option>{subjects.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
-                  <div className="form-two"><label><span>{t.due}</span><input type="date" value={due} onChange={e=>setDue(e.target.value)}/></label><label><span>{t.minutes}</span><input type="number" min="5" max="600" step="5" value={minutes} onChange={e=>setMinutes(e.target.value)}/></label></div>
-                  <label><span>{t.priority}</span><select value={priority} onChange={e=>setPriority(e.target.value)}><option value="3">{t.high}</option><option value="2">{t.medium}</option><option value="1">{t.low}</option></select></label>
-                  <button className="primary-button full-button" disabled={busy||!title.trim()}>{busy?t.loading:t.addTask}<span>↗</span></button>
-                </form>
-              </section>
-              <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">{ar?"مجالات تعلّمك":"Your learning areas"}</span><h2>{t.subjects}</h2></div><span className="count-pill">{String(subjects.length)}</span></div>
-                <form className="subject-form" onSubmit={addSubject}><input value={subjectName} onChange={e=>setSubjectName(e.target.value)} placeholder={t.subjectName} maxLength={120} required/><button className="primary-button" disabled={busy||!subjectName.trim()}>＋</button></form>
-                {subjects.length===0?<p className="muted">{t.emptySubjects}</p>:<div className="subject-list">{subjects.map((s,i)=><article className="subject-row" key={s.id}><span className="subject-index">{String(i+1).padStart(2,"0")}</span><span className="subject-color"/><strong>{s.name}</strong></article>)}</div>}
-              </section>
-            </div>
-            <section className="content-panel task-board"><div className="panel-heading"><div><span className="eyebrow">{ar?"قائمة المهام":"Task list"}</span><h2>{t.planning}</h2></div><span className="count-pill">{tasks.length.toString().padStart(2,"0")}</span></div>
-              <div className="filter-bar">{(["today","upcoming","overdue"] as const).map(x=><button key={x} className={scope===x?"active":""} onClick={()=>setScope(x)}>{t[x==="today"?"todayFilter":x]}</button>)}<span className="filter-spacer"/>{(["all","todo","doing","done"] as const).map(x=><button key={x} className={filter===x?"active subtle":"subtle"} onClick={()=>setFilter(x)}>{t[x]}</button>)}</div>
-              {loading?<p className="muted">{t.loading}</p>:visible.length===0?<div className="empty-state"><span className="empty-symbol">✧</span><p>{t.empty}</p></div>:<div className="task-list">{visible.map(task=><article className="task-row" key={task.id}><span className={"task-priority priority-"+task.priority}/><div className="task-info"><strong>{task.title}</strong><small>{subjectFor(task.subject_id)} · {task.due_at?new Date(task.due_at).toLocaleDateString(ar?"ar-QA":"en-US"):t.noDue}</small></div><span className={"task-status status-"+task.status}>{t[task.status]}</span><button className="small-action" onClick={()=>void changeTask(task,task.status==="todo"?"doing":task.status==="doing"?"done":"todo")}>{task.status==="todo"?t.startTask:task.status==="doing"?t.finishTask:t.reopen}</button><button className="delete-action" onClick={()=>void removeTask(task)} aria-label={t.remove}>×</button></article>)}</div>}
-            </section>
-          </div>}
-          {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
-          {section==="az" && page==="workspace" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">Knowledge system / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
+          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
+          {section==="az" && page==="focus" && <section className="focus-view content-panel">{finishedFocus&&<div className="focus-finish-card"><strong>{ar?"أحسنت!":"Nice work."} {finishedFocus.minutes} {ar?"دقيقة على":"min on"} {finishedFocus.taskTitle}.</strong><div><button type="button" onClick={async()=>{if(finishedFocus.taskId){const finishedTask=tasks.find(x=>x.id===finishedFocus.taskId);if(finishedTask)await changeTask(finishedTask,"done");}setFinishedFocus(null);}}>{ar?"وضع علامة مكتملة":"Mark done"}</button><button type="button" onClick={()=>setFinishedFocus(null)}>{ar?"ليس الآن":"Not yet"}</button></div></div>}<span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
+          {section==="az" && page==="workspace" && (activeDocument?<section className="document-viewer content-panel"><div className="document-viewer-head"><strong>{activeDocument.title}</strong><button type="button" onClick={()=>setActiveDocument(null)}>{ar?"إغلاق المستند":"Close document"}</button></div><iframe title={activeDocument.title} src={activeDocument.url}/></section>:<section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">Knowledge system / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>)}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Notebook</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
           {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Arena</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">Coming soon</span></section>}
           {section==="community" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Community</span><h2>{t.communityTitle}</h2><p>{t.communityText}</p><span className="coming-soon-label">{ar?"قريبًا":"Coming in a later phase"}</span></section>}
