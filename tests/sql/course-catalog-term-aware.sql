@@ -60,6 +60,10 @@ begin
 end;
 $$;
 
+-- Add a row owned by user 2 so the RLS assertion proves cross-user isolation.
+insert into public.subjects (user_id, name, term_id)
+values ('00000000-0000-0000-0000-000000000002','User 2 private subject','20000000-0000-0000-0000-000000000001');
+
 -- RLS: user 1 sees only their own subject rows.
 begin;
 set local role authenticated;
@@ -88,8 +92,16 @@ begin
   if v_count = 0 then
     raise exception 'Expected seeded catalog institutions';
   end if;
+  begin
+    insert into public.academic_catalog_institutions
+      (country_code, slug, institution_type, name_ar, name_en)
+    values ('QA','forbidden-test-write','school','اختبار','Forbidden test write');
+    raise exception 'Expected authenticated catalog write to be denied';
+  exception when insufficient_privilege then
+    null;
+  end;
 end;
-$$;
+$;
 rollback;
 
 select 'course catalog migration tests passed' as result;
