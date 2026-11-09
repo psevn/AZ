@@ -65,11 +65,13 @@ export function analyzeAcademicActivity({
   );
 
   let focusMilliseconds = 0;
+  let sessionsLastSevenDays = 0;
   for (const session of focusSessions) {
     const startedAt = validDate(session?.started_at);
     const endedAt = validDate(session?.ended_at);
     if (!startedAt || !endedAt || endedAt <= startedAt) continue;
     if (!isWithinLastSevenDays(endedAt, startKey, today, timeZone)) continue;
+    sessionsLastSevenDays += 1;
     focusMilliseconds += endedAt.getTime() - startedAt.getTime();
   }
 
@@ -95,9 +97,7 @@ export function analyzeAcademicActivity({
       subjectActiveCounts: subjectTaskCounts,
     },
     focus: {
-      sessionsLastSevenDays: focusSessions.filter((session) =>
-        session?.ended_at && isWithinLastSevenDays(session.ended_at, startKey, today, timeZone),
-      ).length,
+      sessionsLastSevenDays,
       minutesLastSevenDays: Math.round(focusMilliseconds / 60000),
     },
   };
