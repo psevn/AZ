@@ -7,6 +7,7 @@ type Language = "ar" | "en";
 type Step = "identity" | "term" | "courses" | "schedule" | "preferences" | "review";
 type EducationLevel = "school" | "university" | "college" | "postgraduate";
 type ExistingSubject = { id: string; name: string; term_id?: string | null; course_code?: string | null; instructor?: string | null };
+type CatalogInstitutionOption = { name_ar: string; name_en: string; institution_type: string };
 type SessionDraft = { id: string; subject_id: string; weekday: number; starts_at_local: string; ends_at_local: string; meeting_type: "lecture" | "lab" | "tutorial" | "other"; location: string };
 type AcademicProfile = {
   education_level: EducationLevel;
@@ -38,8 +39,11 @@ const copy = {
     university: "الجامعة",
     college: "الكلية / الدبلوم",
     postgraduate: "الدراسات العليا",
-    institution: "اسم المؤسسة التعليمية",
-    institutionPlaceholder: "اسم المدرسة أو الجامعة أو الكلية",
+    institution: "المؤسسة التعليمية",
+    institutionPlaceholder: "ابحث عن جامعتك أو اخترها",
+    schoolInstitutionPlaceholder: "اسم المدرسة (اختياري)",
+    institutionHint: "اختر من المؤسسات المعتمدة في قطر، أو اكتب الاسم إذا لم تجده.",
+    schoolInstitutionHint: "للمدارس، يعتمد كتالوج المواد على مصادر وزارة التعليم. اسم المدرسة اختياري.",
     grade: "الصف / السنة / المستوى",
     gradePlaceholder: "اختر مستواك",
     specialization: "التخصص أو المسار (اختياري)",
@@ -141,8 +145,11 @@ const copy = {
     university: "University",
     college: "College / Diploma",
     postgraduate: "Postgraduate",
-    institution: "Institution name",
-    institutionPlaceholder: "School, university, or college name",
+    institution: "Educational institution",
+    institutionPlaceholder: "Search for or select your university",
+    schoolInstitutionPlaceholder: "School name (optional)",
+    institutionHint: "Choose a recognized institution in Qatar, or type its name if it is not listed.",
+    schoolInstitutionHint: "For schools, the subject catalog follows Ministry sources. Your school name is optional.",
     grade: "Grade / Year / Level",
     gradePlaceholder: "Choose your level",
     specialization: "Specialization or track (optional)",
@@ -271,6 +278,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
   const [step, setStep] = useState<Step>("identity");
   const [educationLevel, setEducationLevel] = useState<EducationLevel | null>(null);
   const [institution, setInstitution] = useState("");
+  const [institutionOptions, setInstitutionOptions] = useState<CatalogInstitutionOption[]>([]);
   const [gradeOrYear, setGradeOrYear] = useState("");
   const [specialization, setSpecialization] = useState("");
   const [termId, setTermId] = useState<string | null>(null);
@@ -310,6 +318,24 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
     study_hours_per_day: studyHours,
     primary_goal: primaryGoal,
   }), [educationLevel, institution, gradeOrYear, specialization, studyTime, studyHours, primaryGoal]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadInstitutionOptions() {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from("academic_catalog_institutions")
+        .select("name_ar,name_en,institution_type")
+        .eq("country_code", "QA")
+        .eq("is_active", true)
+        .neq("institution_type", "ministry")
+        .order("name_en");
+      if (!active || error) return;
+      setInstitutionOptions((data || []) as CatalogInstitutionOption[]);
+    }
+    void loadInstitutionOptions();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -563,7 +589,7 @@ export default function AcademicSetup({ userId, lang, existingSubjects, onComple
               <strong>{option.label}</strong><i>{educationLevel === option.value ? "✓" : "+"}</i>
             </button>)}
           </div>
-          <label><span>{t.institution}</span><input value={institution} onChange={event => setInstitution(event.target.value)} maxLength={160} placeholder={t.institutionPlaceholder} /></label>
+          <label className="academic-setup-institution"><span>{t.institution}</span><input list={educationLevel === "school" ? undefined : "az-institution-options"} value={institution} onChange={event => setInstitution(event.target.value)} maxLength={160} placeholder={educationLevel === "school" ? t.schoolInstitutionPlaceholder : t.institutionPlaceholder} /><datalist id="az-institution-options">{institutionOptions.map(item => <option key={item.name_en} value={lang === "ar" ? item.name_ar : item.name_en} />)}</datalist><small>{educationLevel === "school" ? t.schoolInstitutionHint : t.institutionHint}</small></label>
           <div className="academic-setup-fields">
             <label><span>{t.grade}</span><select value={gradeOrYear} onChange={event => setGradeOrYear(event.target.value)} disabled={!educationLevel}><option value="">{t.gradePlaceholder}</option>{educationLevel ? gradeOptions[lang][educationLevel].map(value => <option key={value} value={value}>{value}</option>) : null}</select></label>
             <label><span>{t.specialization}</span><input value={specialization} onChange={event => setSpecialization(event.target.value)} maxLength={160} placeholder={t.specializationPlaceholder} /></label>
