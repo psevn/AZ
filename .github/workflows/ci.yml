@@ -109,3 +109,25 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/az_test
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/az_projects_migrations_test.sql
+
+  browser-collaboration:
+    needs: sync-editor-lockfile
+    if: always() && (needs.sync-editor-lockfile.result == 'success' || needs.sync-editor-lockfile.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install AZ dependencies
+        run: npm ci
+      - name: Install collaboration Worker dependencies
+        working-directory: collaboration-worker
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Test the real browser workspace against a local Worker and mock Supabase
+        run: npm run test:e2e
