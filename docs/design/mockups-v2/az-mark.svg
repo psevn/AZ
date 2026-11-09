@@ -1,9 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 490" fill="none" role="img" aria-label="AZ">
   <defs>
-    <linearGradient id="az" x1="7" y1="8" x2="112" y2="64" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#92F9FD"/><stop offset=".28" stop-color="#67DBF3"/><stop offset=".65" stop-color="#0456C0"/><stop offset="1" stop-color="#6501D2"/>
+    <linearGradient id="az-brand" x1="0" y1="245" x2="640" y2="245" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#20E6F2"/>
+      <stop offset="0.34" stop-color="#0879E8"/>
+      <stop offset="0.66" stop-color="#2520D8"/>
+      <stop offset="1" stop-color="#8A00E8"/>
     </linearGradient>
   </defs>
-  <path d="M5 62 29 10h13l24 52H49L35.5 32 22 62H5Z" fill="url(#az)"/>
-  <path d="M57 10h57v10L77 51h37v11H56V52l37-31H57V10Z" fill="url(#az)"/>
+  <path fill="url(#az-brand)" fill-rule="evenodd" d="M221 0 0 489h66l50-108 214-1 35-60L221 0Zm-2 149 77 169-152-1 75-168Z"/>
+  <path fill="url(#az-brand)" d="m292 48 26 60 195 2-210 379h333l-22-61-207-2L625 49 292 48Z"/>
 </svg>

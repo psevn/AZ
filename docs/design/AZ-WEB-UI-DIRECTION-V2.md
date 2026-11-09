@@ -15,7 +15,8 @@ The current web UI feels like a marketing page, not a daily tool. Causes found i
 Modern AI-product pattern (sidebar + central composer + generous whitespace + neutral surfaces), expressed in AZ's own identity. We do **not** copy any other product's exact layout, assets or branding.
 
 - **Surfaces:** neutral dark (`#0E1013` bg, `#0A0C0F` sidebar, `#15181D` cards), light theme warm neutral (`#F7F7F5`). One hairline border colour, no glow, minimal shadow.
-- **Accent:** one colour — cyan `#67DBF3` (dark) / `#0A7C93` (light) — for primary actions and active state only. The AZ gradient appears only in the logo.
+- **Brand colours (from the approved logo `public/az-mark.svg`, commit 90e59cd on `feature/az-projects-mvp`):** gradient `#20E6F2` → `#0879E8` → `#2520D8` → `#8A00E8`. Use: cyan `#20E6F2` (dark) / blue `#0879E8` (light) for active states and checks; the blue→violet gradient for primary buttons and progress bars only; the full gradient in the logo. No other accent colours. (Earlier palette `#67DBF3/#0456C0/#6501D2` came from the placeholder logo and is retired.)
+- **Logo:** the approved geometric monogram, unchanged. `main` still contains the older placeholder mark — the approved file must be brought to `main` with the Projects branch (or cherry-picked) before the UI work ships.
 - **Type:** Inter (Latin) + IBM Plex Sans Arabic (Arabic) — both open-licence fonts per their projects (**[VERIFY]** licence text when added). Self-hosted via npm packages (`@fontsource-variable/inter`, `@fontsource/ibm-plex-sans-arabic`). Mockup renders Arabic with a fallback font; final Arabic look depends on the real font.
 - **Layout:** 264px sidebar (new session, nav, recent), centred composer on Home, Today/Focus/Next-exam cards below. Study screen = document left, structured summary with page references right.
 - **Motion:** only functional transitions; honour `prefers-reduced-motion`.
