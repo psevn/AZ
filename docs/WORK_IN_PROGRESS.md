@@ -19,6 +19,7 @@
 - Added subtle backdrop blur to key Universe-mode surfaces.
 - Reworked the Home hero into a welcome and study prompt with quick task capture; submitting the prompt opens Planning with the text prefilled, while existing focus and planning shortcuts remain available.
 - Added responsive styling for the Home study prompt in narrow layouts.
+- Simplified the sidebar: replaced decorative uppercase rail copy with the AZ mark, added a New session shortcut to Focus, and added an Account shortcut; the logo remains visible when the rail is collapsed.
 
 ### Verification already performed
 - Before the latest UI edits, `npm run build` passed locally after the merge and font installation (Vite production build completed; 67 modules transformed).
@@ -31,7 +32,7 @@
 - Measure rendering performance on the low-memory target device.
 - Check text contrast (WCAG AA) on all cards and overlays in both themes.
 - Review the Home redesign visually in the browser and confirm keyboard/mobile behavior; quick capture currently pre-fills the Planning task title and does not create a task until the user submits the Planning form.
-- Review sidebar details against the approved direction: logo, new-session entry, navigation, account area, and removal of decorative uppercase labels.
+- Verify sidebar behavior visually in expanded/collapsed desktop mode and on mobile, including keyboard focus and account email truncation.
 - Confirm the intended location of `docs/COLLABORATION.md`; it was not found at the repository root or under `docs/` on the checked branch.
 
 ### Safety boundaries
