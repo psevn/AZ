@@ -1266,3 +1266,31 @@ button.primary-button:disabled,
 .subject-form input,
 .focus-select,
 .profile-details span { font-size: 13px; }
+
+
+/* Planning quick capture — compact, preview-first, and theme-aware. */
+.quick-add-panel { margin-bottom:18px; }
+.quick-add-form { display:flex; align-items:stretch; gap:10px; }
+.quick-add-form input {
+ flex:1 1 auto; min-width:0; min-height:46px; padding:11px 14px;
+ border:1px solid var(--line); border-radius:10px; color:var(--text-strong);
+ background:var(--field); font-size:14px;
+}
+.quick-add-form input:focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; }
+.quick-add-form .primary-button { flex:0 0 auto; min-height:46px; padding-inline:18px; }
+.quick-add-preview {
+ display:grid; grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr));
+ gap:10px; margin-top:14px; padding:12px; border:1px solid var(--line);
+ border-radius:10px; background:var(--surface-2);
+}
+.quick-add-preview > div { display:grid; gap:5px; min-width:0; }
+.quick-add-preview span { color:var(--muted); font-size:11px; }
+.quick-add-preview strong { overflow-wrap:anywhere; color:var(--text-strong); font-size:12px; font-weight:550; }
+.quick-add-note,.quick-add-help { margin:10px 0 0; color:var(--muted); font-size:11px; line-height:1.6; }
+.quick-add-note { color:var(--text-strong); }
+@media (max-width:760px) {
+ .quick-add-form { flex-direction:column; }
+ .quick-add-form .primary-button { width:100%; }
+ .quick-add-preview { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .quick-add-preview > div:first-child { grid-column:1 / -1; }
+}

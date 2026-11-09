@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
+import { parseQuickAdd } from "./lib/quickAdd.mjs";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
@@ -60,6 +61,7 @@ export default function App() {
   const [tasks,setTasks] = useState<Task[]>([]);
   const [subjectName,setSubjectName] = useState("");
   const [title,setTitle] = useState("");
+  const [quickText,setQuickText] = useState("");
   const [subjectId,setSubjectId] = useState("");
   const [due,setDue] = useState("");
   const [minutes,setMinutes] = useState("45");
@@ -176,6 +178,7 @@ export default function App() {
     return date < today && task.status !== "done";
   }),[tasks,filter,scope,today]);
   const subjectFor = (id:string|null) => subjects.find(s=>s.id===id)?.name || t.noSubject;
+  const quickPreview = useMemo(() => parseQuickAdd(quickText, subjects), [quickText, subjects]);
   const completedCount = tasks.filter(task=>task.status==="done").length;
   const completionRate = tasks.length ? Math.round(completedCount/tasks.length*100) : 0;
   const openTasks = tasks.filter(task=>task.status!=="done");
@@ -218,6 +221,20 @@ export default function App() {
     else { setTitle(""); setDue(""); setMinutes("45"); setPriority("2"); await loadData(); }
     setBusy(false);
   }
+  async function addQuickTask(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !user || !quickPreview.title.trim()) return;
+    setBusy(true); setError("");
+    const { error: insertError } = await supabase.from("tasks").insert({
+      user_id:user.id, subject_id:quickPreview.subjectId, title:quickPreview.title.trim(),
+      due_at:quickPreview.dueDate ? new Date(quickPreview.dueDate+"T23:59:00").toISOString() : null,
+      priority:quickPreview.priority, est_minutes:quickPreview.estMinutes, status:"todo"
+    });
+    if (insertError) setError(insertError.message);
+    else { setQuickText(""); await loadData(); }
+    setBusy(false);
+  }
+
   async function changeTask(task:Task,status:Task["status"]) {
     if (!supabase) return;
     const {error:e} = await supabase.from("tasks").update({status}).eq("id",task.id);
@@ -315,6 +332,24 @@ export default function App() {
             </section>
           </div>}
           {section==="planning" && <div className="planning-view">
+            <section className="content-panel quick-add-panel">
+              <div className="panel-heading"><div><span className="eyebrow">{ar?"إضافة سريعة":"Quick capture"}</span><h2>{ar?"أضف مهمة بجملة واحدة":"Add a task in one line"}</h2></div><span className="panel-symbol">＋</span></div>
+              <form className="quick-add-form" onSubmit={addQuickTask}>
+                <input type="text" value={quickText} onChange={event=>setQuickText(event.target.value)} maxLength={300}
+                  placeholder={ar?"مثال: مراجعة الفصل غداً #رياضيات !1 45د":"e.g. Review chapter tomorrow #Biology !1 45m"}
+                  aria-label={ar?"اكتب المهمة":"Describe the task"} />
+                <button className="primary-button" type="submit" disabled={busy||!quickPreview.title.trim()}>{busy?t.loading:(ar?"إضافة المهمة":"Add task")} <span>↗</span></button>
+              </form>
+              {quickText.trim() && <div className="quick-add-preview" aria-live="polite">
+                <div><span>{ar?"العنوان":"Title"}</span><strong>{quickPreview.title||(ar?"أضف عنواناً للمهمة":"Add a task title")}</strong></div>
+                <div><span>{t.chooseSubject}</span><strong>{subjectFor(quickPreview.subjectId)}</strong></div>
+                <div><span>{t.due}</span><strong>{quickPreview.dueDate?new Date(quickPreview.dueDate+"T12:00:00").toLocaleDateString(ar?"ar-QA":"en-US"):t.noDue}</strong></div>
+                <div><span>{t.minutes}</span><strong>{quickPreview.estMinutes} {ar?"دقيقة":"min"}</strong></div>
+                <div><span>{t.priority}</span><strong>{quickPreview.priorityToken} · {quickPreview.priority===3?t.high:quickPreview.priority===2?t.medium:t.low}</strong></div>
+                {quickPreview.priorityNotice && <p className="quick-add-note">{ar?"الأولوية بثلاث درجات":"Priority has three levels"}</p>}
+              </div>}
+              <p className="quick-add-help">{ar?"التاريخ: اليوم، غداً، أيام الأسبوع أو 15 Nov · المادة: #اسم · الأولوية: !1 إلى !3 · المدة: 45د أو 45m":"Date: today, tomorrow, weekdays or 15 Nov · Subject: #name · Priority: !1 to !3 · Duration: 45m"}</p>
+            </section>
             <div className="planning-grid">
               <section className="content-panel"><div className="panel-heading"><div><span className="eyebrow">{ar?"أنشئ خطتك":"Create your plan"}</span><h2>{t.addTask}</h2></div><span className="panel-symbol">＋</span></div>
                 <form className="task-form" onSubmit={addTask}>
