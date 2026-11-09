@@ -101,7 +101,7 @@ begin
     null;
   end;
 end;
-$;
+$$;
 rollback;
 
 select 'course catalog migration tests passed' as result;
