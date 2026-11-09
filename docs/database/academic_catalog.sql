@@ -370,7 +370,7 @@ from (values
   ('AIE 641','الأخلاقيات الإسلامية والذكاء الاصطناعي','Islamic Ethics and Artificial Intelligence',array['AI Ethics']::text[],3::numeric,'This course focuses on moral questions raised by artificial intelligence, governance, philosophical foundations, and applied ethical issues.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027'),
   ('AIE 660','دراسة موجهة','Tutorial',array[]::text[],3::numeric,'One-on-one supervised reading and discussion of key writings in Islamic Ethics.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027'),
   ('AIE 661','تدريب عملي','Internship',array[]::text[],3::numeric,'A tailored internship program connected to students’ future work plans and approved institutions.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027'),
-  ('AIE 695','ساعات رسالة الماجستير','Master''s Thesis Hours',array['Thesis']::text[],null::numeric,'Master’s thesis research hours.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027'),
+  ('AIE 695','ساعات رسالة الماجستير','Master''s Thesis Hours',array['Thesis']::text[],null::numeric,'Master’s thesis research hours.','https://catalog.hbku.edu.qa/course-descriptions/aie/','HBKU Academic Catalog 2026-2027')
 ) as seed(course_code,name_ar,name_en,aliases,credit_hours,description_en,source_url,source_name)
 join public.academic_catalog_institutions i on i.country_code='QA' and i.slug='hbku'
 where not exists (
