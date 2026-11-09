@@ -56,9 +56,6 @@ insert into auth.users (id,email) values
 begin;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
-select current_user as db_role, current_setting('request.jwt.claim.sub',true) as jwt_sub, auth.uid() as auth_uid;
-insert into public.projects (created_by,title)
-values (auth.uid(),'CI direct RLS probe');
 select public.create_project('CI collaboration project','migration contract test',null,null);
 commit;
 
