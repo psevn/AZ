@@ -65,6 +65,6 @@ The end-to-end test creates a test-signed ticket and exercises the `/collab/:doc
 - Add membership revocation and test that removed members lose access to existing sockets promptly.
 - Test persistence after forced Durable Object eviction/restart, not only client reconnect.
 - Verify Arabic RTL, English LTR, mixed-direction text, keyboard accessibility, and mobile widths in a browser.
-- Recover the missing SQL migration files from the live project history before production deployment.
+- Recover the eleven remaining historical SQL migration files before any clean database rebuild or production deployment. The four AZ Projects migrations have schema-equivalent reconstructions documented in `docs/technical/SUPABASE-MIGRATION-RECOVERY.md`.
 - Review Durable Object cost, limits, and Hibernation API compatibility.
 - Deploy only after these acceptance checks pass and the owner explicitly approves deployment and migration application.
