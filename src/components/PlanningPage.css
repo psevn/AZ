@@ -85,3 +85,37 @@
 @media(hover:none){.plan-task-actions{opacity:1}}
 @media(max-width:680px){.planning-page{padding-top:0}.planning-topline{margin-bottom:14px}.plan-quick-add{top:6px;min-height:50px}.plan-tabs{gap:17px;margin-top:18px}.plan-subject-strip{align-items:flex-start}.plan-subject-chips{padding-bottom:5px}.plan-task{gap:9px;padding-inline:5px}.plan-task-actions{opacity:1}.plan-drawer{width:100%;padding:20px}.plan-toast{bottom:12px;max-width:calc(100vw - 32px);white-space:normal}}
 @media(prefers-reduced-motion:reduce){.planning-page *,.planning-page *:before,.planning-page *:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+
+/* Planning polish: quiet rows, accessible priority rings, and unclipped menus. */
+.plan-planned-total{margin:5px 0 0;color:var(--text-muted,#858b96);font-size:11px;font-weight:450}
+.plan-task-wrap{overflow:visible;max-height:120px}
+.plan-task-wrap.is-completing{overflow:hidden}
+.plan-task{border-inline-start:1px solid transparent}
+.plan-task:hover{border-inline-start-color:transparent}
+.plan-check{width:22px;height:22px;min-width:22px;min-height:22px;border:2px solid var(--priority-color,rgba(145,155,175,.55))}
+.priority-p1{--priority-color:#f06464}
+.priority-p2{--priority-color:#e99a48}
+.priority-p3{--priority-color:#398de8}
+.priority-p0{--priority-color:rgba(145,155,175,.55)}
+.plan-task-main small:empty{display:none}
+.plan-task-actions{gap:3px}
+.plan-icon-action{width:40px;height:40px;min-width:40px;min-height:40px}
+.plan-menu{max-height:220px;overflow:auto}
+.done-day-group h3{color:var(--text-secondary,#a5a9b2)}
+.plan-task-wrap:focus-visible{outline:2px solid rgba(32,230,242,.55);outline-offset:2px;border-radius:11px}
+.plan-drawer input[type=text]{min-height:42px}
+@media(max-width:767px){
+  .plan-drawer-backdrop{align-items:flex-end;justify-content:stretch}
+  .plan-drawer{width:100%;height:min(82dvh,760px);max-height:82dvh;border:1px solid rgba(140,150,170,.2);border-bottom:0;border-radius:18px 18px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -18px 50px rgba(0,0,0,.24);animation:plan-sheet-in .22s ease both}
+  .plan-drawer-head{position:sticky;top:-20px;padding:12px 0 15px;background:var(--surface-strong,#171a20);z-index:2}
+  .plan-drawer label{margin-bottom:14px}
+  .plan-drawer input,.plan-drawer select,.plan-drawer textarea{min-height:44px;font-size:16px}
+  .plan-check{width:44px;height:44px;min-width:44px;min-height:44px;border-width:2px}
+  .plan-task{gap:8px;min-height:60px}
+  .plan-task-actions{gap:2px}
+  .plan-icon-action{width:44px;height:44px;min-width:44px;min-height:44px}
+  .plan-quick-add{min-height:56px;top:4px}
+  .plan-quick-add input{font-size:16px}
+}
+@keyframes plan-sheet-in{from{transform:translateY(22px);opacity:.7}to{transform:translateY(0);opacity:1}}
