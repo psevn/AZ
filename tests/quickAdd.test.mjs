@@ -34,3 +34,8 @@ test("defaults match existing task form",()=>{
 test("unsupported !0 stays in title",()=>{
  const r=parseQuickAdd("Review !0 later",[],now); assert.equal(r.title,"Review !0 later"); assert.equal(r.priority,2);
 });
+
+test("explicit !3 maps to the existing low-priority database value",()=>{
+ const r=parseQuickAdd("Review notes !3",[],now);
+ assert.equal(r.priority,1); assert.equal(r.priorityToken,"!3"); assert.equal(r.priorityNotice,false);
+});
