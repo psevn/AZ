@@ -913,3 +913,36 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .brand-word { letter-spacing: .04em; font-weight: 650; }
 .primary-button { background: linear-gradient(100deg, #0879E8 0%, #2520D8 62%, #8A00E8 100%); color: #fff; box-shadow: none; }
 .primary-button:hover:not(:disabled) { filter: brightness(1.08); }
+
+
+/* Calm background refinements: static corner light in Plain, quiet depth in Universe. */
+.app-shell.bg-plain,
+.app-shell.bg-plain.theme-light {
+  background:
+    radial-gradient(ellipse at 8% 8%, rgba(32,230,242,.07), transparent 34%),
+    radial-gradient(ellipse at 94% 92%, rgba(138,0,232,.065), transparent 36%),
+    var(--bg);
+}
+.bg-plain .home-hero {
+  border-color: var(--line);
+  background: linear-gradient(145deg, var(--surface-2), var(--surface-1));
+  box-shadow: var(--elevation-1);
+}
+.bg-plain .home-hero-copy h2 { color: var(--text-strong); }
+.bg-plain .home-hero-description { color: var(--muted); }
+
+.bg-universe .content-panel,
+.bg-universe .home-progress-panel,
+.bg-universe .home-next-panel,
+.bg-universe .workspace-rail,
+.bg-universe .auth-card,
+.bg-universe .setup-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.theme-light.bg-universe .content-panel,
+.theme-light.bg-universe .home-progress-panel,
+.theme-light.bg-universe .home-next-panel,
+.theme-light.bg-universe .workspace-rail {
+  background-color: rgba(255,255,255,.9);
+}
