@@ -19,7 +19,7 @@ const catalog: CatalogItem[] = [
     ["الجغرافيا","Geography","جغرافيا","Geography"],["التربية الإسلامية","Islamic Studies","اسلامية","Islamic"],
     ["تاريخ قطر","Qatar History","تاريخ قطر","Qatar history"],["تقنية المعلومات","Information Technology","الحاسوب","IT"],
     ["التربية البدنية","Physical Education","رياضة","PE"],["الفنون","Art","فنون","Art"]
-  ].map(([ar,en,a,b])=>({name:ar,group:"school",level:"school" as const,aliases:[en,a,b]})),
+  ].map(([ar,en,a,b])=>({name:ar,code:undefined,group:"school",level:"school" as const,aliases:[en,a,b]})),
   ...[
     ["مقدمة في البرمجة","Introduction to Programming","CS 101","programming"],
     ["هياكل البيانات","Data Structures","CS 201","data structures"],
