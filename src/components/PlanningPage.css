@@ -181,3 +181,7 @@
 .theme-light .plan-task-main .is-overdue,
 .theme-light .overdue-group h3 { color:#B42332; }
 .planning-page .plan-task-main { color:inherit; }
+
+/* Dark theme subject colors remain distinct while meeting WCAG AA on the dark surface. */
+.app-shell:not(.theme-light) .exam-countdown,
+.app-shell:not(.theme-light) .plan-meta-subject { color:color-mix(in srgb,var(--subject-color) 45%,#FFFFFF); }

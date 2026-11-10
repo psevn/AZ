@@ -273,7 +273,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .content-panel { padding:clamp(20px,2.7vw,30px); border:1px solid var(--line); border-radius:21px; background:var(--panel); box-shadow:0 18px 50px rgba(0,0,0,.09); }
 .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:22px; }
 .panel-heading h2 { margin:9px 0 0; font-size:21px; font-weight:600; }
-.text-action { border:0; background:transparent; color:var(--accent); font-size:12px; }
+.text-action { font-size:12px; }
 .task-list { display:grid; gap:8px; }
 .task-row { display:flex; align-items:center; gap:13px; min-width:0; padding:14px 12px; border:1px solid var(--line); border-radius:13px; background:color-mix(in srgb,var(--panel-solid) 48%,transparent); }
 .task-priority { width:3px; height:29px; flex:0 0 auto; border-radius:5px; background:#20E6F2; }
@@ -496,8 +496,8 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .home-hero-description { max-width:410px; margin:0; color:#a6b5cc; font-size:13px; line-height:1.9; }
 .home-hero-actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-top:27px; }
 .home-hero-actions .primary-button { display:inline-flex; align-items:center; gap:22px; }
-.home-secondary-action { display:inline-flex; align-items:center; gap:9px; min-height:44px; padding:10px 13px; border:1px solid rgba(151,187,231,.2); border-radius:12px; color:#c2d0e5; background:rgba(9,20,40,.36); font-size:12px; transition:background .2s,border-color .2s; }
-.home-secondary-action:hover { border-color:rgba(32,230,242,.48); background:rgba(32,230,242,.07); }
+.home-secondary-action { display:inline-flex; align-items:center; gap:9px; min-height:44px; padding:10px 13px; font-size:12px; }
+
 .play-mark { display:grid; place-items:center; width:21px; height:21px; border-radius:50%; color:#20E6F2; background:rgba(32,230,242,.12); font-size:8px; }
 .home-universe-visual { position:relative; min-height:285px; height:100%; display:grid; place-items:center; overflow:hidden; isolation:isolate; }
 .universe-nebula { position:absolute; border-radius:50%; filter:blur(38px); pointer-events:none; }
@@ -520,7 +520,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .label-plan { top:17%; left:10%; }.label-study { top:53%; right:4%; }.label-grow { bottom:12%; left:37%; }
 .universe-coordinate { color:rgba(139,169,207,.4); font-size:7px; letter-spacing:.16em; }.coordinate-top { top:5%; right:8%; }.coordinate-bottom { bottom:4%; right:7%; }
 .home-overview { display:grid; grid-template-columns:minmax(230px,.72fr) minmax(0,1.5fr); gap:18px; align-items:stretch; }
-.home-progress-panel,.home-next-panel { min-width:0; padding:clamp(20px,2.5vw,28px); border:1px solid var(--line); border-radius:22px; background:linear-gradient(145deg,var(--surface-2),var(--surface-1)); box-shadow:var(--elevation-1); }
+.home-progress-panel,.home-next-panel { min-width:0; padding:clamp(20px,2.5vw,28px); }
 .home-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
 .home-section-heading h2 { margin:8px 0 0; font-size:19px; font-weight:600; }
 .progress-orbit-icon { display:grid; place-items:center; width:34px; height:34px; border:1px solid rgba(32,230,242,.25); border-radius:50%; color:var(--accent); box-shadow:0 0 22px rgba(32,230,242,.08); }
@@ -536,7 +536,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .home-metrics span { color:var(--muted); font-size:12px; letter-spacing:.08em; }
 .home-next-panel .home-section-heading { margin-bottom:16px; }
 .home-next-panel .task-row { border-color:color-mix(in srgb,var(--line) 80%,transparent); background:color-mix(in srgb,var(--panel-solid) 42%,transparent); }
-.home-empty-action { margin-top:10px; padding:8px 12px; border:1px solid var(--line); border-radius:9px; color:var(--accent); background:transparent; font-size:12px; }
+.home-empty-action { margin-top:10px; }
 @media (max-width:1000px) {
   .home-hero { grid-template-columns:minmax(0,1fr) minmax(230px,.8fr); }
   .home-overview { grid-template-columns:1fr; }
@@ -911,35 +911,14 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   width: min(100%, 560px);
   margin-top: 18px;
   padding: 6px;
-  border: 1px solid var(--border-strong);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--panel-solid) 88%, transparent);
-  box-shadow: var(--elevation-1);
 }
-.home-study-input input {
-  flex: 1 1 auto;
-  width: 0;
-  min-width: 0;
-  padding: 11px 12px;
-  border: 0;
-  outline: 0;
-  color: var(--text-strong);
-  background: transparent;
-  font-size: 13px;
-}
-.home-study-input input::placeholder { color: var(--muted); opacity: .9; }
-.home-study-input input:focus-visible { box-shadow: inset 0 0 0 1px var(--focus-ring); border-radius: 8px; }
-.home-study-input .primary-button {
-  flex: 0 0 auto;
-  padding: 11px 14px;
-  font-size:12px;
-  white-space: nowrap;
-}
-.bg-plain .home-study-input { background: var(--surface-2); }
+.home-study-input .az-input { flex: 1 1 auto; width: 0; min-width: 0; border:0; background:transparent; box-shadow:none; }
+.home-study-input .az-btn { flex:0 0 auto; white-space:nowrap; }
+
 @media (max-width:680px) {
   .home-study-input { flex-direction: column; gap: 5px; }
-  .home-study-input input { width: 100%; min-height: 42px; }
-  .home-study-input .primary-button { min-height: 42px; }
+  .home-study-input .az-input { width: 100%; min-height: 44px; }
+  .home-study-input .az-btn { min-height: 44px; }
 }
 
 
@@ -1079,12 +1058,6 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .home-next-panel,
 .home-progress-panel,
 .home-next-panel,
-.home-dashboard-card {
-  border: 1px solid var(--line) !important;
-  border-radius: 14px !important;
-  background: var(--panel-solid) !important;
-  box-shadow: none !important;
-}
 .task-row,
 .subject-row { border-color: var(--line) !important; box-shadow: none !important; }
 .progress-orbit-icon { border-color: var(--line); box-shadow: none; }
@@ -1159,15 +1132,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .home-dashboard-card > span { color: var(--muted); font-size: 13px; }
 .home-dashboard-card > strong { color: var(--text-strong); font-size: 25px; font-weight: 580; }
 .home-dashboard-card > small { color: var(--muted); font-size: 12px; }
-.home-dashboard-card > button {
-  justify-self: start;
-  margin-top: 2px;
-  padding: 5px 0;
-  border: 0;
-  color: var(--text-strong);
-  background: transparent;
-  font-size: 12px;
-}
+.home-dashboard-card > button { justify-self: start; margin-top: 2px; }
 .home-overview { grid-template-columns: minmax(230px,.72fr) minmax(0,1.5fr); }
 
 /* Clear disabled controls and consistent, readable form labels. */
@@ -1273,3 +1238,18 @@ button.primary-button:disabled,
 
 /* Home: hide the faint orbit ghost; the universe background is toggled via the sparkle button. */
 .home-universe-visual { display: none !important; }
+
+
+/* Home state surfaces and skeletons; shared components own buttons and cards. */
+.home-offline { padding:8px 12px; border:1px solid var(--border-soft); border-radius:10px; background:var(--surface-2); color:var(--muted); font-size:12px; }
+.home-state { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:14px 16px; border:1px solid var(--border-soft); border-radius:12px; background:var(--surface-1); color:var(--muted); }
+.home-state p { margin:0; }
+.home-skeleton { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.home-skeleton span { display:block; min-height:124px; border:1px solid var(--border-soft); border-radius:14px; background:linear-gradient(90deg,var(--surface-1) 25%,var(--surface-2) 50%,var(--surface-1) 75%); background-size:200% 100%; animation:home-skeleton 1.2s ease-in-out infinite; }
+.home-continue-button { flex:0 0 auto; white-space:nowrap; }
+.home-secondary-action { min-height:44px; }
+.profile-view.az-card { width:100%; }
+.profile-actions .az-btn { min-height:44px; }
+@keyframes home-skeleton { to { background-position:-200% 0; } }
+@media(max-width:680px) { .home-skeleton { grid-template-columns:1fr; } .home-skeleton span { min-height:82px; } .home-state { align-items:stretch; } }
+@media(prefers-reduced-motion:reduce) { .home-skeleton span { animation:none!important; } }

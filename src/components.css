@@ -30,6 +30,7 @@
 .az-btn:hover:not(:disabled) { border-color: var(--border-strong); filter: brightness(1.06); }
 .az-btn:active:not(:disabled) { transform: translateY(1px); }
 .az-btn--primary { border-color: transparent; background: var(--az-gradient-primary); color: #fff; }
+.app-shell:not(.theme-light) .az-btn--primary { background: linear-gradient(100deg,#0668C5 0%,#075EBB 48%,#2520D8 100%); color:#FFFFFF; }
 .az-btn--ghost { border-color: transparent; background: transparent; color: var(--muted); }
 .az-btn--danger { border-color: rgba(255,107,107,.35); color: #FF6B6B; }
 .az-btn:disabled { border-color: var(--border-soft); background: var(--panel-solid); color: var(--muted); opacity: .55; cursor: not-allowed; }
