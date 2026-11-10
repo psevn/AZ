@@ -21,7 +21,7 @@ for (const vp of ["desktop", "mobile"]) {
 }
 
 const names = ["home", "planning", "az", "me"];
-const report = { base, startedAt: new Date().toISOString(), shots: [], componentStates: [], problems: [] };
+const report = { base, startedAt: new Date().toISOString(), shots: [], stateShots: [], componentStates: [], problems: [] };
 const browser = await chromium.launch();
 
 for (const r of runs) {
@@ -135,13 +135,40 @@ for (const r of runs) {
   } catch (e) {
     report.problems.push({ tag, kind: "component-fixture", message: String(e).slice(0, 300) });
   }
+  // Exercise real PlanningPage loading, empty and error branches with demo fixtures.
+  for (const state of ["loading", "empty", "error"]) {
+    try {
+      await page.goto(`${base}/?qa-planning-state=${state}`, { waitUntil: "networkidle" });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+      await page.waitForTimeout(250);
+      const file = `${tag}-planning-${state}.png`;
+      await page.screenshot({ path: `${out}/${file}`, fullPage: true });
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      report.stateShots.push({ file, section: "planning", state, horizontalOverflow: overflow });
+    } catch (e) {
+      report.problems.push({ tag, kind: "planning-state", state, message: String(e).slice(0, 300) });
+    }
+  }
+  // Offline remains a small, non-blocking banner.
+  try {
+    await page.context().setOffline(true);
+    await page.goto(base, { waitUntil: "networkidle" });
+    await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    await page.waitForTimeout(150);
+    const offlineVisible = await page.locator(".plan-offline").isVisible().catch(() => false);
+    if (!offlineVisible) report.problems.push({ tag, kind: "offline-banner", message: "Offline banner was not visible after network loss." });
+    await page.context().setOffline(false);
+  } catch (e) {
+    await page.context().setOffline(false).catch(() => {});
+    report.problems.push({ tag, kind: "offline-banner", message: String(e).slice(0, 300) });
+  }
   await ctx.close();
 }
 
 await browser.close();
 report.finishedAt = new Date().toISOString();
 await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
-console.log(`shots: ${report.shots.length}, component states: ${report.componentStates.length}, problems: ${report.problems.length}, overflow: ${report.shots.filter((s) => s.horizontalOverflow).length}`);
+console.log(`shots: ${report.shots.length}, state shots: ${report.stateShots.length}, component states: ${report.componentStates.length}, problems: ${report.problems.length}, overflow: ${report.shots.concat(report.stateShots).filter((s) => s.horizontalOverflow).length}`);
 if (report.problems.length > 0) {
   throw new Error(`Visual QA failed with ${report.problems.length} problem(s). See report.json for details.`);
 }
