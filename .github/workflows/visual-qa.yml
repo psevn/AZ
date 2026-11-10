@@ -7,7 +7,7 @@ on:
     branches: ["design/**", "feature/azi-intelligence-core"]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write # only to publish screenshots to the visual-qa/* branch
 jobs:
   screenshots:
     runs-on: ubuntu-latest
@@ -29,6 +29,17 @@ jobs:
           npx vite preview --host 127.0.0.1 --port 4173 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173 >/dev/null && break; sleep 1; done
           node scripts/visual-qa.mjs http://127.0.0.1:4173 visual-qa-output
+      - name: Publish screenshots to a review branch (so they can be reviewed from git)
+        if: always()
+        run: |
+          cd visual-qa-output
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b vqa
+          git add -A
+          git commit -q -m "visual QA screenshots for ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "vqa:refs/heads/visual-qa/${{ github.ref_name }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
