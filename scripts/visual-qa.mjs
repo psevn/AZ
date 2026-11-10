@@ -96,22 +96,26 @@ for (const r of runs) {
 
     const hover = page.locator("#qa-hover");
     await hover.hover();
+    const hoverState = await hover.evaluate((el) => ({
+      hovered: el.matches(":hover"),
+      filter: getComputedStyle(el).filter,
+    }));
     await page.keyboard.press("Tab");
     await page.locator("#qa-input").focus();
-    const state = await page.evaluate(() => {
-      const hoverButton = document.querySelector("#qa-hover");
+    const state = await page.evaluate((hoverState) => {
       const input = document.querySelector("#qa-input");
       const disabled = document.querySelector("#qa-disabled");
       return {
-        hoverFilter: getComputedStyle(hoverButton).filter,
+        hoverMatched: hoverState.hovered,
+        hoverFilter: hoverState.filter,
         inputFocusVisible: input.matches(":focus-visible"),
         inputFocusShadow: getComputedStyle(input).boxShadow,
         disabled: disabled.disabled,
         disabledCursor: getComputedStyle(disabled).cursor,
-        buttonMinHeight: getComputedStyle(hoverButton).minHeight,
+        buttonMinHeight: getComputedStyle(document.querySelector("#qa-hover")).minHeight,
       };
-    });
-    if (state.hoverFilter === "none") report.problems.push({ tag, kind: "component-hover", message: "Primary button hover filter was not applied." });
+    }, hoverState);
+    if (!state.hoverMatched || state.hoverFilter === "none" || state.hoverFilter === "brightness(1)") report.problems.push({ tag, kind: "component-hover", message: `Primary button hover effect missing or unchanged: ${JSON.stringify(hoverState)}` });
     if (!state.inputFocusVisible || state.inputFocusShadow === "none") report.problems.push({ tag, kind: "component-focus", message: `Input focus-visible ring missing: ${JSON.stringify(state)}` });
     if (!state.disabled || state.disabledCursor !== "not-allowed") report.problems.push({ tag, kind: "component-disabled", message: `Disabled button state incorrect: ${JSON.stringify(state)}` });
     if (r.vp === "mobile" && Number.parseFloat(state.buttonMinHeight) < 44) report.problems.push({ tag, kind: "component-touch-target", message: `Mobile button is below 44px: ${state.buttonMinHeight}` });
