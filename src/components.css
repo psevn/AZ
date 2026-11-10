@@ -1,0 +1,132 @@
+/* AZ core component primitives.
+   Opt-in classes only: existing page markup and styles remain unchanged until migrated.
+   Keep these primitives presentation-only; behavior belongs to the owning React components. */
+
+:where(.app-shell) :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--az-focus-shadow);
+}
+
+/* Button */
+.az-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--az-space-2);
+  min-height: 40px;
+  padding: 0 var(--az-space-4);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--az-radius-sm);
+  background: var(--panel-solid);
+  color: var(--text);
+  font: 500 var(--az-text-sm)/1 var(--az-font-sans);
+  cursor: pointer;
+  transition: background var(--az-motion-fast), border-color var(--az-motion-fast), filter var(--az-motion-fast), transform var(--az-motion-fast);
+}
+.az-btn:hover:not(:disabled) { border-color: var(--border-strong); filter: brightness(1.06); }
+.az-btn:active:not(:disabled) { transform: translateY(1px); }
+.az-btn--primary { border-color: transparent; background: var(--az-gradient-primary); color: #fff; }
+.az-btn--ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.az-btn--danger { border-color: rgba(255,107,107,.35); color: #FF6B6B; }
+.az-btn:disabled { border-color: var(--border-soft); background: var(--panel-solid); color: var(--muted); opacity: .55; cursor: not-allowed; }
+.az-btn--primary:disabled { background: var(--panel-solid); }
+
+/* Input */
+.az-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--az-space-4);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--az-radius-sm);
+  background: var(--field, var(--panel-solid));
+  color: var(--text);
+  font: 400 var(--az-text-md)/1.4 var(--az-font-sans);
+  transition: border-color var(--az-motion-fast);
+}
+.az-input::placeholder { color: var(--muted); }
+.az-input:hover { border-color: var(--border-strong); }
+
+/* Chip / selectable filter */
+.az-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--az-space-2);
+  min-height: 32px;
+  padding: 0 var(--az-space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: 500 var(--az-text-sm)/1 var(--az-font-sans);
+  cursor: pointer;
+  transition: background var(--az-motion-fast), color var(--az-motion-fast), border-color var(--az-motion-fast);
+}
+.az-chip[aria-pressed="true"], .az-chip.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+}
+
+/* Card */
+.az-card {
+  padding: var(--az-space-5);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--az-radius-lg);
+  background: var(--surface-1, var(--panel-solid));
+  color: var(--text);
+  box-shadow: var(--elevation-1, none);
+}
+
+/* Tabs — pair with role="tablist", role="tab" and aria-selected. */
+.az-tabs { display: flex; gap: var(--az-space-5); border-bottom: 1px solid var(--border-soft); }
+.az-tab {
+  min-height: 40px;
+  padding: var(--az-space-3) 0;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: 500 var(--az-text-md)/1 var(--az-font-sans);
+  cursor: pointer;
+}
+.az-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--text); }
+
+/* Popover surface — positioning and dismissal remain the responsibility of the caller. */
+.az-popover {
+  padding: var(--az-space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--az-radius-md);
+  background: var(--panel-solid);
+  color: var(--text);
+  box-shadow: var(--elevation-2, 0 12px 32px rgba(0,0,0,.28));
+}
+
+/* Toast surface — caller supplies role="status" and aria-live="polite". */
+.az-toast {
+  position: fixed;
+  inset-inline: 0;
+  bottom: var(--az-space-5);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--az-space-4);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin-inline: auto;
+  padding: var(--az-space-3) var(--az-space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--az-radius-md);
+  background: var(--panel-solid);
+  color: var(--text);
+  font-size: var(--az-text-sm);
+  box-shadow: var(--elevation-2, 0 12px 32px rgba(0,0,0,.28));
+}
+
+@media (max-width: 767px) {
+  .az-btn, .az-input, .az-tab { min-height: var(--az-touch-min); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .az-btn, .az-input, .az-chip { transition: none; }
+}
