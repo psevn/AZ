@@ -134,7 +134,7 @@
 
 /* Light theme: subject colours used as text must stay readable on white (WCAG AA). */
 .theme-light .exam-countdown,
-.theme-light .plan-meta-subject{color:color-mix(in srgb,var(--subject-color,#0879E8) 55%,#101B32)}
+.theme-light .plan-meta-subject{color:color-mix(in srgb,var(--subject-color,#0668C5) 45%,#101B32)}
 
 
 /* Step 24 Planning: shared primitives own component surfaces; this file keeps page layout. */
@@ -177,3 +177,7 @@
   .planning-page .plan-check,.planning-page .plan-icon-action { min-height:44px; min-width:44px; }
   .planning-page .plan-document-chip { min-height:32px; }
 }
+
+.theme-light .plan-task-main .is-overdue,
+.theme-light .overdue-group h3 { color:#B42332; }
+.planning-page .plan-task-main { color:inherit; }
