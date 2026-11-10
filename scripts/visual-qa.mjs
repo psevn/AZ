@@ -165,7 +165,7 @@ for (const r of runs) {
   }
 
   // Exercise the Quiz screen states in both themes, languages and viewport sizes.
-  for (const state of ["question", "feedback", "result", "empty", "error", "loading"]) {
+  for (const state of ["setup", "question", "feedback", "result", "empty", "error", "loading"]) {
     try {
       await page.goto(`${base}/?qa-quiz-state=${state}`, { waitUntil: "networkidle" });
       await page.locator(".home-quiz-action").click({ timeout: 6000 });
@@ -182,12 +182,26 @@ for (const r of runs) {
       report.problems.push({ tag, kind: "quiz-state", state, message: String(e).slice(0, 300) });
     }
   }
-  // Verify number-key selection and Enter confirmation on the live question interaction.
+
+  // Confirm Planning has its own Short quiz entry point.
+  if (r.vp === "desktop" && r.lang === "en" && r.theme === "dark" && r.bg === "plain") {
+    try {
+      await page.goto(base, { waitUntil: "networkidle" });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+      await page.locator(".plan-short-quiz").click({ timeout: 4000 });
+      await page.locator(".quiz-page").waitFor({ timeout: 4000 });
+    } catch (e) {
+      report.problems.push({ tag, kind: "quiz-planning-entry", message: String(e).slice(0, 300) });
+    }
+  }
+
+  // Verify number-key selection and Enter confirmation on the demo question interaction.
   if (r.vp === "desktop" && r.lang === "en" && r.theme === "dark" && r.bg === "plain") {
     try {
       await page.goto(base, { waitUntil: "networkidle" });
       await page.locator(".home-quiz-action").click({ timeout: 6000 });
       await page.locator(".quiz-page").waitFor();
+      await page.locator(".quiz-start").click({ timeout: 4000 });
       await page.locator(".quiz-choice").first().waitFor();
       await page.keyboard.press("1");
       const selected = await page.locator(".quiz-choice").first().getAttribute("aria-checked");
