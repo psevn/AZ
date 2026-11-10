@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseQuickAdd } from "../src/lib/quickAdd.mjs";
-import { qatarDateKey, addCalendarDays, qatarDateTimeToIso, qatarWeekday, formatQatarDate } from "../src/lib/qatarTime.mjs";
+import { qatarDateKey, addCalendarDays, qatarDateTimeToIso, qatarWeekday, formatQatarDate, nearestUpcomingExam } from "../src/lib/qatarTime.mjs";
 
 const now = new Date("2026-11-09T09:00:00.000Z"); // 12:00 in Qatar
 const subjects = [
@@ -103,4 +103,32 @@ test("Qatar calendar math is host-timezone independent", () => {
 test("Qatar date formatting keeps the calendar day and Western digits", () => {
   assert.equal(formatQatarDate("2026-11-16", "en-GB", { weekday: "long", day: "numeric", month: "long" }), "Monday 16 November");
   assert.match(formatQatarDate("2026-11-16", "ar-QA", { day: "numeric", month: "long" }), /16/u);
+});
+
+
+test("Nearest upcoming exam ignores past and undated subjects and chooses the earliest date", () => {
+  const subjectsWithExams = [
+    { id: "past", name: "Past", exam_date: "2026-11-09" },
+    { id: "later", name: "Later", exam_date: "2026-11-20" },
+    { id: "undated", name: "Undated", exam_date: null },
+    { id: "nearest", name: "Nearest", exam_date: "2026-11-12" },
+  ];
+  assert.equal(nearestUpcomingExam(subjectsWithExams, "2026-11-10")?.id, "nearest");
+});
+
+test("Nearest upcoming exam includes an exam today and returns null when none remain", () => {
+  const subjectsWithExams = [
+    { id: "today", name: "Today", exam_date: "2026-11-10" },
+    { id: "past", name: "Past", exam_date: "2026-11-09" },
+  ];
+  assert.equal(nearestUpcomingExam(subjectsWithExams, "2026-11-10")?.id, "today");
+  assert.equal(nearestUpcomingExam(subjectsWithExams, "2026-11-11"), null);
+});
+
+test("Nearest upcoming exam ignores malformed date values", () => {
+  const subjectsWithExams = [
+    { id: "invalid", name: "Invalid", exam_date: "next Friday" },
+    { id: "valid", name: "Valid", exam_date: "2026-11-15" },
+  ];
+  assert.equal(nearestUpcomingExam(subjectsWithExams, "2026-11-10")?.id, "valid");
 });
