@@ -41,7 +41,7 @@ test("completed tasks and focus sessions count only within the seven-day window"
     ],
     focusSessions: [
       { started_at: "2026-11-09T09:00:00.000Z", ended_at: "2026-11-09T10:30:00.000Z" },
-      { started_at: "2026-11-02T09:00:00.000Z", ended_at: "2026-11-02T09:25:00.000Z" },
+      { started_at: "2026-11-03T09:00:00.000Z", ended_at: "2026-11-03T09:25:00.000Z" },
       { started_at: "2026-11-09T11:00:00.000Z", ended_at: "2026-11-09T10:00:00.000Z" },
     ],
   });
