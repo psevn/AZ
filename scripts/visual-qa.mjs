@@ -151,6 +151,9 @@ for (const r of runs) {
   }
   // Check the light-theme accent and demo subject-label colors against the page surface.
   if (r.theme === "light") {
+    await page.goto(base, { waitUntil: "networkidle" });
+    await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    await page.waitForTimeout(150);
     const contrast = await page.evaluate(() => {
       const rgb = (value) => {
         if (value.startsWith("#")) {
