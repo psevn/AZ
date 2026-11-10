@@ -96,12 +96,20 @@ for (const r of runs) {
 
     const hover = page.locator("#qa-hover");
     await hover.hover();
-    // Let the 140ms CSS transition finish before reading the computed hover filter.
-    await page.waitForTimeout(200);
-    const hoverState = await hover.evaluate((el) => ({
-      hovered: el.matches(":hover"),
-      filter: getComputedStyle(el).filter,
-    }));
+    // Wait for the browser to finish the CSS transition; fixed sleeps can be too short on busy CI workers.
+    await page.waitForFunction(() => {
+      const el = document.querySelector("#qa-hover");
+      return !!el && el.matches(":hover") && getComputedStyle(el).filter === "brightness(1.06)";
+    }, null, { timeout: 1200 }).catch(() => {});
+    const hoverState = await hover.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        hovered: el.matches(":hover"),
+        filter: style.filter,
+        transitionDuration: style.transitionDuration,
+        transitionDelay: style.transitionDelay,
+      };
+    });
     await page.keyboard.press("Tab");
     await page.locator("#qa-input").focus();
     const state = await page.evaluate((hoverState) => {
