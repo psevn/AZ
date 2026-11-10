@@ -150,6 +150,19 @@ for (const r of runs) {
       report.problems.push({ tag, kind: "planning-state", state, message: String(e).slice(0, 300) });
     }
   }
+  // Exercise Home loading, empty and error branches using demo-only fixtures.
+  for (const state of ["loading", "empty", "error"]) {
+    try {
+      await page.goto(`${base}/?qa-home-state=${state}`, { waitUntil: "networkidle" });
+      await page.waitForTimeout(250);
+      const file = `${tag}-home-${state}.png`;
+      await page.screenshot({ path: `${out}/${file}`, fullPage: true });
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      report.stateShots.push({ file, section: "home", state, horizontalOverflow: overflow });
+    } catch (e) {
+      report.problems.push({ tag, kind: "home-state", state, message: String(e).slice(0, 300) });
+    }
+  }
   // Check the light-theme accent and demo subject-label colors against the page surface.
   if (r.theme === "light") {
     await page.goto(base, { waitUntil: "networkidle" });
@@ -190,12 +203,15 @@ for (const r of runs) {
   // Offline remains a small, non-blocking banner.
   try {
     await page.goto(base, { waitUntil: "networkidle" });
-    if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
-      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
     await page.context().setOffline(true);
     await page.waitForTimeout(150);
-    const offlineVisible = await page.locator(".plan-offline").isVisible().catch(() => false);
-    if (!offlineVisible) report.problems.push({ tag, kind: "offline-banner", message: "Offline banner was not visible after the browser context went offline." });
+    const homeOfflineVisible = await page.locator(".home-offline").isVisible().catch(() => false);
+    if (!homeOfflineVisible) report.problems.push({ tag, kind: "home-offline-banner", message: "Home offline banner was not visible after the browser context went offline." });
+    if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
+    await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    await page.waitForTimeout(150);
+    const planningOfflineVisible = await page.locator(".plan-offline").isVisible().catch(() => false);
+    if (!planningOfflineVisible) report.problems.push({ tag, kind: "planning-offline-banner", message: "Planning offline banner was not visible after the browser context went offline." });
     await page.context().setOffline(false);
   } catch (e) {
     await page.context().setOffline(false).catch(() => {});
