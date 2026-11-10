@@ -36,7 +36,7 @@ for (const r of runs) {
   const page = await ctx.newPage();
   const tag = `${r.vp}-${r.lang}-${r.theme}-${r.bg}`;
   page.on("pageerror", (e) => report.problems.push({ tag, kind: "pageerror", message: String(e).slice(0, 300) }));
-  page.on("console", (m) => { if (m.type() === "error") report.problems.push({ tag, kind: "console", message: m.text().slice(0, 300) }); });
+  page.on("console", (m) => { if (m.type() === "error" && !m.text().includes("net::ERR_INTERNET_DISCONNECTED")) report.problems.push({ tag, kind: "console", message: m.text().slice(0, 300) }); });
   await page.goto(base, { waitUntil: "domcontentloaded" });
   for (let i = 0; i < names.length; i++) {
     try {
