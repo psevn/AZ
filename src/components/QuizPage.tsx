@@ -369,7 +369,7 @@ export default function QuizPage({
       </label>
       <div className="quiz-setup-footer">
         <p>{demoMode ? (ar ? "وضع العرض: أسئلة تجريبية بلا مفاتيح إجابة." : "Demo mode: sample questions with no answer keys.") : t.generationUnavailable}</p>
-        <button type="button" className="az-btn az-btn--primary" onClick={startQuiz} disabled={!selectedSubject}>{t.start}</button>
+        <button type="button" className="az-btn az-btn--primary quiz-start" onClick={startQuiz} disabled={!selectedSubject}>{t.start}</button>
       </div>
     </section>}
 
