@@ -1294,3 +1294,17 @@ button.primary-button:disabled,
  .quick-add-preview { grid-template-columns:repeat(2,minmax(0,1fr)); }
  .quick-add-preview > div:first-child { grid-column:1 / -1; }
 }
+
+
+/* Let the progress panel size to its own content instead of stretching beside
+   the longer Next step task list and leaving a large empty lower region. */
+@media (min-width: 1001px) {
+  .home-overview {
+    align-items: start;
+  }
+
+  .home-progress-panel {
+    align-self: start;
+    height: fit-content;
+  }
+}
