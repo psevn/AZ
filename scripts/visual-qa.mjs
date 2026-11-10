@@ -185,7 +185,7 @@ for (const r of runs) {
       };
       const ratio = (a,b) => { const x=luminance(a),y=luminance(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); };
       const shell = document.querySelector(".app-shell");
-      const surface = "#FFFFFF";
+      const surface = theme === "light" ? "#FFFFFF" : "#0E1013";
       const accent = getComputedStyle(shell).getPropertyValue("--accent").trim();
       const accentRatio = ratio(accent, surface);
       const subject = document.querySelector(".plan-meta-subject");
