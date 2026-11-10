@@ -873,7 +873,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
     transform:translateX(-110%); transition:transform .24s ease;
     box-shadow:0 20px 70px rgba(0,0,0,.4);
   }
-  [dir="rtl"] .workspace-rail {
+  .app-shell[dir="rtl"] .workspace-rail {
     left:auto; right:0; transform:translateX(110%);
     border-radius:18px 0 0 18px;
   }
