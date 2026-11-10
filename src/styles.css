@@ -1294,3 +1294,24 @@ button.primary-button:disabled,
  .quick-add-preview { grid-template-columns:repeat(2,minmax(0,1fr)); }
  .quick-add-preview > div:first-child { grid-column:1 / -1; }
 }
+
+
+/* Keep the Home overview cards readable on tablet and mobile widths.
+   This final responsive rule intentionally follows the desktop grid declaration. */
+@media (max-width: 767px) {
+  .home-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-progress-panel,
+  .home-next-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .home-next-panel .task-info strong {
+    max-width: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
