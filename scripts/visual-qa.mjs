@@ -163,7 +163,7 @@ for (const r of runs) {
       report.problems.push({ tag, kind: "home-state", state, message: String(e).slice(0, 300) });
     }
   }
-  // Check the light-theme accent and demo subject-label colors against the page surface.
+  // Check accent, subject-label, primary-action and danger-action contrast in both themes.
   if (r.theme === "light" || r.theme === "dark") {
     await page.goto(base, { waitUntil: "networkidle" });
     if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
