@@ -194,7 +194,7 @@ export default function App() {
     ? (ar ? "لم يُضف موعد اختبار بعد" : "No exam date added yet")
     : nearestExamDays === 0
       ? (ar ? "الاختبار اليوم" : "Exam today")
-      : ar ? `الاختبار بعد ${nearestExamDays} أيام` : `Exam in ${nearestExamDays} days`;
+      : ar ? `الاختبار بعد ${nearestExamDays === 1 ? "يوم واحد" : nearestExamDays === 2 ? "يومين" : nearestExamDays <= 10 ? `${nearestExamDays} أيام` : `${nearestExamDays} يومًا`}` : `Exam in ${nearestExamDays} days`;
   const subjectFor = (id:string|null) => subjects.find(s=>s.id===id)?.name || t.noSubject;
   const completedCount = tasks.filter(task=>task.status==="done").length;
   const completionRate = tasks.length ? Math.round(completedCount/tasks.length*100) : 0;
