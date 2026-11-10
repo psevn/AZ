@@ -3,6 +3,8 @@
 # Demo mode is a build-time flag used only here; it never connects to a real backend.
 name: Visual QA
 on:
+  pull_request:
+    branches: ["design/**"]
   push:
     branches: ["design/**", "feature/azi-intelligence-core"]
   workflow_dispatch:
@@ -19,6 +21,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Test quick-add regressions
+        run: npm run test:quick-add
+      - name: Test Arabic pluralization
+        run: npm run test:arabic-plural
       - run: npm run build
         env:
           VITE_DEMO: "1"

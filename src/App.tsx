@@ -6,6 +6,7 @@ import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
 import PlanningPage from "./components/PlanningPage";
 import { qatarDateKey } from "./lib/qatarTime.mjs";
+import { formatArabicCount } from "./lib/arabicPlural.mjs";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
@@ -306,14 +307,14 @@ export default function App() {
                 <span className="universe-coordinate coordinate-top">AZ · 01</span><span className="universe-coordinate coordinate-bottom">From A to Z</span>
               </div>
             </section>
-            <section className="home-dashboard-cards"><article className="home-dashboard-card"><span>{ar?"مهام اليوم":"Today"}</span><strong>{todayTaskCount}</strong><small>{ar?"مهام بموعد اليوم":"Tasks due today"}</small></article><article className="home-dashboard-card"><span>{ar?"التركيز":"Focus"}</span><strong>{started===null?(ar?"جاهز":"Ready"):clock(elapsed)}</strong><small>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</small><button type="button" onClick={()=>{setSection("az");setPage("focus");}}>{ar?"ابدأ":"Start"} ↗</button></article><article className="home-dashboard-card"><span>{ar?"الاختبار القادم":"Upcoming exam"}</span><strong>{nearestExamLabel}</strong><small>{nearestExam?.name ?? (ar?"لا توجد اختبارات قادمة":"No upcoming exams")}</small></article></section>
+            <section className="home-dashboard-cards"><article className="home-dashboard-card"><span>{ar?"مهام اليوم":"Today"}</span><strong>{todayTaskCount}</strong><small>{ar?formatArabicCount(todayTaskCount,{zero:"لا مهام بموعد اليوم",one:"مهمة واحدة بموعد اليوم",two:"مهمتان بموعد اليوم",few:"مهام بموعد اليوم",many:"مهمة بموعد اليوم"}):"Tasks due today"}</small></article><article className="home-dashboard-card"><span>{ar?"التركيز":"Focus"}</span><strong>{started===null?(ar?"جاهز":"Ready"):clock(elapsed)}</strong><small>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</small><button type="button" onClick={()=>{setSection("az");setPage("focus");}}>{ar?"ابدأ":"Start"} ↗</button></article><article className="home-dashboard-card"><span>{ar?"الاختبار القادم":"Upcoming exam"}</span><strong>{nearestExamLabel}</strong><small>{nearestExam?.name ?? (ar?"لا توجد اختبارات قادمة":"No upcoming exams")}</small></article></section>
             <section className="home-overview">
               <div className="home-progress-panel">
                 <div className="home-section-heading"><div><span className="eyebrow">{ar?"إشارتك اليومية":"Daily progress"}</span><h2>{ar?"تقدّمك":"Your progress"}</h2></div><span className="progress-orbit-icon">✧</span></div>
                 <div className="progress-summary"><div className="progress-number"><strong>{completionRate}<small>%</small></strong><span>{ar?"من إجمالي المهام مكتمل":"of all tasks completed"}</span></div><div className="progress-track home-progress-track"><i style={{width:completionRate+"%"}}/></div></div>
                 <div className="home-metrics">
                   <div><strong>{String(tasks.length).padStart(2,"0")}</strong><span>{ar?"إجمالي المهام":"Total tasks"}</span></div>
-                  <div><strong>{String(todayTaskCount).padStart(2,"0")}</strong><span>{ar?"مهام اليوم":"Due today"}</span></div>
+                  <div><strong>{String(todayTaskCount).padStart(2,"0")}</strong><span>{ar?"المهام المستحقة":"Due today"}</span></div>
                   <div><strong>{String(subjects.length).padStart(2,"0")}</strong><span>{ar?"المواد":"Subjects"}</span></div>
                 </div>
               </div>
