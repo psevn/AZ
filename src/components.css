@@ -2,7 +2,11 @@
    Opt-in classes only: existing page markup and styles remain unchanged until migrated.
    Keep these primitives presentation-only; behavior belongs to the owning React components. */
 
-:where(.app-shell) :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+:where(.az-btn, .az-input, .az-chip, .az-tab, .az-popover, .az-toast) :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible,
+.az-btn:focus-visible,
+.az-input:focus-visible,
+.az-chip:focus-visible,
+.az-tab:focus-visible {
   outline: none;
   box-shadow: var(--az-focus-shadow);
 }
