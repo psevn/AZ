@@ -37,7 +37,7 @@ for (const r of runs) {
   const tag = `${r.vp}-${r.lang}-${r.theme}-${r.bg}`;
   page.on("pageerror", (e) => report.problems.push({ tag, kind: "pageerror", message: String(e).slice(0, 300) }));
   page.on("console", (m) => { if (m.type() === "error") report.problems.push({ tag, kind: "console", message: m.text().slice(0, 300) }); });
-  await page.goto(base, { waitUntil: "networkidle" });
+  await page.goto(base, { waitUntil: "domcontentloaded" });
   for (let i = 0; i < names.length; i++) {
     try {
       if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 }).catch(() => {});
@@ -138,7 +138,7 @@ for (const r of runs) {
   // Exercise real PlanningPage loading, empty and error branches with demo fixtures.
   for (const state of ["loading", "empty", "error"]) {
     try {
-      await page.goto(`${base}/?qa-planning-state=${state}`, { waitUntil: "networkidle" });
+      await page.goto(`${base}/?qa-planning-state=${state}`, { waitUntil: "domcontentloaded" });
       if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
       await page.waitForTimeout(250);
@@ -153,7 +153,7 @@ for (const r of runs) {
   // Exercise Home loading, empty and error branches using demo-only fixtures.
   for (const state of ["loading", "empty", "error"]) {
     try {
-      await page.goto(`${base}/?qa-home-state=${state}`, { waitUntil: "networkidle" });
+      await page.goto(`${base}/?qa-home-state=${state}`, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(250);
       const file = `${tag}-home-${state}.png`;
       await page.screenshot({ path: `${out}/${file}`, fullPage: true });
@@ -167,7 +167,7 @@ for (const r of runs) {
   // Exercise the Quiz screen states in both themes, languages and viewport sizes.
   for (const state of ["setup", "question", "feedback", "result", "empty", "error", "loading"]) {
     try {
-      await page.goto(`${base}/?qa-quiz-state=${state}`, { waitUntil: "networkidle" });
+      await page.goto(`${base}/?qa-quiz-state=${state}`, { waitUntil: "domcontentloaded" });
       await page.locator(".home-quiz-action").click({ timeout: 6000 });
       await page.waitForTimeout(250);
       const file = `${tag}-quiz-${state}.png`;
@@ -186,7 +186,7 @@ for (const r of runs) {
   // Confirm Planning has its own Short quiz entry point.
   if (r.vp === "desktop" && r.lang === "en" && r.theme === "dark" && r.bg === "plain") {
     try {
-      await page.goto(base, { waitUntil: "networkidle" });
+      await page.goto(base, { waitUntil: "domcontentloaded" });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
       await page.locator(".plan-short-quiz").click({ timeout: 4000 });
       await page.locator(".quiz-page").waitFor({ timeout: 4000 });
@@ -198,7 +198,7 @@ for (const r of runs) {
   // Verify number-key selection and Enter confirmation on the demo question interaction.
   if (r.vp === "desktop" && r.lang === "en" && r.theme === "dark" && r.bg === "plain") {
     try {
-      await page.goto(base, { waitUntil: "networkidle" });
+      await page.goto(base, { waitUntil: "domcontentloaded" });
       await page.locator(".home-quiz-action").click({ timeout: 6000 });
       await page.locator(".quiz-page").waitFor();
       await page.locator(".quiz-start").click({ timeout: 4000 });
@@ -215,7 +215,7 @@ for (const r of runs) {
 
   // Check accent, subject-label, primary-action and danger-action contrast in both themes.
   if (r.theme === "light" || r.theme === "dark") {
-    await page.goto(base, { waitUntil: "networkidle" });
+    await page.goto(base, { waitUntil: "domcontentloaded" });
     if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
     await page.waitForTimeout(150);
@@ -252,7 +252,7 @@ for (const r of runs) {
 
   // Offline remains a small, non-blocking banner.
   try {
-    await page.goto(base, { waitUntil: "networkidle" });
+    await page.goto(base, { waitUntil: "domcontentloaded" });
     await page.context().setOffline(true);
     await page.waitForTimeout(150);
     const homeOfflineVisible = await page.locator(".home-offline").isVisible().catch(() => false);
