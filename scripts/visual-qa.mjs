@@ -192,12 +192,13 @@ for (const r of runs) {
     await page.goto(base, { waitUntil: "networkidle" });
     if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
-    await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+    await page.context().setOffline(true);
     await page.waitForTimeout(150);
     const offlineVisible = await page.locator(".plan-offline").isVisible().catch(() => false);
-    if (!offlineVisible) report.problems.push({ tag, kind: "offline-banner", message: "Offline banner was not visible after network loss." });
-    await page.evaluate(() => window.dispatchEvent(new Event("online")));
+    if (!offlineVisible) report.problems.push({ tag, kind: "offline-banner", message: "Offline banner was not visible after the browser context went offline." });
+    await page.context().setOffline(false);
   } catch (e) {
+    await page.context().setOffline(false).catch(() => {});
     report.problems.push({ tag, kind: "offline-banner", message: String(e).slice(0, 300) });
   }
   await ctx.close();
