@@ -878,6 +878,8 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
     border-radius:18px 0 0 18px;
   }
   .workspace-rail.is-mobile-open { transform:translateX(0); }
+  /* Keep the open state stronger than the RTL off-canvas default. */
+  .app-shell[dir="rtl"] .workspace-rail.is-mobile-open { transform:translateX(0); }
   .workspace-rail.is-collapsed { width:min(290px,84vw); padding:22px 14px; }
   .workspace-rail.is-collapsed .rail-label,
   .workspace-rail.is-collapsed .nav-text,
