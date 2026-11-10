@@ -382,7 +382,7 @@ export default function QuizPage({
         <span style={{ width: `${questionProgress}%` } as CSSProperties} />
       </div>
       <p className="quiz-topic-label">{current.topic}</p>
-      <h2 className="quiz-prompt">{current.prompt}</h2>
+      <h2 className="quiz-prompt" dir="auto">{current.prompt}</h2>
       <div className="quiz-choice-group" role="radiogroup" aria-label={ar ? "خيارات الإجابة" : "Answer choices"}>
         {current.choices.map((choice, index) => <button
           key={`${current.id}-${index}`}
