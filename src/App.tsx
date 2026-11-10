@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
 import PlanningPage from "./components/PlanningPage";
+import { qatarDateKey } from "./lib/qatarTime.mjs";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
@@ -182,7 +183,20 @@ export default function App() {
     return () => window.clearInterval(id);
   },[started]);
 
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = qatarDateKey();
+  const nearestExam = subjects
+    .filter(subject => subject.exam_date && subject.exam_date >= today)
+    .sort((a, b) => (a.exam_date ?? "").localeCompare(b.exam_date ?? ""))[0] ?? null;
+  const nearestExamDays = nearestExam?.exam_date
+    ? Math.round((Date.parse(nearestExam.exam_date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000)
+    : null;
+  const nearestExamLabel = nearestExamDays === null
+    ? (ar ? "لا توجد اختبارات قادمة" : "No upcoming exams")
+    : nearestExamDays === 0
+      ? (ar ? "الاختبار اليوم" : "Exam today")
+      : ar
+        ? `الاختبار بعد ${nearestExamDays === 1 ? "يوم واحد" : nearestExamDays === 2 ? "يومين" : nearestExamDays <= 10 ? `${nearestExamDays} أيام` : `${nearestExamDays} يومًا`}`
+        : `Exam in ${nearestExamDays} days`;
   const subjectFor = (id:string|null) => subjects.find(s=>s.id===id)?.name || t.noSubject;
   const completedCount = tasks.filter(task=>task.status==="done").length;
   const completionRate = tasks.length ? Math.round(completedCount/tasks.length*100) : 0;
@@ -292,7 +306,7 @@ export default function App() {
                 <span className="universe-coordinate coordinate-top">AZ · 01</span><span className="universe-coordinate coordinate-bottom">From A to Z</span>
               </div>
             </section>
-            <section className="home-dashboard-cards"><article className="home-dashboard-card"><span>{ar?"مهام اليوم":"Today"}</span><strong>{todayTaskCount}</strong><small>{ar?"مهام بموعد اليوم":"Tasks due today"}</small></article><article className="home-dashboard-card"><span>{ar?"التركيز":"Focus"}</span><strong>{started===null?(ar?"جاهز":"Ready"):clock(elapsed)}</strong><small>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</small><button type="button" onClick={()=>{setSection("az");setPage("focus");}}>{ar?"ابدأ":"Start"} ↗</button></article><article className="home-dashboard-card"><span>{ar?"الاختبار القادم":"Upcoming exam"}</span><strong>—</strong><small>{ar?"لم يُضف موعد اختبار بعد":"No exam date added yet"}</small></article></section>
+            <section className="home-dashboard-cards"><article className="home-dashboard-card"><span>{ar?"مهام اليوم":"Today"}</span><strong>{todayTaskCount}</strong><small>{ar?"مهام بموعد اليوم":"Tasks due today"}</small></article><article className="home-dashboard-card"><span>{ar?"التركيز":"Focus"}</span><strong>{started===null?(ar?"جاهز":"Ready"):clock(elapsed)}</strong><small>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</small><button type="button" onClick={()=>{setSection("az");setPage("focus");}}>{ar?"ابدأ":"Start"} ↗</button></article><article className="home-dashboard-card"><span>{ar?"الاختبار القادم":"Upcoming exam"}</span><strong>{nearestExamLabel}</strong><small>{nearestExam?.name ?? (ar?"لا توجد اختبارات قادمة":"No upcoming exams")}</small></article></section>
             <section className="home-overview">
               <div className="home-progress-panel">
                 <div className="home-section-heading"><div><span className="eyebrow">{ar?"إشارتك اليومية":"Daily progress"}</span><h2>{ar?"تقدّمك":"Your progress"}</h2></div><span className="progress-orbit-icon">✧</span></div>

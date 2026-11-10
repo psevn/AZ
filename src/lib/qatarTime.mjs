@@ -11,6 +11,13 @@ export function qatarDateKey(instant = new Date()) {
   return values.year + "-" + values.month + "-" + values.day;
 }
 
+/** Returns the nearest subject exam on or after the supplied Qatar calendar date. */
+export function nearestUpcomingExam(subjects, today = qatarDateKey()) {
+  return subjects
+    .filter(subject => /^\d{4}-\d{2}-\d{2}$/.test(subject.exam_date ?? "") && subject.exam_date >= today)
+    .sort((a, b) => a.exam_date.localeCompare(b.exam_date))[0] ?? null;
+}
+
 /** Adds calendar days to a YYYY-MM-DD key using UTC arithmetic (not the host timezone). */
 export function addCalendarDays(dateKey, amount) {
   const [year, month, day] = String(dateKey).split("-").map(Number);
