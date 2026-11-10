@@ -153,6 +153,11 @@ for (const r of runs) {
   if (r.theme === "light") {
     const contrast = await page.evaluate(() => {
       const rgb = (value) => {
+        if (value.startsWith("#")) {
+          const hex=value.slice(1);
+          const full=hex.length===3?hex.split("").map(x=>x+x).join(""):hex;
+          return [0,2,4].map(i=>parseInt(full.slice(i,i+2),16));
+        }
         const match = value.match(/[\\d.]+/g)?.map(Number) ?? [];
         return match.length >= 3 ? match.slice(0,3) : [0,0,0];
       };
@@ -162,16 +167,19 @@ for (const r of runs) {
       };
       const ratio = (a,b) => { const x=luminance(a),y=luminance(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); };
       const shell = document.querySelector(".app-shell");
-      const surface = getComputedStyle(shell).backgroundColor;
+      const surface = "#FFFFFF";
       const accent = getComputedStyle(shell).getPropertyValue("--accent").trim();
       const accentRatio = ratio(accent, surface);
       const subject = document.querySelector(".plan-meta-subject");
       const subjectColor = subject ? getComputedStyle(subject).color : "";
       const subjectRatio = subjectColor ? ratio(subjectColor, surface) : null;
-      return { accent, surface, accentRatio, subjectColor, subjectRatio };
+      const primaryGradientMinRatio = ["#0668C5","#075EBB","#2520D8"].reduce((min,color)=>Math.min(min,ratio("#FFFFFF",color)),Infinity);
+      const dangerRatio = ratio("#B42332",surface);
+      return { accent, surface, accentRatio, subjectColor, subjectRatio, primaryGradientMinRatio, dangerRatio };
     });
     if (contrast.accentRatio < 4.5) report.problems.push({ tag, kind: "light-accent-contrast", message: JSON.stringify(contrast) });
     if (contrast.subjectRatio !== null && contrast.subjectRatio < 4.5) report.problems.push({ tag, kind: "light-subject-contrast", message: JSON.stringify(contrast) });
+    if (contrast.primaryGradientMinRatio < 4.5 || contrast.dangerRatio < 4.5) report.problems.push({ tag, kind: "light-action-contrast", message: JSON.stringify(contrast) });
   }
 
   // Offline remains a small, non-blocking banner.
