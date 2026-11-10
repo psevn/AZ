@@ -186,7 +186,7 @@ export default function App() {
   const today = qatarDateKey();
   const nearestExam = nearestUpcomingExam(subjects, today);
   const nearestExamDays = nearestExam?.exam_date
-    ? Math.round((Date.parse(nearestUpcomingExam.exam_date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000)
+    ? Math.round((Date.parse(nearestExam.exam_date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000)
     : null;
   const nearestExamLabel = nearestExamDays === null
     ? (ar ? "لا توجد اختبارات قادمة" : "No upcoming exams")
