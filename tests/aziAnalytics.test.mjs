@@ -117,9 +117,9 @@ test("study streak uses Qatar calendar days and tolerates a missed current day",
   const result = analyzeQuizPerformance({
     now: new Date("2026-11-09T12:00:00.000Z"),
     attempts: [
-      { id: "a1", finished_at: "2026-11-06T20:30:00.000Z" }, // Nov 6 Qatar
-      { id: "a2", finished_at: "2026-11-07T20:30:00.000Z" },
-      { id: "a3", finished_at: "2026-11-08T20:30:00.000Z" },
+      { id: "a1", finished_at: "2026-11-06T12:30:00.000Z" }, // Nov 6 Qatar
+      { id: "a2", finished_at: "2026-11-07T12:30:00.000Z" },
+      { id: "a3", finished_at: "2026-11-08T12:30:00.000Z" },
     ],
   });
 
