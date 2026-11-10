@@ -89,3 +89,7 @@
 ## 2026-11-10 — Visual QA pipeline (Claude, branch `design/visual-qa-pipeline`, based on `feature/azi-intelligence-core`)
 - Added `src/lib/demoSupabase.ts` (fixture client, only used when `VITE_DEMO=1` at build time), a 4-line switch in `src/lib/supabase.ts`, `scripts/visual-qa.mjs`, `.github/workflows/visual-qa.yml`, and `docs/design/AZ-WEB-DESIGN-WORLD-CLASS-PLAN.md`.
 - **Not verified in the agent session** (npm registry blocked there): `npm run build`, the demo client against the real component tree, the screenshot script. CI results are the evidence; see the next entry.
+
+## 2026-11-10 — Design system foundation (Claude, branch `design/design-system-step2`, based on `feature/azi-intelligence-core`)
+- Added `src/design/tokens.css`, `src/design/components.css`, `docs/design/AZ-DESIGN-SYSTEM.md`; imported in `main.tsx`; raised all font sizes below 12px to 12px (mechanical, in styles.css and component CSS); hid the ghost orbit art on Home.
+- Not migrated yet: pages still use their own classes. Evidence = the visual-QA run for this branch (see PR).
