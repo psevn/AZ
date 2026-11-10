@@ -121,6 +121,7 @@ export default function App() {
 
   async function loadData() {
     if (!supabase || !user) return;
+    setError("");
     setLoading(true);
     const [s,initialTasks] = await Promise.all([
       supabase.from("subjects").select("id,name,color,exam_date,created_at").order("created_at"),
@@ -335,7 +336,7 @@ export default function App() {
       </div>}
       {showAcademicSetup && setupChecked && !loading && user && <AcademicSetup userId={user.id} lang={lang} existingSubjects={subjects} onComplete={()=>{setShowAcademicSetup(false); void loadData();}} />}
       {message && <p className="feedback success-feedback" role="status">{message}</p>}
-      {error && <p className="feedback error-feedback" role="alert">{error}</p>}
+      {error && <p className="feedback error-feedback" role="alert">{ar?"حدث خطأ. حاول مرة أخرى.":"Something went wrong. Please try again."}</p>}
     </section>
     <footer className="footer"><span>© 2026 AZ</span><span>{t.footer}</span></footer>
   </main>;
