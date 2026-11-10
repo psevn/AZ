@@ -144,3 +144,138 @@ export function buildAcademicInsights(metrics) {
 
   return insights;
 }
+
+
+/**
+ * Summarizes completed quiz answers by topic and calculates a calendar-day
+ * practice streak. Only finished attempts count; unanswered/in-progress
+ * attempts never affect accuracy or streaks.
+ *
+ * Input rows are plain records from quiz_attempts, attempt_answers and
+ * quiz_questions. Callers must scope all three queries to the signed-in user.
+ */
+export function analyzeQuizPerformance({
+  attempts = [],
+  answers = [],
+  questions = [],
+  now = new Date(),
+  timeZone = "Asia/Qatar",
+  weakAccuracyThreshold = 0.6,
+  minimumTopicAnswers = 3,
+} = {}) {
+  const instant = validDate(now);
+  if (!instant) throw new TypeError("now must be a valid date");
+  if (!(weakAccuracyThreshold >= 0 && weakAccuracyThreshold <= 1)) {
+    throw new RangeError("weakAccuracyThreshold must be between 0 and 1");
+  }
+  if (!Number.isInteger(minimumTopicAnswers) || minimumTopicAnswers < 1) {
+    throw new RangeError("minimumTopicAnswers must be a positive integer");
+  }
+
+  const finishedAttempts = attempts.filter((attempt) => {
+    const finishedAt = validDate(attempt?.finished_at);
+    return attempt?.id && finishedAt && finishedAt <= instant;
+  });
+  const finishedById = new Map(finishedAttempts.map((attempt) => [attempt.id, attempt]));
+  const questionById = new Map(questions.filter((question) => question?.id).map((question) => [question.id, question]));
+  const topicCounts = new Map();
+
+  for (const answer of answers) {
+    if (!answer || typeof answer.is_correct !== "boolean" || !finishedById.has(answer.attempt_id)) continue;
+    const question = questionById.get(answer.question_id);
+    const topic = typeof question?.topic === "string" ? question.topic.trim() : "";
+    if (!topic) continue;
+    const counts = topicCounts.get(topic) ?? { topic, answered: 0, correct: 0 };
+    counts.answered += 1;
+    if (answer.is_correct) counts.correct += 1;
+    topicCounts.set(topic, counts);
+  }
+
+  const topics = [...topicCounts.values()]
+    .map((topic) => ({
+      ...topic,
+      incorrect: topic.answered - topic.correct,
+      accuracy: topic.answered ? topic.correct / topic.answered : 0,
+      isWeak: topic.answered >= minimumTopicAnswers && topic.correct / topic.answered < weakAccuracyThreshold,
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy || b.answered - a.answered || a.topic.localeCompare(b.topic));
+
+  const activeDates = [...new Set(finishedAttempts
+    .map((attempt) => dateKeyInZone(attempt.finished_at, timeZone))
+    .filter(Boolean))].sort();
+  const activeSet = new Set(activeDates);
+  const today = dateKeyInZone(instant, timeZone);
+  const todayNumber = dayNumber(today);
+  const lastActiveDate = activeDates.at(-1) ?? null;
+  const lastActiveNumber = lastActiveDate ? dayNumber(lastActiveDate) : null;
+
+  let currentDays = 0;
+  if (lastActiveNumber !== null && todayNumber - lastActiveNumber <= 1) {
+    let cursor = lastActiveNumber;
+    while (activeSet.has(new Date(cursor * DAY_MS).toISOString().slice(0, 10))) {
+      currentDays += 1;
+      cursor -= 1;
+    }
+  }
+
+  let longestDays = 0;
+  let runDays = 0;
+  let previousNumber = null;
+  for (const dateKey of activeDates) {
+    const number = dayNumber(dateKey);
+    runDays = previousNumber !== null && number === previousNumber + 1 ? runDays + 1 : 1;
+    longestDays = Math.max(longestDays, runDays);
+    previousNumber = number;
+  }
+
+  return {
+    asOf: instant.toISOString(),
+    timeZone,
+    topics,
+    weakTopics: topics.filter((topic) => topic.isWeak),
+    streak: {
+      currentDays,
+      longestDays,
+      activeDays: activeDates.length,
+      lastActiveDate,
+    },
+  };
+}
+
+/** Converts calculated study performance into neutral, evidence-backed notices. */
+export function buildStudyInsights(performance) {
+  if (!performance || !Array.isArray(performance.weakTopics) || !performance.streak) {
+    throw new TypeError("performance must come from analyzeQuizPerformance");
+  }
+
+  const insights = performance.weakTopics.map((topic) => ({
+    id: `weak-topic-${topic.topic}`,
+    kind: "study_topic",
+    severity: "info",
+    title: "Topic to revisit",
+    message: `Recent quiz accuracy for ${topic.topic} is ${Math.round(topic.accuracy * 100)}%.`,
+    evidence: {
+      topic: topic.topic,
+      answered: topic.answered,
+      correct: topic.correct,
+      incorrect: topic.incorrect,
+      accuracy: topic.accuracy,
+      asOf: performance.asOf,
+    },
+    action: { type: "navigate", destination: "quiz", topic: topic.topic },
+  }));
+
+  if (performance.streak.currentDays > 0) {
+    insights.push({
+      id: "study-streak",
+      kind: "study_streak",
+      severity: "info",
+      title: "Study streak",
+      message: `${performance.streak.currentDays} consecutive day(s) with a completed quiz.`,
+      evidence: { ...performance.streak, asOf: performance.asOf },
+      action: { type: "navigate", destination: "quiz" },
+    });
+  }
+
+  return insights;
+}

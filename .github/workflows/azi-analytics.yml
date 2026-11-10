@@ -1,0 +1,30 @@
+name: AZI Analytics CI
+
+on:
+  push:
+    branches:
+      - feat/azi-weak-topics-study-streak
+  pull_request:
+    branches:
+      - feature/azi-intelligence-core
+
+permissions:
+  contents: read
+
+jobs:
+  analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Run AZI analytics tests
+        run: npm run test:azi
+      - name: Run existing quick-add tests
+        run: npm run test:quick-add
+      - name: Build application
+        run: npm run build

@@ -81,3 +81,74 @@ test("invalid timestamps are ignored and invalid now is rejected", () => {
   assert.equal(result.focus.minutesLastSevenDays, 0);
   assert.throws(() => analyzeAcademicActivity({ now: "invalid" }), /valid date/);
 });
+
+
+test("weak topics require enough completed answers and exclude unfinished attempts", async () => {
+  const { analyzeQuizPerformance } = await import("../src/lib/aziAnalytics.mjs");
+  const result = analyzeQuizPerformance({
+    now,
+    attempts: [
+      { id: "finished", finished_at: "2026-11-09T10:00:00.000Z" },
+      { id: "unfinished", finished_at: null },
+    ],
+    questions: [
+      { id: "q1", topic: "Algebra" },
+      { id: "q2", topic: "Algebra" },
+      { id: "q3", topic: "Algebra" },
+      { id: "q4", topic: "Biology" },
+    ],
+    answers: [
+      { attempt_id: "finished", question_id: "q1", is_correct: false },
+      { attempt_id: "finished", question_id: "q2", is_correct: true },
+      { attempt_id: "finished", question_id: "q3", is_correct: false },
+      { attempt_id: "finished", question_id: "q4", is_correct: false },
+      { attempt_id: "unfinished", question_id: "q4", is_correct: false },
+    ],
+  });
+
+  assert.equal(result.topics.find((topic) => topic.topic === "Algebra").answered, 3);
+  assert.equal(result.weakTopics.length, 1);
+  assert.equal(result.weakTopics[0].topic, "Algebra");
+  assert.equal(result.weakTopics[0].accuracy, 1 / 3);
+});
+
+test("study streak uses Qatar calendar days and tolerates a missed current day", async () => {
+  const { analyzeQuizPerformance } = await import("../src/lib/aziAnalytics.mjs");
+  const result = analyzeQuizPerformance({
+    now: new Date("2026-11-09T12:00:00.000Z"),
+    attempts: [
+      { id: "a1", finished_at: "2026-11-06T12:30:00.000Z" }, // Nov 6 Qatar
+      { id: "a2", finished_at: "2026-11-07T12:30:00.000Z" },
+      { id: "a3", finished_at: "2026-11-08T12:30:00.000Z" },
+    ],
+  });
+
+  assert.equal(result.streak.currentDays, 3);
+  assert.equal(result.streak.longestDays, 3);
+  assert.equal(result.streak.lastActiveDate, "2026-11-08");
+});
+
+test("study insights are based on weak-topic evidence and non-zero streaks", async () => {
+  const { analyzeQuizPerformance, buildStudyInsights } = await import("../src/lib/aziAnalytics.mjs");
+  const performance = analyzeQuizPerformance({
+    now,
+    attempts: [{ id: "finished", finished_at: "2026-11-09T10:00:00.000Z" }],
+    questions: [{ id: "q1", topic: "Statistics" }, { id: "q2", topic: "Statistics" }, { id: "q3", topic: "Statistics" }],
+    answers: [
+      { attempt_id: "finished", question_id: "q1", is_correct: false },
+      { attempt_id: "finished", question_id: "q2", is_correct: false },
+      { attempt_id: "finished", question_id: "q3", is_correct: true },
+    ],
+  });
+  const insights = buildStudyInsights(performance);
+
+  assert.equal(insights[0].kind, "study_topic");
+  assert.equal(insights[0].evidence.topic, "Statistics");
+  assert.equal(insights[1].kind, "study_streak");
+});
+
+test("invalid analytics thresholds are rejected", async () => {
+  const { analyzeQuizPerformance } = await import("../src/lib/aziAnalytics.mjs");
+  assert.throws(() => analyzeQuizPerformance({ now, weakAccuracyThreshold: 2 }), /between 0 and 1/);
+  assert.throws(() => analyzeQuizPerformance({ now, minimumTopicAnswers: 0 }), /positive integer/);
+});
