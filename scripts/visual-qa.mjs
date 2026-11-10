@@ -40,7 +40,14 @@ for (const r of runs) {
       if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 }).catch(() => {});
       await page.locator(".primary-nav > .primary-nav-item > button").nth(i).click({ timeout: 6000 });
       await page.waitForTimeout(700);
-      if (r.vp === "mobile") await page.keyboard.press("Escape").catch(() => {});
+      if (r.vp === "mobile") {
+        await page.waitForTimeout(300);
+        const railState = await page.locator(".workspace-rail").evaluate((el) => {
+          const rect = el.getBoundingClientRect();
+          return { open: el.classList.contains("is-mobile-open"), visible: rect.right > 0 && rect.left < window.innerWidth };
+        });
+        if (railState.open || railState.visible) report.problems.push({ tag, kind: "mobile-navigation", section: names[i], message: `Navigation drawer should be fully off-canvas after selecting a section; state=${JSON.stringify(railState)}` });
+      }
       const file = `${tag}-${names[i]}.png`;
       await page.screenshot({ path: `${out}/${file}`, fullPage: true });
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
