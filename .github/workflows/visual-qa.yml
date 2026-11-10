@@ -25,6 +25,8 @@ jobs:
         run: npm run test:quick-add
       - name: Test Arabic pluralization
         run: npm run test:arabic-plural
+      - name: Test minimum readable typography
+        run: npm run test:typography
       - run: npm run build
         env:
           VITE_DEMO: "1"
