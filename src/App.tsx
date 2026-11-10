@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
 import PlanningPage from "./components/PlanningPage";
-import { qatarDateKey, nearestUpcomingExam } from "./lib/qatarTime.mjs";
+import { qatarDateKey } from "./lib/qatarTime.mjs";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
@@ -184,7 +184,9 @@ export default function App() {
   },[started]);
 
   const today = qatarDateKey();
-  const nearestExam = nearestUpcomingExam(subjects, today);
+  const nearestExam = subjects
+    .filter(subject => subject.exam_date && subject.exam_date >= today)
+    .sort((a, b) => (a.exam_date ?? "").localeCompare(b.exam_date ?? ""))[0] ?? null;
   const nearestExamDays = nearestExam?.exam_date
     ? Math.round((Date.parse(nearestExam.exam_date + "T00:00:00Z") - Date.parse(today + "T00:00:00Z")) / 86400000)
     : null;
