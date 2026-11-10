@@ -136,3 +136,40 @@
   .plan-document-chip{max-width:25%;padding-inline:5px}
   .plan-task-main strong{font-size:12px}
 }
+
+
+/* Keep the horizontal subject strip discoverable when chips extend beyond the viewport. */
+.plan-subject-chips {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent, #20e6f2) 55%, transparent) transparent;
+}
+
+.plan-subject-chips::-webkit-scrollbar {
+  display: block;
+  height: 3px;
+}
+
+.plan-subject-chips::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.plan-subject-chips::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #20e6f2) 55%, transparent);
+}
+
+.plan-subject-chips::after {
+  content: "";
+  position: sticky;
+  inset-inline-end: 0;
+  z-index: 1;
+  flex: 0 0 24px;
+  height: 30px;
+  margin-inline-start: -24px;
+  pointer-events: none;
+  background: linear-gradient(to left, var(--bg, #0e1013) 0%, transparent 100%);
+}
+
+[dir="rtl"] .plan-subject-chips::after {
+  background: linear-gradient(to right, var(--bg, #0e1013) 0%, transparent 100%);
+}
