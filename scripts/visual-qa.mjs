@@ -151,15 +151,14 @@ for (const r of runs) {
   }
   // Offline remains a small, non-blocking banner.
   try {
-    await page.context().setOffline(true);
     await page.goto(base, { waitUntil: "networkidle" });
     await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    await page.evaluate(() => window.dispatchEvent(new Event("offline")));
     await page.waitForTimeout(150);
     const offlineVisible = await page.locator(".plan-offline").isVisible().catch(() => false);
     if (!offlineVisible) report.problems.push({ tag, kind: "offline-banner", message: "Offline banner was not visible after network loss." });
-    await page.context().setOffline(false);
+    await page.evaluate(() => window.dispatchEvent(new Event("online")));
   } catch (e) {
-    await page.context().setOffline(false).catch(() => {});
     report.problems.push({ tag, kind: "offline-banner", message: String(e).slice(0, 300) });
   }
   await ctx.close();
