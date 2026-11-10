@@ -139,6 +139,7 @@ for (const r of runs) {
   for (const state of ["loading", "empty", "error"]) {
     try {
       await page.goto(`${base}/?qa-planning-state=${state}`, { waitUntil: "networkidle" });
+      if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
       await page.waitForTimeout(250);
       const file = `${tag}-planning-${state}.png`;
@@ -152,7 +153,8 @@ for (const r of runs) {
   // Check the light-theme accent and demo subject-label colors against the page surface.
   if (r.theme === "light") {
     await page.goto(base, { waitUntil: "networkidle" });
-    await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
     await page.waitForTimeout(150);
     const contrast = await page.evaluate(() => {
       const rgb = (value) => {
@@ -188,7 +190,8 @@ for (const r of runs) {
   // Offline remains a small, non-blocking banner.
   try {
     await page.goto(base, { waitUntil: "networkidle" });
-    await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
     await page.evaluate(() => window.dispatchEvent(new Event("offline")));
     await page.waitForTimeout(150);
     const offlineVisible = await page.locator(".plan-offline").isVisible().catch(() => false);
