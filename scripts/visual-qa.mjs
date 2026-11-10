@@ -164,7 +164,7 @@ for (const r of runs) {
     }
   }
   // Check the light-theme accent and demo subject-label colors against the page surface.
-  if (r.theme === "light") {
+  if (r.theme === "light" || r.theme === "dark") {
     await page.goto(base, { waitUntil: "networkidle" });
     if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
@@ -192,12 +192,12 @@ for (const r of runs) {
       const subjectColor = subject ? getComputedStyle(subject).color : "";
       const subjectRatio = subjectColor ? ratio(subjectColor, surface) : null;
       const primaryGradientMinRatio = ["#0668C5","#075EBB","#2520D8"].reduce((min,color)=>Math.min(min,ratio("#FFFFFF",color)),Infinity);
-      const dangerRatio = ratio("#B42332",surface);
+      const dangerRatio = ratio(r.theme === "light" ? "#B42332" : "#FF6B6B",surface);
       return { accent, surface, accentRatio, subjectColor, subjectRatio, primaryGradientMinRatio, dangerRatio };
     });
-    if (contrast.accentRatio < 4.5) report.problems.push({ tag, kind: "light-accent-contrast", message: JSON.stringify(contrast) });
-    if (contrast.subjectRatio !== null && contrast.subjectRatio < 4.5) report.problems.push({ tag, kind: "light-subject-contrast", message: JSON.stringify(contrast) });
-    if (contrast.primaryGradientMinRatio < 4.5 || contrast.dangerRatio < 4.5) report.problems.push({ tag, kind: "light-action-contrast", message: JSON.stringify(contrast) });
+    if (contrast.accentRatio < 4.5) report.problems.push({ tag, kind: `${r.theme}-accent-contrast`, message: JSON.stringify(contrast) });
+    if (contrast.subjectRatio !== null && contrast.subjectRatio < 4.5) report.problems.push({ tag, kind: `${r.theme}-subject-contrast`, message: JSON.stringify(contrast) });
+    if (contrast.primaryGradientMinRatio < 4.5 || contrast.dangerRatio < 4.5) report.problems.push({ tag, kind: `${r.theme}-action-contrast`, message: JSON.stringify(contrast) });
   }
 
   // Offline remains a small, non-blocking banner.
