@@ -6,6 +6,7 @@ const files = [
   'src/styles.css',
   'src/components/AcademicSetup.css',
   'src/components/PlanningPage.css',
+  'src/components/QuizPage.css',
 ];
 
 // Explicit exceptions are visual artwork only; interactive controls, labels,

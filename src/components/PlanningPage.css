@@ -188,4 +188,4 @@
 
 .planning-topline-actions { display:flex; align-items:center; gap:12px; flex:none; }
 .planning-topline-actions .plan-short-quiz { min-height:44px; white-space:nowrap; }
-@media(max-width:560px) { .planning-topline-actions { gap:8px; } .planning-topline-actions .plan-short-quiz { padding-inline:10px; font-size:11px; } }
+@media(max-width:560px) { .planning-topline-actions { gap:8px; } .planning-topline-actions .plan-short-quiz { padding-inline:10px; font-size:12px; } }
