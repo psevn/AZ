@@ -1,0 +1,66 @@
+/* AZ design tokens — extracted without changing existing values. */
+:root {
+  --az-font-sans: "Inter", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+  --az-space-1: 4px;
+  --az-space-2: 8px;
+  --az-space-3: 12px;
+  --az-space-4: 16px;
+  --az-space-5: 24px;
+  --az-space-6: 32px;
+  --az-space-7: 48px;
+  --az-radius-sm: 10px;
+  --az-radius-md: 14px;
+  --az-radius-lg: 20px;
+  --az-radius-xl: 26px;
+  --az-motion-fast: 140ms;
+  --az-motion-base: 220ms;
+  --az-motion-slow: 360ms;
+}
+
+.app-shell {
+  --bg: #0E1013;
+  --panel: #15181D;
+  --panel-solid: #15181D;
+  --text: #ECEEF2;
+  --muted: #9AA2AF;
+  --line: rgba(255,255,255,.08);
+  --accent: #20E6F2;
+  --accent-ink: #061326;
+  --field: #0A0C0F;
+  --brand-gradient: linear-gradient(100deg, #20E6F2 0%, #0879E8 34%, #2520D8 66%, #8A00E8 100%);
+  --surface-1: #15181D;
+  --surface-2: #1B1F25;
+  --surface-3: #20252C;
+  --text-strong: #ECEEF2;
+  --text-soft: #9AA2AF;
+  --border-soft: rgba(255,255,255,.08);
+  --border-strong: rgba(255,255,255,.16);
+  --focus-ring: color-mix(in srgb, var(--accent) 78%, white);
+  --elevation-1: 0 8px 24px rgba(0, 0, 0, .12);
+  --elevation-2: 0 18px 50px rgba(0, 0, 0, .18);
+  --elevation-3: 0 28px 90px rgba(0, 0, 0, .28);
+  --content-max: 1320px;
+}
+
+.theme-light {
+  --bg: #F7F7F5;
+  --panel: rgba(255,255,255,.82);
+  --panel-solid: #FFFFFF;
+  --text: #101B32;
+  --muted: #64738C;
+  --line: rgba(20,45,85,.13);
+  --accent: #0879E8;
+  --accent-ink: #FFFFFF;
+  --field: rgba(237,242,250,.9);
+  --surface-1: rgba(255,255,255,.82);
+  --surface-2: rgba(255,255,255,.94);
+  --surface-3: #FFFFFF;
+  --text-strong: #101B32;
+  --text-soft: #64738C;
+  --border-soft: rgba(20,45,85,.13);
+  --border-strong: rgba(20,45,85,.24);
+  --focus-ring: #0879E8;
+  --elevation-1: 0 8px 24px rgba(27,55,95,.07);
+  --elevation-2: 0 18px 50px rgba(27,55,95,.09);
+  --elevation-3: 0 28px 80px rgba(27,55,95,.14);
+}
