@@ -16,6 +16,20 @@
   --az-motion-fast: 140ms;
   --az-motion-base: 220ms;
   --az-motion-slow: 360ms;
+
+  /* Shared type, accessibility and action tokens for the core component layer. */
+  --az-text-xs: 12px;
+  --az-text-sm: 13px;
+  --az-text-md: 15px;
+  --az-text-lg: 17px;
+  --az-text-xl: 20px;
+  --az-text-2xl: 28px;
+  --az-text-3xl: 36px;
+  --az-leading-tight: 1.2;
+  --az-leading-body: 1.55;
+  --az-touch-min: 44px;
+  --az-focus-shadow: 0 0 0 2px var(--bg, #0E1013), 0 0 0 4px var(--accent, #20E6F2);
+  --az-gradient-primary: linear-gradient(100deg, #20E6F2 0%, #0879E8 34%, #2520D8 66%, #8A00E8 100%);
 }
 
 .app-shell {
