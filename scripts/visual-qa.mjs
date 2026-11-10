@@ -169,7 +169,7 @@ for (const r of runs) {
     if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
     await page.waitForTimeout(150);
-    const contrast = await page.evaluate(() => {
+    const contrast = await page.evaluate((theme) => {
       const rgb = (value) => {
         if (value.startsWith("#")) {
           const hex=value.slice(1);
@@ -192,9 +192,9 @@ for (const r of runs) {
       const subjectColor = subject ? getComputedStyle(subject).color : "";
       const subjectRatio = subjectColor ? ratio(subjectColor, surface) : null;
       const primaryGradientMinRatio = ["#0668C5","#075EBB","#2520D8"].reduce((min,color)=>Math.min(min,ratio("#FFFFFF",color)),Infinity);
-      const dangerRatio = ratio(r.theme === "light" ? "#B42332" : "#FF6B6B",surface);
+      const dangerRatio = ratio(theme === "light" ? "#B42332" : "#FF6B6B",surface);
       return { accent, surface, accentRatio, subjectColor, subjectRatio, primaryGradientMinRatio, dangerRatio };
-    });
+    }, r.theme);
     if (contrast.accentRatio < 4.5) report.problems.push({ tag, kind: `${r.theme}-accent-contrast`, message: JSON.stringify(contrast) });
     if (contrast.subjectRatio !== null && contrast.subjectRatio < 4.5) report.problems.push({ tag, kind: `${r.theme}-subject-contrast`, message: JSON.stringify(contrast) });
     if (contrast.primaryGradientMinRatio < 4.5 || contrast.dangerRatio < 4.5) report.problems.push({ tag, kind: `${r.theme}-action-contrast`, message: JSON.stringify(contrast) });
