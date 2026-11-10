@@ -77,8 +77,7 @@
 
 /* Touch targets on small screens */
 @media (max-width: 767px) {
-  .az-btn, .az-input { min-height: var(--az-touch-min); }
-  .az-chip { min-height: 36px; }
+  .az-btn, .az-input, .az-chip, .az-tab { min-height: var(--az-touch-min); }
 }
 @media (prefers-reduced-motion: reduce) {
   .az-btn, .az-chip, .az-input { transition: none; }
