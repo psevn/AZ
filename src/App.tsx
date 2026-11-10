@@ -5,12 +5,14 @@ import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
 import PlanningPage from "./components/PlanningPage";
+import QuizPage from "./components/QuizPage";
+import { getStudyInsights } from "./lib/studyInsights";
 import { qatarDateKey } from "./lib/qatarTime.mjs";
 import { formatArabicCount } from "./lib/arabicPlural.mjs";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
-type Section = "home" | "planning" | "az" | "community" | "me";
+type Section = "home" | "planning" | "az" | "community" | "me" | "quiz";
 type Subject = { id: string; name: string; color: string | null; exam_date: string | null; created_at: string };
 type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; completed_at?: string | null; document_id?: string | null; created_at: string };
 
@@ -82,6 +84,7 @@ export default function App() {
   const qaHomeState = import.meta.env.VITE_DEMO === "1" ? new URLSearchParams(window.location.search).get("qa-home-state") : null;
   const showHomeLoading = loading || qaHomeState === "loading";
   const showHomeError = Boolean(error) || qaHomeState === "error";
+  const homeInsights = getStudyInsights();
 
   useEffect(() => {
     try {
@@ -263,7 +266,7 @@ export default function App() {
 
   const workspaceNav:Page[] = ["workspace","notebook","focus","arena"];
   const sectionNav:Section[] = ["home","planning","az","me"];
-  const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",community:"◎",me:"◌"};
+  const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",community:"◎",me:"◌",quiz:"◇"};
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")} dir={ar?"rtl":"ltr"} lang={lang}>
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/>{universe && <UniverseEffects />}
@@ -292,7 +295,7 @@ export default function App() {
           <div className="rail-bottom"><button className="rail-account" type="button" onClick={()=>{setSection("me");setMessage("");setMobileNavOpen(false);}}><span className="rail-account-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</span><span className="rail-account-copy"><small>{ar?"الحساب":"Account"}</small><strong>{user.email}</strong></span></button></div>
         </aside>
         <div className="workspace-main">
-          {section!=="home" && section!=="planning" && <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div></div>}
+          {section!=="home" && section!=="planning" && section!=="quiz" && <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div></div>}
           {section==="home" && <div className="home-view">{offline&&<div className="home-offline" role="status">{ar?"أنت غير متصل بالإنترنت. قد لا تتم مزامنة التغييرات.":"You’re offline. Changes may not sync until you reconnect."}</div>}
             <section className="home-hero">
               <div className="home-hero-copy">
@@ -307,6 +310,7 @@ export default function App() {
                 <div className="home-hero-actions">
                   <button className="az-btn home-secondary-action" onClick={()=>setSection("planning")}>{ar?"افتح خطتك":"Open your plan"} <span>↗</span></button>
                   <button className="az-btn home-secondary-action" onClick={()=>{setSection("az");setPage("focus");}}><span className="play-mark">▶</span>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</button>
+                  <button type="button" className="az-btn az-btn--primary home-secondary-action home-quiz-action" onClick={()=>setSection("quiz")}>{ar?"اختبار قصير":"Short quiz"} <span>↗</span></button>
                 </div>
               </div>
               <div className="home-universe-visual" aria-hidden="true">
@@ -319,6 +323,7 @@ export default function App() {
                 <span className="universe-coordinate coordinate-top">AZ · 01</span><span className="universe-coordinate coordinate-bottom">From A to Z</span>
               </div>
             </section>
+            <section className="home-insights-slot" data-insights-slot aria-label={ar?"موضع رؤى الدراسة":"Study insights"}>{homeInsights.map(insight=><p key={insight.id}>{insight.message}</p>)}</section>
             {showHomeError&&<div className="home-state" role="alert"><p>{ar?"تعذّر تحميل بياناتك. حاول مرة أخرى.":"Could not load your data. Please try again."}</p><button type="button" className="az-btn az-btn--primary" onClick={()=>void loadData()}>{ar?"إعادة المحاولة":"Retry"}</button></div>}
             {showHomeLoading?<section className="home-skeleton" aria-label={t.loading}><span/><span/><span/></section>:<>
             <section className="home-dashboard-cards"><article className="az-card home-dashboard-card"><span>{ar?"مهام اليوم":"Today"}</span><strong>{todayTaskCount}</strong><small>{ar?formatArabicCount(todayTaskCount,{zero:"لا مهام بموعد اليوم",one:"مهمة واحدة بموعد اليوم",two:"مهمتان بموعد اليوم",few:"مهام بموعد اليوم",many:"مهمة بموعد اليوم"}):"Tasks due today"}</small></article><article className="az-card home-dashboard-card"><span>{ar?"التركيز":"Focus"}</span><strong>{started===null?(ar?"جاهز":"Ready"):clock(elapsed)}</strong><small>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</small><button type="button" className="az-btn az-btn--ghost" onClick={()=>{setSection("az");setPage("focus");}}>{ar?"ابدأ":"Start"} ↗</button></article><article className="az-card home-dashboard-card"><span>{ar?"الاختبار القادم":"Upcoming exam"}</span><strong>{nearestExamLabel}</strong><small>{nearestExam?.name ?? (ar?"لا توجد اختبارات قادمة":"No upcoming exams")}</small></article></section>
@@ -339,7 +344,8 @@ export default function App() {
             </section>
             </>}
           </div>}
-          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} hasError={Boolean(error)} onRetry={loadData} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
+          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} hasError={Boolean(error)} onRetry={loadData} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}} onStartQuiz={()=>setSection("quiz")}/>}
+          {section==="quiz" && <QuizPage userId={user.id} lang={lang} subjects={subjects} offline={offline} onBackPlanning={()=>setSection("planning")} onOpenWorkspace={()=>{setSection("az");setPage("workspace");}}/>}
           {section==="az" && page==="focus" && <section className="focus-view content-panel">{finishedFocus&&<div className="focus-finish-card"><strong>{ar?"أحسنت!":"Nice work."} {finishedFocus.minutes} {ar?"دقيقة على":"min on"} {finishedFocus.taskTitle}.</strong><div><button type="button" onClick={async()=>{if(finishedFocus.taskId){const finishedTask=tasks.find(x=>x.id===finishedFocus.taskId);if(finishedTask)await changeTask(finishedTask,"done");}setFinishedFocus(null);}}>{ar?"وضع علامة مكتملة":"Mark done"}</button><button type="button" onClick={()=>setFinishedFocus(null)}>{ar?"ليس الآن":"Not yet"}</button></div></div>}<span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && (activeDocument?<section className="document-viewer content-panel"><div className="document-viewer-head"><strong>{activeDocument.title}</strong><button type="button" onClick={()=>setActiveDocument(null)}>{ar?"إغلاق المستند":"Close document"}</button></div><iframe title={activeDocument.title} src={activeDocument.url}/></section>:<section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">Knowledge system / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>)}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Notebook</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}

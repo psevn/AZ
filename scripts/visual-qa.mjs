@@ -21,7 +21,7 @@ for (const vp of ["desktop", "mobile"]) {
 }
 
 const names = ["home", "planning", "az", "me"];
-const report = { base, startedAt: new Date().toISOString(), shots: [], stateShots: [], componentStates: [], problems: [] };
+const report = { base, startedAt: new Date().toISOString(), shots: [], stateShots: [], componentStates: [], quizShots: [], problems: [] };
 const browser = await chromium.launch();
 
 for (const r of runs) {
@@ -163,6 +163,42 @@ for (const r of runs) {
       report.problems.push({ tag, kind: "home-state", state, message: String(e).slice(0, 300) });
     }
   }
+
+  // Exercise the Quiz screen states in both themes, languages and viewport sizes.
+  for (const state of ["question", "feedback", "result", "empty", "error", "loading"]) {
+    try {
+      await page.goto(`${base}/?qa-quiz-state=${state}`, { waitUntil: "networkidle" });
+      await page.locator(".home-quiz-action").click({ timeout: 6000 });
+      await page.waitForTimeout(250);
+      const file = `${tag}-quiz-${state}.png`;
+      await page.screenshot({ path: `${out}/${file}`, fullPage: true });
+      const metrics = await page.evaluate(() => ({
+        horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+        visible: !!document.querySelector(".quiz-page"),
+      }));
+      if (!metrics.visible) report.problems.push({ tag, kind: "quiz-navigation", state, message: "Quiz page did not render after Home action." });
+      report.quizShots.push({ file, state, horizontalOverflow: metrics.horizontalOverflow });
+    } catch (e) {
+      report.problems.push({ tag, kind: "quiz-state", state, message: String(e).slice(0, 300) });
+    }
+  }
+  // Verify number-key selection and Enter confirmation on the live question interaction.
+  if (r.vp === "desktop" && r.lang === "en" && r.theme === "dark" && r.bg === "plain") {
+    try {
+      await page.goto(base, { waitUntil: "networkidle" });
+      await page.locator(".home-quiz-action").click({ timeout: 6000 });
+      await page.locator(".quiz-page").waitFor();
+      await page.locator(".quiz-choice").first().waitFor();
+      await page.keyboard.press("1");
+      const selected = await page.locator(".quiz-choice").first().getAttribute("aria-checked");
+      await page.keyboard.press("Enter");
+      await page.locator(".quiz-feedback").waitFor({ timeout: 3000 });
+      if (selected !== "true") report.problems.push({ tag, kind: "quiz-keyboard", message: "Number key 1 did not select the first radio choice." });
+    } catch (e) {
+      report.problems.push({ tag, kind: "quiz-keyboard", message: String(e).slice(0, 300) });
+    }
+  }
+
   // Check accent, subject-label, primary-action and danger-action contrast in both themes.
   if (r.theme === "light" || r.theme === "dark") {
     await page.goto(base, { waitUntil: "networkidle" });
@@ -223,7 +259,7 @@ for (const r of runs) {
 await browser.close();
 report.finishedAt = new Date().toISOString();
 await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
-console.log(`shots: ${report.shots.length}, state shots: ${report.stateShots.length}, component states: ${report.componentStates.length}, problems: ${report.problems.length}, overflow: ${report.shots.concat(report.stateShots).filter((s) => s.horizontalOverflow).length}`);
+console.log(`shots: ${report.shots.length}, state shots: ${report.stateShots.length}, component states: ${report.componentStates.length}, quiz shots: ${report.quizShots.length}, problems: ${report.problems.length}, overflow: ${report.shots.concat(report.stateShots, report.quizShots).filter((s) => s.horizontalOverflow).length}`);
 if (report.problems.length > 0) {
   throw new Error(`Visual QA failed with ${report.problems.length} problem(s). See report.json for details.`);
 }
