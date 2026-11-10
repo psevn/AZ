@@ -176,7 +176,7 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .panel-progress strong small { font-size: 12px; color: #8193AE; }
 .progress-track { height: 3px; display: block; background: rgba(255,255,255,.12); border-radius: 9px; overflow: hidden; margin-bottom: 9px; }
 .progress-track i { display: block; width: 63%; height: 100%; background: var(--brand-gradient); border-radius: inherit; }
-.float-foot { font-size: 6px; letter-spacing: .09em; }
+.float-foot { font-size: 12px; letter-spacing: .09em; }
 .panel-spark { right: 1%; top: 13%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: #AABBD4; font-size: 12px; line-height: 1.6; }
 .panel-spark b { color: #ECEEF2; font-weight: 600; }
 .spark-icon { font-size: 20px; color: #20E6F2; text-shadow: 0 0 14px #20E6F2; }
