@@ -3,6 +3,8 @@
 # Demo mode is a build-time flag used only here; it never connects to a real backend.
 name: Visual QA
 on:
+  pull_request:
+    branches: ["design/**"]
   push:
     branches: ["design/**", "feature/azi-intelligence-core"]
   workflow_dispatch:
