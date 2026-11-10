@@ -121,6 +121,7 @@ export default function App() {
 
   async function loadData() {
     if (!supabase || !user) return;
+    setError("");
     setLoading(true);
     const [s,initialTasks] = await Promise.all([
       supabase.from("subjects").select("id,name,color,exam_date,created_at").order("created_at"),
@@ -324,7 +325,7 @@ export default function App() {
               </section>
             </section>
           </div>}
-          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
+          {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} hasError={Boolean(error)} onRetry={loadData} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}}/>}
           {section==="az" && page==="focus" && <section className="focus-view content-panel">{finishedFocus&&<div className="focus-finish-card"><strong>{ar?"أحسنت!":"Nice work."} {finishedFocus.minutes} {ar?"دقيقة على":"min on"} {finishedFocus.taskTitle}.</strong><div><button type="button" onClick={async()=>{if(finishedFocus.taskId){const finishedTask=tasks.find(x=>x.id===finishedFocus.taskId);if(finishedTask)await changeTask(finishedTask,"done");}setFinishedFocus(null);}}>{ar?"وضع علامة مكتملة":"Mark done"}</button><button type="button" onClick={()=>setFinishedFocus(null)}>{ar?"ليس الآن":"Not yet"}</button></div></div>}<span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && (activeDocument?<section className="document-viewer content-panel"><div className="document-viewer-head"><strong>{activeDocument.title}</strong><button type="button" onClick={()=>setActiveDocument(null)}>{ar?"إغلاق المستند":"Close document"}</button></div><iframe title={activeDocument.title} src={activeDocument.url}/></section>:<section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">Knowledge system / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>)}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Notebook</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
@@ -335,7 +336,7 @@ export default function App() {
       </div>}
       {showAcademicSetup && setupChecked && !loading && user && <AcademicSetup userId={user.id} lang={lang} existingSubjects={subjects} onComplete={()=>{setShowAcademicSetup(false); void loadData();}} />}
       {message && <p className="feedback success-feedback" role="status">{message}</p>}
-      {error && <p className="feedback error-feedback" role="alert">{error}</p>}
+      {error && <p className="feedback error-feedback" role="alert">{ar?"حدث خطأ. حاول مرة أخرى.":"Something went wrong. Please try again."}</p>}
     </section>
     <footer className="footer"><span>© 2026 AZ</span><span>{t.footer}</span></footer>
   </main>;

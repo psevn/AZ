@@ -21,7 +21,7 @@ for (const vp of ["desktop", "mobile"]) {
 }
 
 const names = ["home", "planning", "az", "me"];
-const report = { base, startedAt: new Date().toISOString(), shots: [], componentStates: [], problems: [] };
+const report = { base, startedAt: new Date().toISOString(), shots: [], stateShots: [], componentStates: [], problems: [] };
 const browser = await chromium.launch();
 
 for (const r of runs) {
@@ -135,13 +135,79 @@ for (const r of runs) {
   } catch (e) {
     report.problems.push({ tag, kind: "component-fixture", message: String(e).slice(0, 300) });
   }
+  // Exercise real PlanningPage loading, empty and error branches with demo fixtures.
+  for (const state of ["loading", "empty", "error"]) {
+    try {
+      await page.goto(`${base}/?qa-planning-state=${state}`, { waitUntil: "networkidle" });
+      if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+      await page.waitForTimeout(250);
+      const file = `${tag}-planning-${state}.png`;
+      await page.screenshot({ path: `${out}/${file}`, fullPage: true });
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      report.stateShots.push({ file, section: "planning", state, horizontalOverflow: overflow });
+    } catch (e) {
+      report.problems.push({ tag, kind: "planning-state", state, message: String(e).slice(0, 300) });
+    }
+  }
+  // Check the light-theme accent and demo subject-label colors against the page surface.
+  if (r.theme === "light") {
+    await page.goto(base, { waitUntil: "networkidle" });
+    if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    await page.waitForTimeout(150);
+    const contrast = await page.evaluate(() => {
+      const rgb = (value) => {
+        if (value.startsWith("#")) {
+          const hex=value.slice(1);
+          const full=hex.length===3?hex.split("").map(x=>x+x).join(""):hex;
+          return [0,2,4].map(i=>parseInt(full.slice(i,i+2),16));
+        }
+        const match = value.match(/[\\d.]+/g)?.map(Number) ?? [];
+        return match.length >= 3 ? match.slice(0,3) : [0,0,0];
+      };
+      const luminance = (color) => {
+        const [r,g,b] = rgb(color).map(v => { const c=v/255; return c<=0.04045?c/12.92:((c+0.055)/1.055)**2.4; });
+        return 0.2126*r+0.7152*g+0.0722*b;
+      };
+      const ratio = (a,b) => { const x=luminance(a),y=luminance(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); };
+      const shell = document.querySelector(".app-shell");
+      const surface = "#FFFFFF";
+      const accent = getComputedStyle(shell).getPropertyValue("--accent").trim();
+      const accentRatio = ratio(accent, surface);
+      const subject = document.querySelector(".plan-meta-subject");
+      const subjectColor = subject ? getComputedStyle(subject).color : "";
+      const subjectRatio = subjectColor ? ratio(subjectColor, surface) : null;
+      const primaryGradientMinRatio = ["#0668C5","#075EBB","#2520D8"].reduce((min,color)=>Math.min(min,ratio("#FFFFFF",color)),Infinity);
+      const dangerRatio = ratio("#B42332",surface);
+      return { accent, surface, accentRatio, subjectColor, subjectRatio, primaryGradientMinRatio, dangerRatio };
+    });
+    if (contrast.accentRatio < 4.5) report.problems.push({ tag, kind: "light-accent-contrast", message: JSON.stringify(contrast) });
+    if (contrast.subjectRatio !== null && contrast.subjectRatio < 4.5) report.problems.push({ tag, kind: "light-subject-contrast", message: JSON.stringify(contrast) });
+    if (contrast.primaryGradientMinRatio < 4.5 || contrast.dangerRatio < 4.5) report.problems.push({ tag, kind: "light-action-contrast", message: JSON.stringify(contrast) });
+  }
+
+  // Offline remains a small, non-blocking banner.
+  try {
+    await page.goto(base, { waitUntil: "networkidle" });
+    if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+    await page.context().setOffline(true);
+    await page.waitForTimeout(150);
+    const offlineVisible = await page.locator(".plan-offline").isVisible().catch(() => false);
+    if (!offlineVisible) report.problems.push({ tag, kind: "offline-banner", message: "Offline banner was not visible after the browser context went offline." });
+    await page.context().setOffline(false);
+  } catch (e) {
+    await page.context().setOffline(false).catch(() => {});
+    report.problems.push({ tag, kind: "offline-banner", message: String(e).slice(0, 300) });
+  }
   await ctx.close();
 }
 
 await browser.close();
 report.finishedAt = new Date().toISOString();
 await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
-console.log(`shots: ${report.shots.length}, component states: ${report.componentStates.length}, problems: ${report.problems.length}, overflow: ${report.shots.filter((s) => s.horizontalOverflow).length}`);
+console.log(`shots: ${report.shots.length}, state shots: ${report.stateShots.length}, component states: ${report.componentStates.length}, problems: ${report.problems.length}, overflow: ${report.shots.concat(report.stateShots).filter((s) => s.horizontalOverflow).length}`);
 if (report.problems.length > 0) {
   throw new Error(`Visual QA failed with ${report.problems.length} problem(s). See report.json for details.`);
 }
