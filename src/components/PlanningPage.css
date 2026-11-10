@@ -140,3 +140,27 @@
 /* Light theme: subject colours used as text must stay readable on white (WCAG AA). */
 .theme-light .exam-countdown,
 .theme-light .plan-meta-subject{color:color-mix(in srgb,var(--subject-color,#0879E8) 55%,#101B32)}
+
+
+/* Step 24 Planning: shared primitives own component surfaces; this file keeps page layout. */
+.planning-page .az-btn { transition: background 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out, filter 180ms ease-out, transform 180ms ease-out; }
+.planning-page .az-chip { transition: background 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out; }
+.planning-page .az-popover { animation: plan-popover-in 180ms ease-out both; }
+.planning-page .plan-drawer { animation: plan-drawer-in 180ms ease-out both; }
+.planning-page .plan-toast { animation: plan-toast-in 180ms ease-out both; }
+.plan-state { display:grid; justify-items:start; gap:12px; padding:24px 4px; color:var(--text-soft,#a5a9b2); }
+.plan-state p { margin:0; }
+.plan-skeleton { display:grid; gap:10px; padding:8px 0; }
+.plan-skeleton span { display:block; height:58px; border:1px solid var(--border-soft); border-radius:12px; background:linear-gradient(90deg,var(--surface-1) 25%,var(--surface-2) 50%,var(--surface-1) 75%); background-size:200% 100%; animation:plan-skeleton 1.2s ease-in-out infinite; }
+.plan-offline { position:sticky; top:0; z-index:20; margin:0 0 10px; padding:8px 12px; border:1px solid var(--border-soft); border-radius:10px; background:var(--surface-2); color:var(--text-soft); font-size:12px; }
+.plan-quick-add .az-input { flex:1; min-width:0; width:100%; border:0; background:transparent; box-shadow:none; }
+.plan-subject-popover .az-input { min-height:40px; }
+.plan-tabs .az-tab { position:relative; padding:var(--az-space-3) 0; }
+.plan-tabs .az-tab.active:after { content:none; }
+.plan-toast.az-toast { inset-inline:0; inset-inline-start:0; transform:none; }
+@keyframes plan-skeleton { to { background-position:-200% 0; } }
+@keyframes plan-popover-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+@keyframes plan-toast-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+@media(prefers-reduced-motion:reduce) {
+  .planning-page .az-btn,.planning-page .az-chip,.planning-page .az-popover,.planning-page .plan-drawer,.planning-page .plan-toast,.plan-skeleton span { animation:none!important; transition:none!important; }
+}
