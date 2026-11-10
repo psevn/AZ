@@ -134,3 +134,11 @@
 @media (prefers-reduced-motion: reduce) {
   .az-btn, .az-input, .az-chip { transition: none; }
 }
+
+
+/* Light theme contrast: keep primary and danger actions above WCAG AA. */
+.theme-light .az-btn--primary {
+  background: linear-gradient(100deg,#0668C5 0%,#075EBB 48%,#2520D8 100%);
+  color: #FFFFFF;
+}
+.theme-light .az-btn--danger { color: #B42332; }
