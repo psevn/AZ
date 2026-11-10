@@ -1,0 +1,426 @@
+{
+  "base": "http://127.0.0.1:4173",
+  "startedAt": "2026-11-10T12:32:08.579Z",
+  "shots": [
+    {
+      "file": "desktop-en-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-light-universe-me.png",
+      "horizontalOverflow": false
+    }
+  ],
+  "componentStates": [
+    {
+      "file": "desktop-en-dark-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "desktop-en-dark-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "desktop-en-light-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "desktop-en-light-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "desktop-ar-dark-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "desktop-ar-dark-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "desktop-ar-light-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "desktop-ar-light-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "40px"
+    },
+    {
+      "file": "mobile-en-dark-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    },
+    {
+      "file": "mobile-en-dark-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    },
+    {
+      "file": "mobile-en-light-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    },
+    {
+      "file": "mobile-en-light-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    },
+    {
+      "file": "mobile-ar-dark-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    },
+    {
+      "file": "mobile-ar-dark-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    },
+    {
+      "file": "mobile-ar-light-plain-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    },
+    {
+      "file": "mobile-ar-light-universe-component-states.png",
+      "hoverMatched": true,
+      "hoverFilter": "brightness(1.06)",
+      "inputFocusVisible": true,
+      "inputFocusShadow": "rgb(14, 16, 19) 0px 0px 0px 2px, rgb(32, 230, 242) 0px 0px 0px 4px",
+      "disabled": true,
+      "disabledCursor": "not-allowed",
+      "buttonMinHeight": "44px"
+    }
+  ],
+  "problems": [],
+  "finishedAt": "2026-11-10T12:34:14.315Z"
+}
