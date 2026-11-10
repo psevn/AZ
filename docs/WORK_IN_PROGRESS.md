@@ -85,3 +85,7 @@
 - **Execution evidence:** I executed the actual parser/helper source and the 17 test cases in an isolated JavaScript runtime harness; result: **17 passed, 0 failed**. This was not `npm run test:quick-add` under Node's test runner.
 - **Not yet verified:** owner-side `npm run test:quick-add`, `npm run build`, browser behavior in multiple host timezones, UI/RTL/mobile screenshots, Playwright flows, and CI. These are not claimed complete.
 - No dependency added. No task-type column, SQL migration, RLS change, live database write, merge, or deployment.
+
+## 2026-11-10 — Visual QA pipeline (Claude, branch `design/visual-qa-pipeline`, based on `feature/azi-intelligence-core`)
+- Added `src/lib/demoSupabase.ts` (fixture client, only used when `VITE_DEMO=1` at build time), a 4-line switch in `src/lib/supabase.ts`, `scripts/visual-qa.mjs`, `.github/workflows/visual-qa.yml`, and `docs/design/AZ-WEB-DESIGN-WORLD-CLASS-PLAN.md`.
+- **Not verified in the agent session** (npm registry blocked there): `npm run build`, the demo client against the real component tree, the screenshot script. CI results are the evidence; see the next entry.
