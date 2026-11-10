@@ -164,12 +164,13 @@ for (const r of runs) {
     }
   }
 
-  // Exercise the Quiz screen states in both themes, languages and viewport sizes.
+  // Quiz QA matrix: all requested viewport/theme/language combinations; one background is sufficient.
+  if (r.bg === "plain") {
   for (const state of ["setup", "question", "feedback", "result", "empty", "error", "loading"]) {
     try {
       await page.goto(`${base}/?qa-quiz-state=${state}`, { waitUntil: "domcontentloaded" });
       await page.locator(".home-quiz-action").click({ timeout: 6000 });
-      await page.waitForTimeout(250);
+      await page.locator(".quiz-page").waitFor({ timeout: 6000 });
       const file = `${tag}-quiz-${state}.png`;
       await page.screenshot({ path: `${out}/${file}`, fullPage: true });
       const metrics = await page.evaluate(() => ({
@@ -181,6 +182,8 @@ for (const r of runs) {
     } catch (e) {
       report.problems.push({ tag, kind: "quiz-state", state, message: String(e).slice(0, 300) });
     }
+  }
+
   }
 
   // Confirm Planning has its own Short quiz entry point.
