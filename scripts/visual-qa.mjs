@@ -149,6 +149,31 @@ for (const r of runs) {
       report.problems.push({ tag, kind: "planning-state", state, message: String(e).slice(0, 300) });
     }
   }
+  // Check the light-theme accent and demo subject-label colors against the page surface.
+  if (r.theme === "light") {
+    const contrast = await page.evaluate(() => {
+      const rgb = (value) => {
+        const match = value.match(/[\\d.]+/g)?.map(Number) ?? [];
+        return match.length >= 3 ? match.slice(0,3) : [0,0,0];
+      };
+      const luminance = (color) => {
+        const [r,g,b] = rgb(color).map(v => { const c=v/255; return c<=0.04045?c/12.92:((c+0.055)/1.055)**2.4; });
+        return 0.2126*r+0.7152*g+0.0722*b;
+      };
+      const ratio = (a,b) => { const x=luminance(a),y=luminance(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); };
+      const shell = document.querySelector(".app-shell");
+      const surface = getComputedStyle(shell).backgroundColor;
+      const accent = getComputedStyle(shell).getPropertyValue("--accent").trim();
+      const accentRatio = ratio(accent, surface);
+      const subject = document.querySelector(".plan-meta-subject");
+      const subjectColor = subject ? getComputedStyle(subject).color : "";
+      const subjectRatio = subjectColor ? ratio(subjectColor, surface) : null;
+      return { accent, surface, accentRatio, subjectColor, subjectRatio };
+    });
+    if (contrast.accentRatio < 4.5) report.problems.push({ tag, kind: "light-accent-contrast", message: JSON.stringify(contrast) });
+    if (contrast.subjectRatio !== null && contrast.subjectRatio < 4.5) report.problems.push({ tag, kind: "light-subject-contrast", message: JSON.stringify(contrast) });
+  }
+
   // Offline remains a small, non-blocking banner.
   try {
     await page.goto(base, { waitUntil: "networkidle" });
