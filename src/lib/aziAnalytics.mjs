@@ -172,7 +172,10 @@ export function analyzeQuizPerformance({
     throw new RangeError("minimumTopicAnswers must be a positive integer");
   }
 
-  const finishedAttempts = attempts.filter((attempt) => attempt?.id && validDate(attempt.finished_at));
+  const finishedAttempts = attempts.filter((attempt) => {
+    const finishedAt = validDate(attempt?.finished_at);
+    return attempt?.id && finishedAt && finishedAt <= instant;
+  });
   const finishedById = new Map(finishedAttempts.map((attempt) => [attempt.id, attempt]));
   const questionById = new Map(questions.filter((question) => question?.id).map((question) => [question.id, question]));
   const topicCounts = new Map();
