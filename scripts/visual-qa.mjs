@@ -96,6 +96,8 @@ for (const r of runs) {
 
     const hover = page.locator("#qa-hover");
     await hover.hover();
+    // Let the 140ms CSS transition finish before reading the computed hover filter.
+    await page.waitForTimeout(200);
     const hoverState = await hover.evaluate((el) => ({
       hovered: el.matches(":hover"),
       filter: getComputedStyle(el).filter,
@@ -115,7 +117,7 @@ for (const r of runs) {
         buttonMinHeight: getComputedStyle(document.querySelector("#qa-hover")).minHeight,
       };
     }, hoverState);
-    if (!state.hoverMatched || state.hoverFilter === "none" || state.hoverFilter === "brightness(1)") report.problems.push({ tag, kind: "component-hover", message: `Primary button hover effect missing or unchanged: ${JSON.stringify(hoverState)}` });
+    if (!state.hoverMatched || state.hoverFilter !== "brightness(1.06)") report.problems.push({ tag, kind: "component-hover", message: `Expected active primary-button hover filter brightness(1.06), received: ${JSON.stringify(hoverState)}` });
     if (!state.inputFocusVisible || state.inputFocusShadow === "none") report.problems.push({ tag, kind: "component-focus", message: `Input focus-visible ring missing: ${JSON.stringify(state)}` });
     if (!state.disabled || state.disabledCursor !== "not-allowed") report.problems.push({ tag, kind: "component-disabled", message: `Disabled button state incorrect: ${JSON.stringify(state)}` });
     if (r.vp === "mobile" && Number.parseFloat(state.buttonMinHeight) < 44) report.problems.push({ tag, kind: "component-touch-target", message: `Mobile button is below 44px: ${state.buttonMinHeight}` });
@@ -132,3 +134,6 @@ await browser.close();
 report.finishedAt = new Date().toISOString();
 await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
 console.log(`shots: ${report.shots.length}, component states: ${report.componentStates.length}, problems: ${report.problems.length}, overflow: ${report.shots.filter((s) => s.horizontalOverflow).length}`);
+if (report.problems.length > 0) {
+  throw new Error(`Visual QA failed with ${report.problems.length} problem(s). See report.json for details.`);
+}
