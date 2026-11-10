@@ -1,4 +1,5 @@
 /* AZ design tokens — extracted without changing existing values. */
+/* Keep values centralized here; component-level consumption is the next design-system slice. */
 :root {
   --az-font-sans: "Inter", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
   --az-space-1: 4px;
