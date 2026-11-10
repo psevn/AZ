@@ -14,7 +14,7 @@ export function qatarDateKey(instant = new Date()) {
 /** Returns the nearest subject exam on or after the supplied Qatar calendar date. */
 export function nearestUpcomingExam(subjects, today = qatarDateKey()) {
   return subjects
-    .filter(subject => /^\\d{4}-\\d{2}-\\d{2}$/.test(subject.exam_date ?? "") && subject.exam_date >= today)
+    .filter(subject => /^\d{4}-\d{2}-\d{2}$/.test(subject.exam_date ?? "") && subject.exam_date >= today)
     .sort((a, b) => a.exam_date.localeCompare(b.exam_date))[0] ?? null;
 }
 
