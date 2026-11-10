@@ -39,7 +39,7 @@ for (const r of runs) {
   for (let i = 0; i < names.length; i++) {
     try {
       if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 }).catch(() => {});
-      await page.locator(".primary-nav .primary-nav-item button").nth(i).click({ timeout: 6000 });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(i).click({ timeout: 6000 });
       await page.waitForTimeout(700);
       if (r.vp === "mobile") await page.keyboard.press("Escape").catch(() => {});
       const file = `${tag}-${names[i]}.png`;
