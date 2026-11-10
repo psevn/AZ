@@ -1,0 +1,152 @@
+{
+  "base": "http://127.0.0.1:4173",
+  "startedAt": "2026-11-10T08:01:00.450Z",
+  "shots": [
+    {
+      "file": "desktop-en-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-light-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-light-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-en-dark-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "desktop-ar-dark-universe-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-ar-dark-plain-me.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-home.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-planning.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-az.png",
+      "horizontalOverflow": false
+    },
+    {
+      "file": "mobile-en-light-plain-me.png",
+      "horizontalOverflow": false
+    }
+  ],
+  "problems": [],
+  "finishedAt": "2026-11-10T08:01:55.629Z"
+}
