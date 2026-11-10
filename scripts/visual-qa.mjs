@@ -15,8 +15,7 @@ const runs = [];
 for (const lang of ["en", "ar"]) for (const theme of ["dark", "light"]) runs.push({ vp: "desktop", lang, theme, bg: "plain" });
 runs.push({ vp: "desktop", lang: "en", theme: "dark", bg: "universe" });
 runs.push({ vp: "desktop", lang: "ar", theme: "dark", bg: "universe" });
-for (const lang of ["en", "ar"]) runs.push({ vp: "mobile", lang, theme: "dark", bg: "plain" });
-runs.push({ vp: "mobile", lang: "en", theme: "light", bg: "plain" });
+for (const lang of ["en", "ar"]) for (const theme of ["dark", "light"]) runs.push({ vp: "mobile", lang, theme, bg: "plain" });
 
 const names = ["home", "planning", "az", "me"];
 const report = { base, startedAt: new Date().toISOString(), shots: [], problems: [] };
