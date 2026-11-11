@@ -1,5 +1,3 @@
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 function validDate(value) {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
@@ -44,12 +42,12 @@ export function selectDailyChallenge({
   recentChallengeKeys = [],
   dismissedChallengeKeys = [],
   existingChallenge = null,
-  minimumPracticeQuestions = 3,
+  minimumPracticeQuestions = 5,
 } = {}) {
   const instant = validDate(now);
   if (!instant) throw new TypeError("now must be a valid date");
-  if (!Number.isInteger(minimumPracticeQuestions) || minimumPracticeQuestions < 1) {
-    throw new TypeError("minimumPracticeQuestions must be a positive integer");
+  if (!Number.isInteger(minimumPracticeQuestions) || minimumPracticeQuestions < 5) {
+    throw new TypeError("minimumPracticeQuestions must be at least 5");
   }
 
   const date = dateKeyInZone(instant, timeZone);
