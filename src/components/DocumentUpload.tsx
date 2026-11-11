@@ -76,8 +76,8 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
   return <section className="document-upload-panel" aria-labelledby="document-upload-title">
     <div className="document-upload-copy">
       <span className="eyebrow">{ar ? "مكتبة المواد" : "YOUR MATERIALS"}</span>
-      <h3 id="document-upload-title">{ar ? "أضف أول مستند دراسي" : "Add your first study document"}</h3>
-      <p>{ar ? "ارفع ملفات محاضراتك وملخصاتك بصيغة PDF. الحد الأقصى 20 ميجابايت." : "Upload lecture slides and notes as PDF files. Maximum size: 20 MB."}</p>
+      <h3 id="document-upload-title">{ar ? "أضف مستنداً دراسياً" : "Add a study document"}</h3>
+      <p>{ar ? "ارفع محاضراتك وملخصاتك بصيغة PDF لتجميع موادك في مكان واحد. الحد الأقصى 20 ميجابايت." : "Add lecture slides and notes to keep your study materials in one place. Maximum size: 20 MB."}</p>
     </div>
     <label className="document-upload-picker">
       <span>{file ? file.name : (ar ? "اختر ملف PDF" : "Choose a PDF")}</span>

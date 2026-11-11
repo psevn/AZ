@@ -5,10 +5,13 @@ on:
     paths:
       - "src/App.tsx"
       - "src/components/DocumentUpload.tsx"
+      - "src/components/DocumentLibrary.tsx"
+      - "src/styles.css"
       - "supabase/functions/create-document-signed-url/**"
       - "supabase/functions/create-document-upload-url/**"
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
+      - "tests/documentLibraryContract.test.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/document-signed-url.yml"
@@ -46,5 +49,7 @@ jobs:
         run: npm run test:document-signed-url
       - name: Test PDF upload security contract
         run: npm run test:document-upload
+      - name: Test document library contract
+        run: npm run test:document-library
       - name: Build web application
         run: npm run build
