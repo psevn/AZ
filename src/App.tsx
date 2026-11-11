@@ -303,7 +303,7 @@ export default function App() {
   }
   async function openDocument(documentId:string) {
     if (!supabase || !user) return;
-    const {data,error:e}=await supabase.from("documents").select("id,title,storage_path").eq("id",documentId).eq("user_id",user.id).eq("status","ready").single();
+    const {data,error:e}=await supabase.from("documents").select("id,title").eq("id",documentId).eq("user_id",user.id).eq("status","ready").single();
     if(e||!data){setError(e?.message??(ar?"تعذر فتح المستند":"Could not open document"));return;}
     const {data:signed,error:signError}=await supabase.functions.invoke("create-document-signed-url",{
       body:{documentId:data.id},
