@@ -1,22 +1,37 @@
-name: Quiz Answer Security Contract
+name: Quiz Runtime And Answer Security
 
 on:
   pull_request:
     paths:
+      - "src/components/QuizPage.tsx"
       - "supabase/proposals/secure_quiz_answer_response.sql"
       - "tests/quizAnswerSecurity.test.mjs"
+      - "tests/quizRuntimeContract.test.mjs"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/quiz-answer-security.yml"
 
 permissions:
   contents: read
 
 jobs:
-  quiz-answer-security:
+  quiz-runtime:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build application
+        run: npm run build
+      - name: Verify quiz runtime contract
+        run: npm run test:quiz-runtime
       - name: Verify safe answer response proposal
         run: node --test tests/quizAnswerSecurity.test.mjs
+      - name: Verify quiz generation contract
+        run: npm run test:quiz-generation

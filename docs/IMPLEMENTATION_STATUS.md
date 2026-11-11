@@ -159,3 +159,21 @@ Connect the existing QuizPage to the established RPC flow:
 6. Keep Daily Challenge integration separate until this Study Pack quiz path is working end-to-end.
 
 No API key, Edge Function deployment, live database change, or production deployment was performed during this inspection.
+
+
+## Study Pack quiz client runtime — PR #43
+
+PR #43 connects the non-demo QuizPage to the existing server attempt lifecycle:
+
+- Ready documents are loaded and selectable as quiz sources.
+- The client invokes the `generate-quiz` Edge Function with the selected document, language, question count, and optional topic.
+- The client starts a new server-owned attempt with `start_attempt`.
+- Questions are loaded from the attempt's immutable `attempt_questions` snapshot and related `quiz_questions` rows; the client checks that the loaded count matches the server's snapshot count.
+- Answers are submitted through `submit_answer`; the client does not carry `correct_index` or calculate live correctness.
+- Completion and score come from `finish_attempt`.
+- Retry creates a new attempt against the same quiz rather than reusing previous answer rows.
+- Synthetic answer feedback remains isolated to explicit `VITE_DEMO=1` visual demo mode.
+
+GitHub Actions verified on 2026-11-11: `npm ci`, `npm run build`, quiz runtime contract tests, safe answer SQL proposal tests, and quiz generation contract tests passed. These are build/static-contract checks, not an authenticated end-to-end test against Supabase.
+
+**Not live-enabled:** the `generate-quiz` Edge Function is not deployed, `OPENAI_API_KEY` is not configured, and the live database does not yet contain `public.create_generated_quiz` (the SQL remains a proposal). Therefore the UI integration is committed for review but real document-to-quiz generation is not yet operational. No API key was created, no function was deployed, and no database migration was applied.
