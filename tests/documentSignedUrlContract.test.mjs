@@ -12,6 +12,7 @@ test("the browser requests a signed URL by document ID and does not sign Storage
   assert.match(app, /functions\.invoke\("create-document-signed-url"/);
   assert.match(app, /body:\s*\{documentId:data\.id\}/);
   assert.doesNotMatch(app, /storage\.from\("documents"\)\.createSignedUrl/);
+  assert.doesNotMatch(app, /storage_path/);
 });
 
 test("the endpoint authenticates the bearer token with Supabase Auth", () => {
