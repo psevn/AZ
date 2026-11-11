@@ -28,11 +28,13 @@ export async function extractPdfPages(
       const page = await pdf.getPage(pageNo);
       try {
         const content = await page.getTextContent();
-        const text = normalizePdfTextItems(
-          content.items.filter((item): item is typeof item & { str: string } => "str" in item),
-        );
+        const textItems = content.items.flatMap((item) => {
+          if (!("str" in item)) return [];
+          return [{ str: item.str, hasEOL: item.hasEOL }];
+        });
+        const text = normalizePdfTextItems(textItems);
         if (text.length > 18_000) {
-          throw new RangeError(`Page ${pageNo} contains too much text to process safely.`);
+          throw new RangeError(\`Page \${pageNo} contains too much text to process safely.\`);
         }
         pages.push({ pageNo, text });
       } finally {
