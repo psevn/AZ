@@ -6,6 +6,7 @@ on:
       - "supabase/tests/clean_replay_stubs.sql"
       - "supabase/tests/run_clean_replay.sh"
       - "supabase/tests/verify_clean_replay.sql"
+      - "docs/technical/SUPABASE-MIGRATION-RECOVERY.md"
       - ".github/workflows/clean-migration-replay.yml"
 
 jobs:
