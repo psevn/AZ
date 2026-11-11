@@ -7,6 +7,7 @@ type DocumentRow = {
   status: "uploaded" | "processing" | "ready" | "failed";
   created_at: string;
   page_count: number | null;
+  failed_reason: string | null;
 };
 
 type Props = {
@@ -27,7 +28,10 @@ const COPY = {
     ready: "جاهز للدراسة",
     uploaded: "تم الرفع · بانتظار المعالجة",
     processing: "قيد المعالجة",
-    failed: "تعذّر إكمال الرفع",
+    failed: "تعذّرت المعالجة",
+    uploadFailed: "فشل الرفع",
+    scanned: "ملف مصوّر · يحتاج OCR",
+    password: "ملف محمي بكلمة مرور",
     open: "فتح المستند",
     preview: "معاينة PDF",
     practice: "ابدأ التدريب",
@@ -43,7 +47,10 @@ const COPY = {
     ready: "Ready to study",
     uploaded: "Uploaded · awaiting processing",
     processing: "Processing",
-    failed: "Upload did not complete",
+    failed: "Processing failed",
+    uploadFailed: "Upload failed",
+    scanned: "Scanned PDF · OCR needed",
+    password: "Password-protected PDF",
     open: "Open document",
     preview: "Preview PDF",
     practice: "Practice",
@@ -69,7 +76,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
     setError("");
     const { data, error: queryError } = await supabase
       .from("documents")
-      .select("id,title,status,created_at,page_count")
+      .select("id,title,status,created_at,page_count,failed_reason")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (queryError) {
@@ -83,11 +90,14 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
 
   useEffect(() => { void load(); }, [load, refreshKey]);
 
-  function statusLabel(status: DocumentRow["status"]) {
-    if (status === "ready") return t.ready;
-    if (status === "processing") return t.processing;
-    if (status === "failed") return t.failed;
-    return t.uploaded;
+  function statusLabel(document: DocumentRow) {
+    if (document.status === "ready") return t.ready;
+    if (document.status === "processing") return t.processing;
+    if (document.status !== "failed") return t.uploaded;
+    if (document.failed_reason === "Upload did not complete." || document.failed_reason === "Could not prepare the upload.") return t.uploadFailed;
+    if (document.failed_reason?.includes("No selectable text")) return t.scanned;
+    if (document.failed_reason?.includes("password-protected")) return t.password;
+    return t.failed;
   }
 
   return (
@@ -121,7 +131,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
                 <strong title={document.title}>{document.title}</strong>
                 <small>{new Date(document.created_at).toLocaleDateString(ar ? "ar-QA" : "en-QA", { day: "numeric", month: "short", year: "numeric" })}{document.status === "ready" && document.page_count ? ` · ${document.page_count} ${ar ? "صفحة" : "pages"}` : ""}</small>
               </span>
-              <span className={"document-library-status is-" + document.status}>{statusLabel(document.status)}</span>
+              <span className={"document-library-status is-" + document.status}>{statusLabel(document)}</span>
               {document.status !== "failed" ? (
                 <div className="document-library-actions">
                   <button type="button" className="az-btn az-btn--ghost document-library-open" onClick={() => onOpenDocument(document.id)}>{document.status === "ready" ? t.open : t.preview} ↗</button>
