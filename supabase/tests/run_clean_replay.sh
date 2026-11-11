@@ -30,5 +30,6 @@ if [[ "$count" -ne 32 ]]; then
 fi
 
 "${PSQL[@]}" -f "$ROOT/supabase/tests/verify_clean_replay.sql"
+"${PSQL[@]}" -f "$ROOT/supabase/tests/verify_atomic_document_processing.sql"
 "${PSQL[@]}" -f "$ROOT/supabase/tests/verify_rls_isolation.sql"
 echo "PASS: all 32 migrations replayed and representative authenticated RLS checks passed on a disposable PostgreSQL database."
