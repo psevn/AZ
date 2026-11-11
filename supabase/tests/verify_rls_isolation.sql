@@ -278,6 +278,7 @@ begin
     update public.project_tasks set assignee_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
      where id = 'c4000000-0000-4000-8000-000000000001';
     if found then raise exception 'Non-lead member unexpectedly reassigned a project task'; end if;
+  exception when insufficient_privilege then null;
   end;
 
   begin
