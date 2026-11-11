@@ -3,7 +3,7 @@ name: Quiz Answer Security Contract
 on:
   pull_request:
     paths:
-      - "supabase/migrations/*secure_quiz_answer_response.sql"
+      - "supabase/proposals/secure_quiz_answer_response.sql"
       - "tests/quizAnswerSecurity.test.mjs"
       - ".github/workflows/quiz-answer-security.yml"
 
@@ -18,7 +18,5 @@ jobs:
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Verify safe answer response contract
+      - name: Verify safe answer response proposal
         run: node --test tests/quizAnswerSecurity.test.mjs
