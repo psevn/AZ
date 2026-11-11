@@ -7,6 +7,11 @@ on:
       - "supabase/proposals/secure_quiz_answer_response.sql"
       - "tests/quizAnswerSecurity.test.mjs"
       - "tests/quizRuntimeContract.test.mjs"
+      - "tests/quizPersistenceContract.test.mjs"
+      - "tests/quizGeneration.test.mjs"
+      - "supabase/functions/generate-quiz/**"
+      - "supabase/functions/_shared/quizGeneration.mjs"
+      - "supabase/proposals/create_generated_quiz_rpc.sql"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/quiz-answer-security.yml"
@@ -35,3 +40,5 @@ jobs:
         run: node --test tests/quizAnswerSecurity.test.mjs
       - name: Verify quiz generation contract
         run: npm run test:quiz-generation
+      - name: Verify generated quiz persistence security
+        run: npm run test:quiz-persistence
