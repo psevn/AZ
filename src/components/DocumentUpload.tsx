@@ -65,7 +65,7 @@ export default function DocumentUpload({ userId, lang, onUploaded }: Props) {
       onUploaded();
     } catch (cause) {
       if (rowCreated) {
-        await supabase.from("documents").delete().eq("id", documentId).eq("user_id", userId);
+        await supabase.from("documents").update({ status: "failed", failed_reason: "Upload did not complete." }).eq("id", documentId).eq("user_id", userId);
       }
       setError(cause instanceof Error ? cause.message : (ar ? "تعذر رفع الملف." : "Could not upload the file."));
     } finally {
