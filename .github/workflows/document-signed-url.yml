@@ -15,10 +15,12 @@ on:
       - "supabase/functions/create-document-signed-url/**"
       - "supabase/functions/create-document-upload-url/**"
       - "supabase/functions/process-document-pages/**"
+      - "supabase/migrations/*atomic_document_processing.sql"
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
       - "tests/documentLibraryContract.test.mjs"
       - "tests/documentProcessingContract.test.mjs"
+      - "tests/documentProcessingAtomic.test.mjs"
       - "tests/documentRecoveryContract.test.mjs"
       - "tests/pdfTextPipeline.test.mjs"
       - "tests/documentReaderContract.test.mjs"
@@ -67,6 +69,8 @@ jobs:
         run: npm run test:pdf-pipeline
       - name: Test interrupted document recovery
         run: npm run test:document-recovery
+      - name: Test atomic document processing
+        run: npm run test:document-atomic
       - name: Test document reader contract
         run: npm run test:document-reader
       - name: Build web application
