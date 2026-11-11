@@ -248,7 +248,7 @@ Deno.serve(async (request: Request) => {
       return json(422, { error: FAILURE_REASONS.no_text, code: "no_text" });
     }
 
-    const { error: completeError } = await adminClient
+    const { data: completed, error: completeError } = await adminClient
       .from("documents")
       .update({
         status: "ready",
@@ -260,25 +260,31 @@ Deno.serve(async (request: Request) => {
       })
       .eq("id", documentId)
       .eq("user_id", userId)
-      .eq("status", "processing");
+      .eq("status", "processing")
+      .select("id")
+      .maybeSingle();
     if (completeError) {
       console.error("process-document-pages completion update failed:", completeError.code);
       return json(500, { error: "Could not finish document processing." });
     }
+    if (!completed) return json(409, { error: "Document processing state changed before completion." });
     return json(200, { ok: true, status: "ready", pageCount });
   }
 
   const reasonCode = typeof body.reasonCode === "string" ? body.reasonCode : "processing_failed";
   const reason = FAILURE_REASONS[reasonCode] ?? FAILURE_REASONS.processing_failed;
-  const { error: failError } = await adminClient
+  const { data: failed, error: failError } = await adminClient
     .from("documents")
     .update({ status: "failed", failed_reason: reason, locked_at: null })
     .eq("id", documentId)
     .eq("user_id", userId)
-    .eq("status", "processing");
+    .eq("status", "processing")
+    .select("id")
+    .maybeSingle();
   if (failError) {
     console.error("process-document-pages failure update failed:", failError.code);
     return json(500, { error: "Could not update document processing status." });
   }
+  if (!failed) return json(409, { error: "Document processing state changed before failure was recorded." });
   return json(200, { ok: true, status: "failed", reasonCode });
 });
