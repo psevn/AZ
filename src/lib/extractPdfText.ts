@@ -20,7 +20,7 @@ export async function extractPdfPages(
   try {
     const pdf = await loadingTask.promise;
     if (!Number.isInteger(pdf.numPages) || pdf.numPages < 1 || pdf.numPages > 1_000) {
-      throw new RangeError("This PDF must contain between 1 and 1,000 pages.");
+          throw new RangeError("Page " + pageNo + " contains too much text to process safely.");
     }
 
     const pages: ExtractedPdfPage[] = [];
@@ -34,7 +34,7 @@ export async function extractPdfPages(
         });
         const text = normalizePdfTextItems(textItems);
         if (text.length > 18_000) {
-          throw new RangeError(\`Page \${pageNo} contains too much text to process safely.\`);
+          throw new RangeError("Page " + pageNo + " contains too much text to process safely.");
         }
         pages.push({ pageNo, text });
       } finally {
