@@ -54,10 +54,14 @@ export async function recoverDocumentProcessing(
     }
     const file = new File([blob], (title || "Study document") + ".pdf", { type: "application/pdf" });
 
-    await invokeProcessing(client, {
+    const started = await invokeProcessing(client, {
       action: status === "uploaded" ? "start" : "resume",
       documentId,
     });
+    if (typeof started.processingToken !== "string") {
+      throw new Error("The processing service returned an invalid attempt token.");
+    }
+    const processingToken = started.processingToken;
     processingStarted = true;
 
     onProgress?.("extracting", 0, 0);
@@ -73,18 +77,19 @@ export async function recoverDocumentProcessing(
       await invokeProcessing(client, {
         action: "save_pages",
         documentId,
+        processingToken,
         pages: batches[index],
       });
       onProgress?.("saving", index + 1, batches.length);
     }
 
     onProgress?.("finalizing");
-    await invokeProcessing(client, { action: "complete", documentId, pageCount });
+    await invokeProcessing(client, { action: "complete", documentId, pageCount, processingToken });
     processingStarted = false;
   } catch (cause) {
     if (processingStarted) {
       const { error } = await client.functions.invoke("process-document-pages", {
-        body: { action: "fail", documentId, reasonCode: failureReason(cause) },
+        body: { action: "fail", documentId, processingToken, reasonCode: failureReason(cause) },
       });
       if (error) console.error("Could not record recovered document failure:", error.message);
     }
