@@ -16,7 +16,7 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
     if (!supabase || !file || busy) return;
     setError("");
     setMessage("");
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+    if (!file.name.toLowerCase().endsWith(".pdf") || (file.type !== "" && file.type !== "application/pdf")) {
       setError(ar ? "اختر ملف PDF فقط." : "Choose a PDF file.");
       return;
     }
