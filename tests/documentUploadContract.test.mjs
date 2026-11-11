@@ -10,7 +10,7 @@ test("Academic workspace renders the authenticated PDF upload panel", () => {
   assert.match(app, /<DocumentUpload lang=\{lang\} onUploaded=\{\(\) => void loadData\(\)\} \/>/);
   assert.match(panel, /accept="application\/pdf,\.pdf"/);
   assert.match(panel, /MAX_FILE_BYTES = 20 \* 1024 \* 1024/);
-  assert.match(panel, /!file\.name\.toLowerCase\(\)\.endsWith\("\\.pdf"\) \|\| \(file\.type !== "" && file\.type !== "application\/pdf"\)/);
+  assert.match(panel, /!file\.name\.toLowerCase\(\)\.endsWith\("\.pdf"\) \|\| \(file\.type !== "" && file\.type !== "application\/pdf"\)/);
 });
 
 test("browser delegates document creation and failure status to the trusted endpoint", () => {
