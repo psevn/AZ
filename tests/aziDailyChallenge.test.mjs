@@ -46,7 +46,8 @@ test("falls back to a ready Study Pack when no topic is available", () => {
   });
 
   assert.equal(result.type, "practice_study_pack");
-  assert.equal(result.sourceId, "ready");
+  assert.equal(result.sourceId, "doc-ready");
+  assert.equal(result.quizId, "quiz-ready");
 });
 
 test("does not select unavailable, undersized, or non-reviewable sources", () => {
