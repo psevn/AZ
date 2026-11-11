@@ -22,20 +22,20 @@ export function makePageBatches(documentId, pages, maxBytes = 300 * 1024) {
       throw new TypeError("Invalid extracted PDF page.");
     }
     if (page.text.length > 18_000) {
-      throw new RangeError(\`Page \${page.pageNo} contains too much text for one processing batch.\`);
+      throw new RangeError("Page " + page.pageNo + " contains too much text for one processing batch.");
     }
 
     const candidate = [...current, page];
     const payload = JSON.stringify({ action: "save_pages", documentId, pages: candidate });
     if (encoder.encode(payload).byteLength > maxBytes) {
       if (current.length === 0) {
-        throw new RangeError(\`Page \${page.pageNo} is too large to save safely.\`);
+        throw new RangeError("Page " + page.pageNo + " is too large to save safely.");
       }
       batches.push(current);
       current = [page];
       const singlePayload = JSON.stringify({ action: "save_pages", documentId, pages: current });
       if (encoder.encode(singlePayload).byteLength > maxBytes) {
-        throw new RangeError(\`Page \${page.pageNo} is too large to save safely.\`);
+        throw new RangeError("Page " + page.pageNo + " is too large to save safely.");
       }
     } else {
       current = candidate;
