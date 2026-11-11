@@ -88,7 +88,7 @@ begin
     if p_page_count is null or p_page_count < 1 or p_page_count > 1000 then
       return jsonb_build_object('ok', false, 'statusCode', 400, 'error', 'A valid page count is required.');
     end if;
-    select count(*), min(page_no), max(page_no), string_agg(text, E'\\n' order by page_no)
+    select count(*), min(page_no), max(page_no), string_agg(text, chr(10) order by page_no)
       into v_page_count, v_min_page, v_max_page, v_combined_text
     from public.document_pages where document_id = p_document_id and user_id = p_user_id;
     if v_page_count <> p_page_count or v_min_page <> 1 or v_max_page <> p_page_count then
