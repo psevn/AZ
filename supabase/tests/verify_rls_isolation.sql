@@ -175,7 +175,7 @@ begin
   loop
     select correct_index, is_correct, explanation
       into v_correct_index, v_is_correct, v_explanation
-      from public.submit_answer(v_attempt_id, r.question_id, 0);
+      from public.submit_answer(v_attempt_id, r.question_id, 0::smallint);
     if v_correct_index <> 0 or v_is_correct is not true or v_explanation is null then
       raise exception 'Practice grading RPC returned an unexpected result';
     end if;
