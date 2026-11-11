@@ -6,6 +6,10 @@ const page = readFileSync(
   new URL("../src/components/QuizPage.tsx", import.meta.url),
   "utf8",
 );
+const app = readFileSync(
+  new URL("../src/App.tsx", import.meta.url),
+  "utf8",
+);
 
 test("generates a quiz from the selected ready document through the server function", () => {
   assert.match(page, /functions\.invoke\("generate-quiz"/);
@@ -59,4 +63,19 @@ test("reports challenge completion only after a valid server-finished attempt", 
   assert.match(page, /attemptId,/);
   assert.match(page, /finishedAt: result\.finished_at/);
   assert.match(page, /score: finalScore/);
+});
+
+test("Home selects only a ready document with an existing five-question quiz", () => {
+  assert.match(app, /from\("documents"\)[\s\S]*?eq\("status", "ready"\)/);
+  assert.match(app, /from\("quizzes"\)[\s\S]*?quiz_questions\(id\)/);
+  assert.match(app, /available_question_count: questionRows\.length/);
+  assert.match(app, /selectDailyChallenge\(\{ studyPacks/);
+  assert.match(app, /setSection\("quiz"\)/);
+});
+
+test("Home retains challenge, quiz, and attempt IDs only after the QuizPage callback", () => {
+  assert.match(app, /challengeId: string; quizId: string; attemptId: string/);
+  assert.match(app, /onChallengeCompleted=\{\(completion\)=>setDailyChallengeCompletion\(completion\)\}/);
+  assert.match(app, /dailyChallengeCompletion\?\.challengeId === dailyChallenge\.id/);
+  assert.doesNotMatch(app, /awardPoints|grantPoints|points\s*\+=/i);
 });
