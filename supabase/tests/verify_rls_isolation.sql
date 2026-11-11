@@ -152,8 +152,7 @@ end
 $$;
 
 -- Exercise the real practice/grading and Daily Challenge RPC chain as student A.
-do $
-declare
+do $test$\ndeclare
   v_attempt_id uuid;
   v_question_id uuid;
   v_correct_index smallint;
@@ -211,8 +210,7 @@ begin
   if v_completion_id is null or not v_already_completed then
     raise exception 'Daily Challenge completion replay was not idempotent';
   end if;
-end
-$;
+end\n$test$;
 
 -- Student B must not see or mutate project A. B also cannot use A's quiz or attempt.
 
