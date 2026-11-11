@@ -60,11 +60,11 @@ test("reports challenge completion only after a valid server-finished attempt", 
   assert.ok(validationIndex > finishIndex);
   assert.ok(receiptIndex > validationIndex);
   assert.ok(callbackIndex > receiptIndex);
-  assert.match(page, /challengeId: challenge\.id/);
-  assert.match(page, /quizId,/);
-  assert.match(page, /attemptId,/);
-  assert.match(page, /finishedAt: result\.finished_at/);
-  assert.match(page, /score: finalScore/);
+  assert.match(page, /challengeId: completion\.challenge_id/);
+  assert.match(page, /quizId: completion\.quiz_id/);
+  assert.match(page, /attemptId: completion\.attempt_id/);
+  assert.match(page, /finishedAt: completion\.finished_at/);
+  assert.match(page, /score: Number\(completion\.score\)/);
 });
 
 test("Home selects only a ready document with an existing five-question quiz", () => {
