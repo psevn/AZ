@@ -3,20 +3,24 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const endpoint = readFileSync(new URL("../supabase/functions/process-document-pages/index.ts", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../supabase/migrations/20261111080000_atomic_document_processing.sql", import.meta.url), "utf8");
 const recovery = readFileSync(new URL("../src/lib/recoverDocumentProcessing.ts", import.meta.url), "utf8");
 const library = readFileSync(new URL("../src/components/DocumentLibrary.tsx", import.meta.url), "utf8");
 
-test("recovery is limited to stale processing locks and uses compare-and-swap", () => {
-  assert.match(endpoint, /STALE_PROCESSING_MS = 30 \* 60 \* 1000/);
-  assert.match(endpoint, /action === "resume"/);
-  assert.match(endpoint, /Date\.now\(\) - lockTime >= STALE_PROCESSING_MS/);
-  assert.match(endpoint, /\.eq\("locked_at", lockedAt\)/);
-  assert.match(endpoint, /\.is\("locked_at", null\)/);
+test("recovery is limited to stale processing locks and is checked under a database row lock", () => {
+  assert.match(endpoint, /action !== "resume"/);
+  assert.match(migration, /p_action = 'resume'/);
+  assert.match(migration, /for update;/);
+  assert.match(migration, /interval '30 minutes'/);
+  assert.match(migration, /v_locked_at > clock_timestamp\(\) - interval '30 minutes'/);
 });
 
-test("processing attempts are fenced so an older browser cannot keep writing", () => {
-  assert.match(endpoint, /body\.processingToken !== document\.locked_at/);
-  assert.match(endpoint, /processingToken\s*\}\)/);
+test("processing attempts are fenced atomically before writes and terminal transitions", () => {
+  assert.match(migration, /p_processing_token is distinct from v_locked_at/);
+  assert.match(migration, /insert into public\.document_pages/);
+  assert.match(migration, /set status = 'ready'/);
+  assert.match(migration, /set status = 'failed'/);
+  assert.match(endpoint, /rpc\("process_document_pages_atomic"/);
   assert.match(recovery, /processingToken/);
   assert.match(recovery, /action: "save_pages"/);
   assert.match(recovery, /action: "complete"/);
