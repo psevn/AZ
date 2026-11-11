@@ -134,6 +134,7 @@ export function analyzeLearningProgress({
     });
 
   const sortedDays = [...activityDays].sort();
+  const studyDaysLastSevenDays = sortedDays.filter((key) => key >= windowStart && key <= todayKey).length;
   let longestStreak = 0;
   let runningStreak = 0;
   let previousDay = null;
@@ -162,7 +163,7 @@ export function analyzeLearningProgress({
     timeZone,
     window: { startDate: windowStart, endDate: todayKey },
     activity: {
-      studyDays: activityDays.size,
+      studyDaysLastSevenDays,
       currentStreak,
       longestStreak,
       completedQuizAttempts: completedAttempts.length,
