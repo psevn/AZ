@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { makePageBatches, normalizePdfTextItems } from "../src/lib/pdfTextPipeline.mjs";
+import { readFileSync } from "node:fs";
+
+const extractor = readFileSync(new URL("../src/lib/extractPdfText.ts", import.meta.url), "utf8");
+const uploadPanel = readFileSync(new URL("../src/components/DocumentUpload.tsx", import.meta.url), "utf8");
 
 test("PDF text normalization preserves paragraph boundaries and removes excess whitespace", () => {
   const text = normalizePdfTextItems([
@@ -51,4 +55,25 @@ test("page batching rejects oversized page text instead of silently truncating i
 test("page batching rejects invalid page numbers and text values", () => {
   assert.throws(() => makePageBatches("doc-1", [{ pageNo: 0, text: "x" }]), /Invalid extracted PDF page/);
   assert.throws(() => makePageBatches("doc-1", [{ pageNo: 1, text: 123 }]), /Invalid extracted PDF page/);
+});
+
+test("PDF.js extracts selectable text locally with a version-matched worker", () => {
+  assert.match(extractor, /from "pdfjs-dist"/);
+  assert.match(extractor, /pdfjs-dist\/build\/pdf\.worker\.mjs\?url/);
+  assert.match(extractor, /GlobalWorkerOptions\.workerSrc = workerUrl/);
+  assert.match(extractor, /pdfjsLib\.getDocument/);
+  assert.match(extractor, /page\.getTextContent\(\)/);
+  assert.match(extractor, /page\.cleanup\(\)/);
+  assert.match(extractor, /loadingTask\.destroy\(\)/);
+  assert.match(extractor, /isEvalSupported: false/);
+  assert.match(extractor, /pdf\.numPages > 1_000/);
+  assert.doesNotMatch(extractor, /fetch\(/);
+});
+
+test("the upload flow extracts locally, persists bounded batches, then completes processing", () => {
+  assert.match(uploadPanel, /import\("\.\.\/lib\/extractPdfText"\)/);
+  assert.match(uploadPanel, /import\("\.\.\/lib\/pdfTextPipeline\.mjs"\)/);
+  assert.match(uploadPanel, /action: "save_pages"/);
+  assert.match(uploadPanel, /action: "complete"/);
+  assert.match(uploadPanel, /process-document-pages/);
 });
