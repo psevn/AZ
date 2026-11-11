@@ -6,6 +6,7 @@ on:
       - "src/App.tsx"
       - "src/components/DocumentUpload.tsx"
       - "src/components/DocumentLibrary.tsx"
+      - "src/components/DocumentReader.tsx"
       - "src/lib/extractPdfText.ts"
       - "src/lib/pdfTextPipeline.mjs"
       - "src/lib/pdfTextPipeline.d.mts"
@@ -18,6 +19,7 @@ on:
       - "tests/documentLibraryContract.test.mjs"
       - "tests/documentProcessingContract.test.mjs"
       - "tests/pdfTextPipeline.test.mjs"
+      - "tests/documentReaderContract.test.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/document-signed-url.yml"
@@ -61,5 +63,7 @@ jobs:
         run: npm run test:document-processing
       - name: Test PDF text pipeline
         run: npm run test:pdf-pipeline
+      - name: Test document reader contract
+        run: npm run test:document-reader
       - name: Build web application
         run: npm run build
