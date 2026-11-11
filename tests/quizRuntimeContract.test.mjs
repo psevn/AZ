@@ -79,5 +79,7 @@ test("Home retains challenge, quiz, and attempt IDs only after the QuizPage call
   assert.match(app, /challengeId: string; quizId: string; attemptId: string/);
   assert.match(app, /onChallengeCompleted=\{\(completion\)=>setDailyChallengeCompletion\(completion\)\}/);
   assert.match(app, /dailyChallengeCompletion\?\.challengeId === dailyChallenge\.id/);
+  assert.match(app, /from\("azi_daily_challenge_completions"\)/);
+  assert.match(app, /eq\("challenge_date", qatarDateKey\(\)\)/);
   assert.doesNotMatch(app, /awardPoints|grantPoints|points\s*\+=/i);
 });
