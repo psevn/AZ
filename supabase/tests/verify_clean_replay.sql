@@ -1,4 +1,4 @@
-do $
+do $$
 declare
   v_atomic_rpc oid;
 begin
