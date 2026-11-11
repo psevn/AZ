@@ -39,7 +39,11 @@ Deno.serve(async (request: Request) => {
     if (new TextEncoder().encode(rawBody).byteLength > 2048) {
       return json(413, { error: "Request is too large." });
     }
-    body = JSON.parse(rawBody);
+    const parsedBody: unknown = JSON.parse(rawBody);
+    if (typeof parsedBody !== "object" || parsedBody === null || Array.isArray(parsedBody)) {
+      return json(400, { error: "Invalid JSON request body." });
+    }
+    body = parsedBody as { documentId?: unknown };
   } catch {
     return json(400, { error: "Invalid JSON request body." });
   }
