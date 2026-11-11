@@ -305,8 +305,13 @@ export default function App() {
     if (!supabase || !user) return;
     const {data,error:e}=await supabase.from("documents").select("id,title,storage_path").eq("id",documentId).eq("user_id",user.id).eq("status","ready").single();
     if(e||!data){setError(e?.message??(ar?"تعذر فتح المستند":"Could not open document"));return;}
-    const {data:signed,error:signError}=await supabase.storage.from("documents").createSignedUrl(data.storage_path,3600);
-    if(signError||!signed){setError(signError?.message??"Could not create document link");return;}
+    const {data:signed,error:signError}=await supabase.functions.invoke("create-document-signed-url",{
+      body:{documentId:data.id},
+    });
+    if(signError||!signed||typeof signed.signedUrl!=="string"){
+      setError(signError?.message??(ar?"تعذر إنشاء رابط المستند":"Could not create document link"));
+      return;
+    }
     setActiveDocument({id:data.id,title:data.title,url:signed.signedUrl});setSection("az");setPage("workspace");
   }
   async function stopFocus() {
