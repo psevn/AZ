@@ -42,7 +42,7 @@ test("a document becomes ready only after every sequential page has been saved",
 });
 
 test("image-only PDFs are not falsely marked ready when no selectable text exists", () => {
-  assert.match(migration, /btrim\(coalesce\(v_combined_text, ''\)\) = ''/);
+  assert.match(migration, /length\(regexp_replace\(coalesce\(v_combined_text, ''\), '\[\[:space:\]\]'/);
   assert.match(migration, /No selectable text was found\. OCR is not available yet\./);
   assert.match(migration, /'statusCode', 422/);
 });
