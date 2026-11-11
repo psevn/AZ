@@ -13,10 +13,11 @@ test("generates a quiz from the selected ready document through the server funct
   assert.match(page, /status",\s*"ready"/);
 });
 
-test("starts and loads a server-owned attempt snapshot", () => {
+test("starts and loads a complete server-owned attempt snapshot", () => {
   assert.match(page, /rpc\("start_attempt"/);
   assert.match(page, /from\("attempt_questions"\)/);
   assert.match(page, /quiz_questions\(id,prompt,choices,source_page,topic,difficulty\)/);
+  assert.match(page, /rows\.length !== Number\(attempt\.question_count\)/);
 });
 
 test("submits answers to server grading and never carries an answer key in the browser", () => {
@@ -31,7 +32,7 @@ test("finishes attempts and reads the authoritative score from the server", () =
   assert.match(page, /rpc\("finish_attempt"/);
   assert.match(page, /result\.correct_count/);
   assert.match(page, /result\.total_questions/);
-  assert.match(page, /result\.score/);
+  assert.match(page, /result\?\.score/);
 });
 
 test("keeps synthetic grading confined to explicit visual demo mode", () => {
