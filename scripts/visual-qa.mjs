@@ -164,8 +164,7 @@ for (const r of runs) {
     }
   }
 
-  // Quiz QA matrix: all requested viewport/theme/language combinations; one background is sufficient.
-  if (r.bg === "plain") {
+  // Quiz QA matrix: cover both background modes across every viewport, theme and language combination.
   for (const state of ["setup", "question", "feedback", "result", "empty", "error", "loading"]) {
     try {
       await page.goto(`${base}/?qa-quiz-state=${state}`, { waitUntil: "domcontentloaded" });
@@ -182,8 +181,6 @@ for (const r of runs) {
     } catch (e) {
       report.problems.push({ tag, kind: "quiz-state", state, message: String(e).slice(0, 300) });
     }
-  }
-
   }
 
   // Confirm Planning has its own Short quiz entry point.
