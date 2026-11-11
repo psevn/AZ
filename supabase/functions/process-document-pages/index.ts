@@ -235,7 +235,7 @@ Deno.serve(async (request: Request) => {
     }
 
     const combinedText = pages.map((page) => page.text).join("\n");
-    if (combinedText.trim().length < 20) {
+    if (combinedText.trim().length === 0) {
       const { data: failed, error: failError } = await adminClient.from("documents")
         .update({
           status: "failed",
