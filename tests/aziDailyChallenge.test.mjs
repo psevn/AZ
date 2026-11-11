@@ -98,7 +98,7 @@ test("returns an already active challenge for the same local day", () => {
 test("uses Qatar-local day boundaries and rejects invalid input", () => {
   const result = selectDailyChallenge({
     now: "2026-11-10T21:30:00.000Z", // Nov 11 in Qatar
-    topics: [{ id: "topic", is_available: true, available_question_count: 3 }],
+    topics: [{ id: "topic", is_available: true, available_question_count: 5 }],
   });
 
   assert.equal(result.date, "2026-11-11");
