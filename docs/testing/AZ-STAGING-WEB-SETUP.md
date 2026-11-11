@@ -20,7 +20,7 @@ This branch is an isolated local-web configuration for the disposable `AZ-Stagin
    Copy-Item .env.staging.example .env.staging.local
    ```
 
-4. Open `.env.staging.local` and replace `YOUR_AZ_STAGING_PUBLISHABLE_KEY` with the publishable key from the **AZ-Staging** project only.
+4. Open `.env.staging.local` and replace `YOUR_SUPABASE_STAGING_PUBLISHABLE_KEY` with the publishable key from the **AZ-Staging** project only.
 5. Start the local staging-configured web app:
 
    ```powershell
