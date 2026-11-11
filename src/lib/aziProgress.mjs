@@ -1,5 +1,4 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
-const QUALIFYING_TYPES = new Set(["quiz", "focus", "mistake_review"]);
 
 function validDate(value) {
   if (!value) return null;
