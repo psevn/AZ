@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const reader = readFileSync(new URL("../src/components/DocumentReader.tsx", import.meta.url), "utf8");
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+const quizPage = readFileSync(new URL("../src/components/QuizPage.tsx", import.meta.url), "utf8");
 
 test("the reader fetches only the selected page for the owned document", () => {
   assert.match(reader, /\.from\("document_pages"\)/);
@@ -34,4 +35,10 @@ test("the application opens the custom reader using the verified document metada
   assert.match(app, /select\("id,title,status,page_count"\)/);
   assert.match(app, /<DocumentReader documentId=\{activeDocument\.id\}/);
   assert.match(app, /pageCount=\{activeDocument\.pageCount\}/);
+});
+
+test("practice action preselects the document the student clicked", () => {
+  assert.match(app, /onStartQuiz=\{\(documentId\) => \{ setQuizDocumentId\(documentId\); setSection\("quiz"\); \}\}/);
+  assert.match(quizPage, /initialDocumentId\?: string \| null/);
+  assert.match(quizPage, /document\.id === initialDocumentId/);
 });
