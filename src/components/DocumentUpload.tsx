@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Props = { userId: string; lang: "ar" | "en"; onUploaded: () => void };
+type Props = { lang: "ar" | "en"; onUploaded: () => void };
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
-export default function DocumentUpload({ userId, lang, onUploaded }: Props) {
+export default function DocumentUpload({ lang, onUploaded }: Props) {
   const ar = lang === "ar";
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
