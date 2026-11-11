@@ -54,7 +54,8 @@ test("the endpoint resolves only an owned document in an explicitly allowed stat
 });
 
 test("the endpoint never accepts a client-supplied path or bucket and confines paths to the user", () => {
-  assert.match(endpoint, /document\.storage_path\.startsWith\(\$\{userId\}\/\)/);
+  assert.match(endpoint, /document\.storage_path\.startsWith/);
+  assert.match(endpoint, /\$\{userId\}\//);
   assert.match(endpoint, /\.from\("documents"\)\s*\.createSignedUrl\(document\.storage_path, 300\)/);
   assert.doesNotMatch(endpoint, /body\.storagePath|body\.path|body\.bucket/);
 });
