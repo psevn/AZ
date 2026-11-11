@@ -52,3 +52,20 @@ test("language metadata is derived from extracted page text", () => {
   assert.match(endpoint, /detectLanguage\(combinedText\)/);
   assert.match(endpoint, /"ar" \| "en" \| "mixed"/);
 });
+
+
+test("the processing endpoint parses standard Bearer authorization headers", () => {
+  const literal = endpoint.match(/\.match\((\/\^Bearer.*?\/i)\)/)?.[1];
+  assert.ok(literal, "Bearer token regex should be present");
+  const slash = literal.lastIndexOf("/");
+  const bearerPattern = new RegExp(literal.slice(1, slash), literal.slice(slash + 1));
+  assert.equal("Bearer az-test-token".match(bearerPattern)?.[1], "az-test-token");
+});
+
+test("Arabic language detection recognizes Arabic Unicode text", () => {
+  const literal = endpoint.match(/text\.match\((\/\[.*?\/g)\)/)?.[1];
+  assert.ok(literal, "Arabic character-range regex should be present");
+  const slash = literal.lastIndexOf("/");
+  const arabicPattern = new RegExp(literal.slice(1, slash), literal.slice(slash + 1));
+  assert.ok("محاضرة".match(arabicPattern));
+});
