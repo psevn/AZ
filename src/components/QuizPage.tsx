@@ -166,6 +166,7 @@ export default function QuizPage({
   onBackPlanning,
   onOpenWorkspace,
   challenge = null,
+  initialDocumentId = null,
   onChallengeCompleted,
 }: {
   userId: string;
@@ -175,6 +176,7 @@ export default function QuizPage({
   onBackPlanning: () => void;
   onOpenWorkspace: () => void;
   challenge?: DailyChallengeContext | null;
+  initialDocumentId?: string | null;
   onChallengeCompleted?: (completion: DailyChallengeCompletion) => void;
 }) {
   const ar = lang === "ar";
@@ -252,7 +254,8 @@ export default function QuizPage({
     setDocuments(readyDocuments);
     setDocumentCount(readyDocuments.length);
     if (readyDocuments.length) {
-      const preferred = readyDocuments.find((document) => document.subject_id === selectedSubject)
+      const preferred = readyDocuments.find((document) => document.id === initialDocumentId)
+        ?? readyDocuments.find((document) => document.subject_id === selectedSubject)
         ?? readyDocuments[0];
       setSelectedSubject(preferred.subject_id ?? "");
       setSelectedDocument(preferred.id);
@@ -263,7 +266,7 @@ export default function QuizPage({
   useEffect(() => {
     if (demoMode || qaState || challenge) return;
     void loadDocuments();
-  }, [userId, challenge?.id]);
+  }, [userId, challenge?.id, initialDocumentId]);
 
   useEffect(() => {
     if (qaState === "empty" || qaState === "error" || qaState === "loading") return;
