@@ -28,12 +28,16 @@ declare
   v_safe_questions jsonb := '[]'::jsonb;
   v_seen_prompts text[] := array[]::text[];
 begin
-  if p_user_id is null
-     or p_document_id is null
-     or p_questions is null
-     or jsonb_typeof(p_questions) is distinct from 'array'
-     or jsonb_array_length(p_questions) not between 5 and 20 then
+  if p_user_id is null or p_document_id is null or p_questions is null then
     raise exception 'Invalid generated quiz input' using errcode = '22023';
+  end if;
+
+  if jsonb_typeof(p_questions) is distinct from 'array' then
+    raise exception 'Generated questions must be a JSON array' using errcode = '22023';
+  end if;
+
+  if jsonb_array_length(p_questions) not between 5 and 20 then
+    raise exception 'Generated quiz must contain between 5 and 20 questions' using errcode = '22023';
   end if;
 
   -- This RPC is service-role-only. The caller must derive p_user_id from a
@@ -55,13 +59,16 @@ begin
   loop
     v_position := v_position + 1;
 
-    if jsonb_typeof(v_question) is distinct from 'object'
-       or jsonb_object_length(v_question) <> 7
+    if jsonb_typeof(v_question) is distinct from 'object' then
+      raise exception 'Question % must be a JSON object', v_position using errcode = '22023';
+    end if;
+
+    if jsonb_object_length(v_question) <> 7
        or (v_question - array[
          'prompt', 'choices', 'correct_index', 'source_page',
          'topic', 'explanation', 'difficulty'
        ]) <> '{}'::jsonb then
-      raise exception 'Invalid question object at position %', v_position using errcode = '22023';
+      raise exception 'Invalid question fields at position %', v_position using errcode = '22023';
     end if;
 
     v_prompt := nullif(btrim(v_question->>'prompt'), '');
@@ -71,10 +78,19 @@ begin
 
     if v_prompt is null or char_length(v_prompt) > 2000
        or v_topic is null or char_length(v_topic) > 120
-       or v_explanation is null or char_length(v_explanation) > 4000
-       or jsonb_typeof(v_choices) is distinct from 'array'
-       or jsonb_array_length(v_choices) <> 4
-       or exists (
+       or v_explanation is null or char_length(v_explanation) > 4000 then
+      raise exception 'Invalid question text at position %', v_position using errcode = '22023';
+    end if;
+
+    if jsonb_typeof(v_choices) is distinct from 'array' then
+      raise exception 'Question choices must be an array at position %', v_position using errcode = '22023';
+    end if;
+
+    if jsonb_array_length(v_choices) <> 4 then
+      raise exception 'Question must have four choices at position %', v_position using errcode = '22023';
+    end if;
+
+    if exists (
          select 1
            from jsonb_array_elements(v_choices) c
           where jsonb_typeof(c) is distinct from 'string'
@@ -85,7 +101,7 @@ begin
          select count(distinct lower(btrim(c #>> '{}')))
            from jsonb_array_elements(v_choices) c
        ) <> 4 then
-      raise exception 'Invalid question content at position %', v_position using errcode = '22023';
+      raise exception 'Invalid question choices at position %', v_position using errcode = '22023';
     end if;
 
     if lower(v_prompt) = any(v_seen_prompts) then
