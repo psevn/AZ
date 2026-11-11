@@ -59,16 +59,25 @@ begin
   end if;
 
   if p_action = 'save_pages' then
-    if p_pages is null or jsonb_typeof(p_pages) <> 'array' or jsonb_array_length(p_pages) < 1 or jsonb_array_length(p_pages) > 20 then
+    if p_pages is null or jsonb_typeof(p_pages) is distinct from 'array' then
+      return jsonb_build_object('ok', false, 'statusCode', 400, 'error', 'A batch must contain between 1 and 20 pages.');
+    end if;
+    if jsonb_array_length(p_pages) < 1 or jsonb_array_length(p_pages) > 20 then
       return jsonb_build_object('ok', false, 'statusCode', 400, 'error', 'A batch must contain between 1 and 20 pages.');
     end if;
     if exists (
-      select 1 from jsonb_array_elements(p_pages) item(value)
-      where jsonb_typeof(item.value) <> 'object'
-        or jsonb_typeof(item.value->'pageNo') is distinct from 'number'
-        or (item.value->>'pageNo')::numeric <> trunc((item.value->>'pageNo')::numeric)
-        or (item.value->>'pageNo')::numeric < 1 or (item.value->>'pageNo')::numeric > 1000
-        or jsonb_typeof(item.value->'text') is distinct from 'string' or length(item.value->>'text') > 18000
+      select 1
+      from jsonb_array_elements(p_pages) item(value)
+      cross join lateral (
+        select case when jsonb_typeof(item.value->'pageNo') = 'number'
+          then (item.value->>'pageNo')::numeric else null end as page_no
+      ) parsed
+      where jsonb_typeof(item.value) is distinct from 'object'
+        or parsed.page_no is null
+        or parsed.page_no <> trunc(parsed.page_no)
+        or parsed.page_no < 1 or parsed.page_no > 1000
+        or jsonb_typeof(item.value->'text') is distinct from 'string'
+        or length(item.value->>'text') > 18000
     ) then
       return jsonb_build_object('ok', false, 'statusCode', 400, 'error', 'A page contains invalid text or page metadata.');
     end if;
