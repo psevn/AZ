@@ -84,11 +84,11 @@ begin
     if (select count(distinct (item.value->>'pageNo')::integer) from jsonb_array_elements(p_pages) item(value)) <> jsonb_array_length(p_pages) then
       return jsonb_build_object('ok', false, 'statusCode', 400, 'error', 'A batch cannot contain duplicate page numbers.');
     end if;
-    insert into public.document_pages(document_id, user_id, page_no, text)
+    insert into public.document_pages as existing_page(document_id, user_id, page_no, text)
     select p_document_id, p_user_id, page."pageNo", page.text
     from jsonb_to_recordset(p_pages) as page("pageNo" integer, text text)
     on conflict(document_id, page_no) do update set text = excluded.text
-    where public.document_pages.user_id = excluded.user_id;
+    where existing_page.user_id = excluded.user_id;
     get diagnostics v_saved_pages = row_count;
     return jsonb_build_object('ok', true, 'savedPages', v_saved_pages);
   end if;
