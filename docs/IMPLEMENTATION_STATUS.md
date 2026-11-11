@@ -94,7 +94,6 @@ Read-only inspection of current constraints and storage policies found:
 
 No additional schema migration was applied during this read-only review. These items are recorded as implementation follow-ups, not completed functionality.
 
-
 ## Stage B web scaffold — committed, not yet runtime-verified
 
 Checked on 2026-11-04:
@@ -109,7 +108,6 @@ Checked on 2026-11-04:
 - **Not yet runtime-verified:** no local build, browser sign-up/sign-in test, two-user isolation test, or production deployment has been run. The Supabase Publishable key has not been placed in local environment configuration. Do not describe this as a working deployed app yet.
 - Remaining Stage B work includes invite-code gating, complete app navigation, credit RPCs, end-to-end tests, PWA offline support, deployment, and verification of email redirect settings.
 
-
 ## Migration inventory cross-check
 
 A follow-up comparison of the live Supabase migration history against the GitHub `supabase/migrations/` directory found a filename/version discrepancy that must be reconciled before relying on a clean database rebuild:
@@ -118,3 +116,15 @@ A follow-up comparison of the live Supabase migration history against the GitHub
 - GitHub currently contains `20261104145802_index_private_question_keys_owner_fk.sql`.
 - Do not rename or replay either migration until the exact applied SQL and source history are reconciled.
 - The original five foundation migration SQL bodies are not present in the repository's historical commits checked so far; the earliest planning commit contains only the three docs files. Recovery still requires the original authoring workspace or an exact SQL export/source.
+
+## Quiz answer-response contract — correction identified 2026-11-11
+
+A source review of the checked-in migration files found a discrepancy with the earlier status statement above:
+
+- `20261104144855_secure_quiz_answer_keys_and_server_grading.sql` defines `public.submit_answer` with a `correct_index` return column.
+- `20261104145027_move_privileged_grading_implementation_to_private_schema.sql` repeats that key-bearing return shape for both `private.submit_answer` and its public wrapper, and grants `authenticated` execution on the private function.
+- Therefore, the checked-in migration sequence does **not** establish the documented safe response contract. The live database's exact current function definitions were not re-read during this repository-only review, so do not infer live state from these source files.
+
+PR #42 adds a corrective migration that drops the legacy public RPC, revokes authenticated execution of the key-bearing private function, and exposes `public.submit_answer_safe` with only `answer_id`, `is_correct`, `explanation`, and `answered_at`. Its Node test checks the SQL contract statically; it is not a PostgreSQL integration test. The migration has not been applied to Supabase.
+
+This remains a **per-question answer-record** contract. It does not create a quiz session, aggregate a whole-quiz score, or prove quiz completion. Those require the exact five original foundation migrations and a separate schema review before designing any new tables or constraints.
