@@ -1,0 +1,22 @@
+name: Quiz Answer Security Contract
+
+on:
+  pull_request:
+    paths:
+      - "supabase/proposals/secure_quiz_answer_response.sql"
+      - "tests/quizAnswerSecurity.test.mjs"
+      - ".github/workflows/quiz-answer-security.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  quiz-answer-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+      - name: Verify safe answer response proposal
+        run: node --test tests/quizAnswerSecurity.test.mjs

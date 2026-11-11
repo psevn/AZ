@@ -94,7 +94,6 @@ Read-only inspection of current constraints and storage policies found:
 
 No additional schema migration was applied during this read-only review. These items are recorded as implementation follow-ups, not completed functionality.
 
-
 ## Stage B web scaffold — committed, not yet runtime-verified
 
 Checked on 2026-11-04:
@@ -109,7 +108,6 @@ Checked on 2026-11-04:
 - **Not yet runtime-verified:** no local build, browser sign-up/sign-in test, two-user isolation test, or production deployment has been run. The Supabase Publishable key has not been placed in local environment configuration. Do not describe this as a working deployed app yet.
 - Remaining Stage B work includes invite-code gating, complete app navigation, credit RPCs, end-to-end tests, PWA offline support, deployment, and verification of email redirect settings.
 
-
 ## Migration inventory cross-check
 
 A follow-up comparison of the live Supabase migration history against the GitHub `supabase/migrations/` directory found a filename/version discrepancy that must be reconciled before relying on a clean database rebuild:
@@ -118,3 +116,46 @@ A follow-up comparison of the live Supabase migration history against the GitHub
 - GitHub currently contains `20261104145802_index_private_question_keys_owner_fk.sql`.
 - Do not rename or replay either migration until the exact applied SQL and source history are reconciled.
 - The original five foundation migration SQL bodies are not present in the repository's historical commits checked so far; the earliest planning commit contains only the three docs files. Recovery still requires the original authoring workspace or an exact SQL export/source.
+
+## Quiz answer-response contract — live schema reconciliation 2026-11-11
+
+The live Supabase project was inspected using read-only catalog queries. No database objects or data were changed.
+
+### Verified live quiz lifecycle
+
+The live schema already contains a complete attempt model:
+
+- `public.quiz_attempts`: `id`, `user_id`, `quiz_id`, `score`, `started_at`, `finished_at`, `mode` (`practice`/`exam`), and optional `time_limit_seconds`.
+- `public.attempt_questions`: snapshots the questions and their order for one attempt; unique on `(attempt_id, question_id)` and `(attempt_id, position_no)`.
+- `public.attempt_answers`: records one answer per question per attempt; unique on `(attempt_id, question_id)`.
+- Composite foreign keys enforce that attempts, questions, and answers belong to the same user and quiz.
+- `private.start_attempt(p_quiz_id, p_mode, p_question_count, p_time_limit_seconds)` creates a new attempt and snapshots its selected questions.
+- `private.submit_answer(p_attempt_id, p_question_id, p_chosen_index)` validates attempt ownership/state, checks question membership, records the answer, and in practice mode returns correctness/explanation.
+- `private.finish_attempt(p_attempt_id)` calculates the score from recorded answers and the attempt's question snapshot, then sets `finished_at`.
+- `private.get_attempt_review(p_attempt_id)` exposes the answer key only after the attempt is finished.
+- Public wrappers `start_attempt`, `submit_answer`, `finish_attempt`, and `get_attempt_review` are present.
+
+The live `private.submit_answer` and `public.submit_answer` signatures are three-argument functions: `(uuid, uuid, smallint)`. The private function currently returns `correct_index`, and its ACL includes `authenticated`; the public wrapper also returns `correct_index`. Therefore, the earlier two-argument proposal was based on incomplete repository-only source inspection and did not match the live database.
+
+### PR #42 correction
+
+PR #42 now proposes to preserve the existing three-argument RPC name/signature while removing `correct_index` from the browser response. It revokes direct authenticated execution of the private key-bearing function and replaces the public wrapper with a hardened `SECURITY DEFINER` wrapper that checks `auth.uid()` and returns only `is_correct`, `explanation`, and `answered_at`. Exam mode intentionally returns null correctness/explanation until post-finish review.
+
+The SQL remains under `supabase/proposals/`; it is not a migration and has not been applied. Its Node test is a static contract test, not PostgreSQL integration verification.
+
+### Remaining repository/live-database drift
+
+The live migration history includes `20261105122304_quiz_attempts_per_quiz` and additional migrations that are not represented in the inspected PR #41 branch migration directory. The five original foundation migration bodies also remain absent from GitHub. Do not assume the current branch can recreate the live database from scratch, and do not generate new quiz-attempt tables: the live lifecycle already exists.
+
+### Next implementation slice
+
+Connect the existing QuizPage to the established RPC flow:
+
+1. Select a ready document and generate/save a quiz through the existing server function.
+2. Start a real attempt with `start_attempt`, using the returned attempt ID and question snapshot.
+3. Submit each answer through the three-argument `submit_answer` RPC; never infer correctness in the browser.
+4. Finish through `finish_attempt` and use the server-returned score/counts.
+5. Load answer-key review only after the attempt is finished.
+6. Keep Daily Challenge integration separate until this Study Pack quiz path is working end-to-end.
+
+No API key, Edge Function deployment, live database change, or production deployment was performed during this inspection.
