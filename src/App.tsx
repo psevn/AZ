@@ -176,7 +176,7 @@ export default function App() {
       supabase.from("quizzes").select("id,document_id,quiz_questions(id)").eq("user_id", user.id).not("document_id", "is", null).order("created_at", { ascending: false }),
     ]);
     if (!readyDocuments.error && !savedQuizzes.error) {
-      const documentsById = new Map((readyDocuments.data ?? []).map((document: any) => [document.id, document]));
+      const documentsById = new Map<string, { id: string; title: string }>((readyDocuments.data ?? []).map((document: any) => [document.id, document] as [string, { id: string; title: string }]));
       const studyPacks = (savedQuizzes.data ?? []).flatMap((quiz: any) => {
         const document = documentsById.get(quiz.document_id);
         const questionRows = Array.isArray(quiz.quiz_questions) ? quiz.quiz_questions : [];
@@ -208,7 +208,7 @@ export default function App() {
     }
     setLoading(false);
   }
-  useEffect(() => { if (user) void loadData(); else { setSubjects([]); setTasks([]); } },[user]);
+  useEffect(() => { if (user) void loadData(); else { setSubjects([]); setTasks([]); setDailyChallenge(null); setDailyChallengeCompletion(null); } },[user]);
 
   useEffect(() => {
     if (!user || !supabase) {
@@ -366,7 +366,7 @@ export default function App() {
                 <span className="universe-coordinate coordinate-top">AZ · 01</span><span className="universe-coordinate coordinate-bottom">From A to Z</span>
               </div>
             </section>
-            {dailyChallenge && <section className="az-card home-daily-challenge" aria-label={ar ? "تحدي اليوم" : "Daily challenge"}>
+            {dailyChallenge && <section className="az-card home-next-panel home-daily-challenge" aria-label={ar ? "تحدي اليوم" : "Daily challenge"}>
               <div>
                 <span className="eyebrow">{ar ? "تحدي اليوم · اختياري" : "Daily challenge · Optional"}</span>
                 <h2>{dailyChallengeCompletion?.challengeId === dailyChallenge.id ? (ar ? "أكملت تحدي اليوم" : "Daily challenge completed") : (ar ? "تدريب من مستندك" : "Practice from your Study Pack")}</h2>
