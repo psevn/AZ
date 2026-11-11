@@ -27,6 +27,9 @@ Use a separate disposable Supabase project or isolated local Supabase stack with
 - Verify PostgREST exposed schemas, function discovery, schema cache refresh, and actual RPC argument/return serialization.
 
 ### Storage API
+- **Known implementation mismatch (release blocker):** `src/App.tsx` currently calls `supabase.storage.from("documents").createSignedUrl(...)` directly from the browser. The migration baseline intentionally removes every client policy on `storage.objects`, so this browser-side signing request is expected to be denied by Storage RLS. The current repository's Edge Functions include quiz generation but no trusted document signed-URL endpoint was found.
+- Keep Storage locked to direct browser access. Implement a server-side endpoint that validates the caller's JWT, verifies the requested document belongs to that caller and is ready, derives the object path from the database (never trusts a client-supplied path), and creates a short-lived signed URL using server-only credentials. Never expose the service-role key to the client.
+- Add end-to-end tests proving owner success, cross-user denial, invalid/deleted document denial, bucket/path confinement, and signed URL expiry. Until this endpoint exists and passes isolated Supabase tests, document opening is not verified and must not be treated as release-ready.
 - Verify the intended private `documents` bucket configuration, size/MIME restrictions, and path conventions.
 - Confirm browser users cannot directly upload/download while all client Storage policies are intentionally absent.
 - Exercise the intended trusted upload/download flow end-to-end, including JWT ownership validation, content-type and size validation, generated object paths, signed URL expiry if used, and cross-user denial.
@@ -71,6 +74,7 @@ Before production:
 - The repository baseline does not currently include `supabase/config.toml`; do not invent one just to make the CLI run.
 - The CI replay bypasses actual `pg_cron` installation and uses a local stub.
 - Auth, PostgREST, Storage, Realtime, and Edge Runtime are not exercised by the disposable PostgreSQL workflow.
+- The current browser-side `createSignedUrl` call conflicts with the locked Storage policy posture; a trusted server-side signed-URL endpoint is still required and must be tested before document opening is considered ready.
 - The live project's migration history and settings have not been changed by this test work.
 - No live API key, production deployment, or live database mutation is authorized by this checklist.
 
