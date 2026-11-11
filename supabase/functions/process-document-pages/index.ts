@@ -236,7 +236,7 @@ Deno.serve(async (request: Request) => {
 
     const combinedText = pages.map((page) => page.text).join("\n");
     if (combinedText.trim().length < 20) {
-      await adminClient.from("documents")
+      const { data: failed, error: failError } = await adminClient.from("documents")
         .update({
           status: "failed",
           failed_reason: FAILURE_REASONS.no_text,
@@ -244,7 +244,13 @@ Deno.serve(async (request: Request) => {
           page_count: pageCount,
           processed_at: new Date().toISOString(),
         })
-        .eq("id", documentId).eq("user_id", userId).eq("status", "processing");
+        .eq("id", documentId).eq("user_id", userId).eq("status", "processing")
+        .select("id").maybeSingle();
+      if (failError) {
+        console.error("process-document-pages no-text update failed:", failError.code);
+        return json(500, { error: "Could not update document processing status." });
+      }
+      if (!failed) return json(409, { error: "Document processing state changed before completion." });
       return json(422, { error: FAILURE_REASONS.no_text, code: "no_text" });
     }
 
