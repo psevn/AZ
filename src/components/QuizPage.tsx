@@ -5,15 +5,17 @@ import { getStudyInsights } from "../lib/studyInsights";
 import "./QuizPage.css";
 
 type Subject = { id: string; name: string; color: string | null; exam_date: string | null };
+type Document = { id: string; title: string; subject_id: string | null };
 type Question = {
   id: string;
-  subject_id: string;
+  subject_id: string | null;
   prompt: string;
   choices: string[];
   topic: string;
-  source_page: number;
-  difficulty: number;
+  source_page: number | null;
+  difficulty: number | null;
 };
+type AttemptResult = { score: number; correct_count: number; total_questions: number; finished_at: string };
 type AnswerResult = { questionId: string; topic: string; correct: boolean };
 type Feedback = { correct: boolean; explanation: string; demo: boolean };
 type Screen = "setup" | "question" | "feedback" | "result" | "loading" | "empty" | "error";
@@ -64,6 +66,9 @@ const COPY = {
     intro: "A few focused questions to help you check your understanding.",
     subject: "Subject",
     chooseSubject: "Choose a subject",
+    document: "Study document",
+    chooseDocument: "Choose a ready document",
+    noReadyDocument: "No ready documents are available for this subject.",
     topic: "Topic (optional)",
     topicPlaceholder: "e.g. Supply and demand",
     start: "Start quiz",
@@ -103,6 +108,9 @@ const COPY = {
     intro: "أسئلة قصيرة تساعدك على التحقق من فهمك بهدوء.",
     subject: "المادة",
     chooseSubject: "اختر المادة",
+    document: "المستند الدراسي",
+    chooseDocument: "اختر مستنداً جاهزاً",
+    noReadyDocument: "لا توجد مستندات جاهزة لهذه المادة.",
     topic: "الموضوع (اختياري)",
     topicPlaceholder: "مثال: العرض والطلب",
     start: "ابدأ الاختبار",
@@ -169,8 +177,14 @@ export default function QuizPage({
     if (qaState === "question" || qaState === "feedback" || qaState === "result" || qaState === "loading" || qaState === "empty" || qaState === "error") return qaState;
     return demoMode ? "setup" : "loading";
   });
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [documentCount, setDocumentCount] = useState<number | null>(demoMode ? 2 : null);
   const [selectedSubject, setSelectedSubject] = useState(subjects[0]?.id ?? "");
+  const [selectedDocument, setSelectedDocument] = useState("");
+  const [quizId, setQuizId] = useState<string | null>(null);
+  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptResult, setAttemptResult] = useState<AttemptResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [topic, setTopic] = useState("");
   const [questions, setQuestions] = useState<Question[]>(DEMO_QUESTIONS);
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -195,6 +209,10 @@ export default function QuizPage({
   const correctCount = answers.filter((answer) => answer.correct).length;
   const score = answers.length ? Math.round((correctCount / answers.length) * 100) : 0;
   const missedTopics = [...new Set(answers.filter((answer) => !answer.correct).map((answer) => answer.topic))];
+  const availableDocuments = documents.filter((document) =>
+    !selectedSubject || document.subject_id === selectedSubject,
+  );
+  const displayedScore = attemptResult?.score ?? score;
 
   async function loadDocuments() {
     if (demoMode) {
@@ -210,18 +228,27 @@ export default function QuizPage({
     }
     setScreen("loading");
     setLoadError("");
-    const { count, error } = await supabase
+    const { data, error } = await supabase
       .from("documents")
-      .select("id", { count: "exact", head: true })
+      .select("id,title,subject_id")
       .eq("user_id", userId)
-      .eq("status", "ready");
+      .eq("status", "ready")
+      .order("created_at", { ascending: false });
     if (error) {
       setLoadError(t.errorTitle);
       setScreen("error");
       return;
     }
-    setDocumentCount(count ?? 0);
-    setScreen((count ?? 0) === 0 ? "empty" : "setup");
+    const readyDocuments = (data ?? []) as Document[];
+    setDocuments(readyDocuments);
+    setDocumentCount(readyDocuments.length);
+    if (readyDocuments.length) {
+      const preferred = readyDocuments.find((document) => document.subject_id === selectedSubject)
+        ?? readyDocuments[0];
+      setSelectedSubject(preferred.subject_id ?? "");
+      setSelectedDocument(preferred.id);
+    }
+    setScreen(readyDocuments.length === 0 ? "empty" : "setup");
   }
 
   useEffect(() => {
@@ -262,18 +289,60 @@ export default function QuizPage({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [screen, feedback, current?.choices.length]);
 
-  function startQuiz() {
-    if (!demoMode) {
+  async function beginAttempt(nextQuizId: string, requestedQuestionCount: number) {
+    if (!supabase) {
       setLoadError(t.generationUnavailable);
       setScreen("error");
       return;
     }
-    if (!filteredDemoQuestions.length) {
-      setQuestions([]);
-      setScreen("empty");
+    setScreen("loading");
+    const { data: attemptData, error: attemptError } = await supabase.rpc("start_attempt", {
+      p_quiz_id: nextQuizId,
+      p_mode: "practice",
+      p_question_count: requestedQuestionCount,
+      p_time_limit_seconds: null,
+    });
+    const attempt = Array.isArray(attemptData) ? attemptData[0] : attemptData;
+    if (attemptError || !attempt?.attempt_id) {
+      setLoadError(attemptError?.message || t.generationUnavailable);
+      setScreen("error");
       return;
     }
-    setQuestions(filteredDemoQuestions);
+
+    const { data: rows, error: questionsError } = await supabase
+      .from("attempt_questions")
+      .select("question_id,position_no,quiz_questions(id,prompt,choices,source_page,topic,difficulty)")
+      .eq("attempt_id", attempt.attempt_id)
+      .eq("user_id", userId)
+      .order("position_no", { ascending: true });
+    if (questionsError || !rows?.length) {
+      setLoadError(questionsError?.message || t.noQuestions);
+      setScreen("error");
+      return;
+    }
+
+    const attemptQuestions: Question[] = rows.map((row: any) => {
+      const nested = Array.isArray(row.quiz_questions) ? row.quiz_questions[0] : row.quiz_questions;
+      return {
+        id: nested.id,
+        subject_id: selectedSubject || null,
+        prompt: nested.prompt,
+        choices: Array.isArray(nested.choices) ? nested.choices : [],
+        topic: nested.topic || (ar ? "موضوع عام" : "General"),
+        source_page: nested.source_page ?? null,
+        difficulty: nested.difficulty ?? null,
+      };
+    });
+    if (attemptQuestions.some((question) => !question.id || !question.prompt || question.choices.length !== 4)) {
+      setLoadError(t.errorTitle);
+      setScreen("error");
+      return;
+    }
+
+    setQuizId(nextQuizId);
+    setAttemptId(attempt.attempt_id);
+    setAttemptResult(null);
+    setQuestions(attemptQuestions);
     setQuestionIndex(0);
     setSelectedIndex(null);
     setFeedback(null);
@@ -281,19 +350,83 @@ export default function QuizPage({
     setScreen("question");
   }
 
-  function submitDemoAnswer() {
-    if (selectedIndex === null || !current) return;
-    // Visual-QA fixtures deliberately do not contain answer keys. Outcomes are synthetic
-    // presentation data and are never tied to the selected choice or exposed as correct indexes.
-    const correct = questionIndex % 2 === 0;
-    const nextFeedback: Feedback = {
+  async function startQuiz() {
+    if (demoMode) {
+      if (!filteredDemoQuestions.length) {
+        setQuestions([]);
+        setScreen("empty");
+        return;
+      }
+      setQuestions(filteredDemoQuestions);
+      setQuestionIndex(0);
+      setSelectedIndex(null);
+      setFeedback(null);
+      setAnswers([]);
+      setScreen("question");
+      return;
+    }
+    if (!supabase || !selectedDocument) {
+      setLoadError(t.generationUnavailable);
+      setScreen("error");
+      return;
+    }
+    setScreen("loading");
+    setLoadError("");
+    const { data, error } = await supabase.functions.invoke("generate-quiz", {
+      body: { documentId: selectedDocument, language: lang, questionCount: 8, topic: topic.trim() },
+    });
+    if (error || !data?.quizId || !Array.isArray(data.questions) || data.questions.length < 5) {
+      setLoadError(data?.error || error?.message || t.generationUnavailable);
+      setScreen("error");
+      return;
+    }
+    await beginAttempt(data.quizId, data.questions.length);
+  }
+
+  async function submitAnswer() {
+    if (selectedIndex === null || !current || isSubmitting) return;
+    if (demoMode) {
+      // Visual-QA fixtures deliberately contain no answer keys; this is synthetic presentation data.
+      const correct = questionIndex % 2 === 0;
+      setFeedback({
+        correct,
+        explanation: ar
+          ? "هذا توضيح تجريبي لعرض حالة التصحيح. سيأتي التفسير الفعلي من خدمة التصحيح الآمنة بعد الإرسال."
+          : "This is illustrative demo feedback. The secure grading service will return the real explanation after submission.",
+        demo: true,
+      });
+      setAnswers((existing) => [...existing.filter((answer) => answer.questionId !== current.id), {
+        questionId: current.id,
+        topic: current.topic,
+        correct,
+      }]);
+      setScreen("feedback");
+      return;
+    }
+    if (!supabase || !attemptId) {
+      setLoadError(t.generationUnavailable);
+      setScreen("error");
+      return;
+    }
+    setIsSubmitting(true);
+    const { data, error } = await supabase.rpc("submit_answer", {
+      p_attempt_id: attemptId,
+      p_question_id: current.id,
+      p_chosen_index: selectedIndex,
+    });
+    setIsSubmitting(false);
+    const result = Array.isArray(data) ? data[0] : data;
+    if (error || !result || typeof result.is_correct !== "boolean") {
+      setLoadError(error?.message || t.errorTitle);
+      setScreen("error");
+      return;
+    }
+    const correct = result.is_correct;
+    setFeedback({
       correct,
-      explanation: ar
-        ? "هذا توضيح تجريبي لعرض حالة التصحيح. سيأتي التفسير الفعلي من خدمة التصحيح الآمنة بعد الإرسال."
-        : "This is illustrative demo feedback. The secure grading service will return the real explanation after submission.",
-      demo: true,
-    };
-    setFeedback(nextFeedback);
+      explanation: result.explanation || (ar ? "تم تسجيل الإجابة." : "Your answer was recorded."),
+      demo: false,
+    });
     setAnswers((existing) => [...existing.filter((answer) => answer.questionId !== current.id), {
       questionId: current.id,
       topic: current.topic,
@@ -302,8 +435,32 @@ export default function QuizPage({
     setScreen("feedback");
   }
 
-  function continueQuiz() {
+  async function continueQuiz() {
     if (questionIndex + 1 >= questions.length) {
+      if (demoMode) {
+        setScreen("result");
+        return;
+      }
+      if (!supabase || !attemptId) {
+        setLoadError(t.generationUnavailable);
+        setScreen("error");
+        return;
+      }
+      setScreen("loading");
+      const { data, error } = await supabase.rpc("finish_attempt", { p_attempt_id: attemptId });
+      const result = Array.isArray(data) ? data[0] : data;
+      if (error || !result || typeof result.score !== "number" ||
+          typeof result.correct_count !== "number" || typeof result.total_questions !== "number") {
+        setLoadError(error?.message || t.errorTitle);
+        setScreen("error");
+        return;
+      }
+      setAttemptResult({
+        score: result.score,
+        correct_count: result.correct_count,
+        total_questions: result.total_questions,
+        finished_at: result.finished_at,
+      });
       setScreen("result");
       return;
     }
@@ -313,12 +470,16 @@ export default function QuizPage({
     setScreen("question");
   }
 
-  function repeatQuiz() {
-    setQuestionIndex(0);
-    setSelectedIndex(null);
-    setFeedback(null);
-    setAnswers([]);
-    setScreen("question");
+  async function repeatQuiz() {
+    if (demoMode) {
+      setQuestionIndex(0);
+      setSelectedIndex(null);
+      setFeedback(null);
+      setAnswers([]);
+      setScreen("question");
+      return;
+    }
+    if (quizId) await beginAttempt(quizId, questions.length);
   }
 
   const questionProgress = questions.length ? ((questionIndex + 1) / questions.length) * 100 : 0;
@@ -358,18 +519,30 @@ export default function QuizPage({
       {documentCount !== null && <p className="quiz-document-count">{ar ? `${documentCount} مستندات جاهزة` : `${documentCount} ready documents`}</p>}
       <label className="quiz-field">
         <span>{t.subject}</span>
-        <select className="az-input" value={selectedSubject} onChange={(event) => setSelectedSubject(event.target.value)}>
+        <select className="az-input" value={selectedSubject} onChange={(event) => {
+          setSelectedSubject(event.target.value);
+          const nextDocument = documents.find((document) => !event.target.value || document.subject_id === event.target.value);
+          setSelectedDocument(nextDocument?.id ?? "");
+        }}>
           <option value="">{t.chooseSubject}</option>
           {subjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
         </select>
       </label>
+      {!demoMode && <label className="quiz-field">
+        <span>{t.document}</span>
+        <select className="az-input" value={selectedDocument} onChange={(event) => setSelectedDocument(event.target.value)}>
+          <option value="">{t.chooseDocument}</option>
+          {availableDocuments.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}
+        </select>
+        {!availableDocuments.length && <small>{t.noReadyDocument}</small>}
+      </label>}
       <label className="quiz-field">
         <span>{t.topic}</span>
         <input className="az-input" value={topic} onChange={(event) => setTopic(event.target.value)} placeholder={t.topicPlaceholder} />
       </label>
       <div className="quiz-setup-footer">
         <p>{demoMode ? (ar ? "وضع العرض: أسئلة تجريبية بلا مفاتيح إجابة." : "Demo mode: sample questions with no answer keys.") : t.generationUnavailable}</p>
-        <button type="button" className="az-btn az-btn--primary quiz-start" onClick={startQuiz} disabled={!selectedSubject}>{t.start}</button>
+        <button type="button" className="az-btn az-btn--primary quiz-start" onClick={() => void startQuiz()} disabled={demoMode ? !selectedSubject : !selectedDocument}>{t.start}</button>
       </div>
     </section>}
 
@@ -400,20 +573,20 @@ export default function QuizPage({
       </div>
       {screen === "question" && <div className="quiz-question-footer">
         <span className="quiz-key-hint">{ar ? "اختر 1–4 ثم اضغط Enter" : "Press 1–4 to choose, then Enter"}</span>
-        <button type="button" className="az-btn az-btn--primary quiz-confirm" onClick={submitDemoAnswer} disabled={selectedIndex === null}>{t.confirm}</button>
+        <button type="button" className="az-btn az-btn--primary quiz-confirm" onClick={() => void submitAnswer()} disabled={selectedIndex === null || isSubmitting}>{isSubmitting ? t.loading : t.confirm}</button>
       </div>}
       {screen === "feedback" && feedback && <section className={"quiz-feedback " + (feedback.correct ? "is-correct" : "is-incorrect")} role="status" aria-live="polite">
         <div className="quiz-feedback-heading"><span aria-hidden="true">{feedback.correct ? "✓" : "○"}</span><strong>{feedback.correct ? t.correct : t.incorrect}</strong></div>
         <p><strong>{t.explanation}:</strong> {feedback.explanation}</p>
-        <p className="quiz-demo-note">{t.demoNote}</p>
-        <div className="quiz-question-footer"><span className="quiz-key-hint">{t.source}: {current.source_page} {t.page}</span><button type="button" className="az-btn az-btn--primary quiz-next" onClick={continueQuiz}>{t.next}</button></div>
+        {feedback.demo && <p className="quiz-demo-note">{t.demoNote}</p>}
+        <div className="quiz-question-footer"><span className="quiz-key-hint">{current.source_page ? t.source + ": " + current.source_page + " " + t.page : ""}</span><button type="button" className="az-btn az-btn--primary quiz-next" onClick={() => void continueQuiz()}>{t.next}</button></div>
       </section>}
     </section>}
 
     {screen === "result" && <section className="quiz-card az-card quiz-result" aria-live="polite">
       <span className="quiz-result-orbit" aria-hidden="true">✧</span>
       <span className="eyebrow">{t.result}</span>
-      <div className="quiz-score"><strong>{score}<small>%</small></strong><span>{t.score}</span></div>
+      <div className="quiz-score"><strong>{displayedScore}<small>%</small></strong><span>{t.score}</span></div>
       <div className="quiz-missed-topics">
         <h2>{t.missed}</h2>
         {missedTopics.length ? <ul>{missedTopics.map((missedTopic) => <li key={missedTopic}>{missedTopic}</li>)}</ul> : <p>{t.noneMissed}</p>}
