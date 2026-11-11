@@ -1,0 +1,42 @@
+name: AZI Engagement Tests
+
+on:
+  pull_request:
+    branches:
+      - feature/learning-engagement-spec
+      - feature/azi-learning-progress-foundation
+    paths:
+      - "src/lib/aziProgress.mjs"
+      - "src/lib/aziProgress.d.mts"
+      - "src/lib/aziDailyChallenge.mjs"
+      - "src/lib/aziDailyChallenge.d.mts"
+      - "tests/aziProgress.test.mjs"
+      - "tests/aziDailyChallenge.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/azi-engagement-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  engagement-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Test learning progress metrics
+        run: npm run test:azi-progress
+
+      - name: Test daily challenge selection
+        run: npm run test:azi-daily-challenge
