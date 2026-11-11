@@ -65,10 +65,10 @@ begin
     if exists (
       select 1 from jsonb_array_elements(p_pages) item(value)
       where jsonb_typeof(item.value) <> 'object'
-        or jsonb_typeof(item.value->'pageNo') <> 'number'
+        or jsonb_typeof(item.value->'pageNo') is distinct from 'number'
         or (item.value->>'pageNo')::numeric <> trunc((item.value->>'pageNo')::numeric)
-        or (item.value->>'pageNo')::integer < 1 or (item.value->>'pageNo')::integer > 1000
-        or jsonb_typeof(item.value->'text') <> 'string' or length(item.value->>'text') > 18000
+        or (item.value->>'pageNo')::numeric < 1 or (item.value->>'pageNo')::numeric > 1000
+        or jsonb_typeof(item.value->'text') is distinct from 'string' or length(item.value->>'text') > 18000
     ) then
       return jsonb_build_object('ok', false, 'statusCode', 400, 'error', 'A page contains invalid text or page metadata.');
     end if;
@@ -94,7 +94,7 @@ begin
     if v_page_count <> p_page_count or v_min_page <> 1 or v_max_page <> p_page_count then
       return jsonb_build_object('ok', false, 'statusCode', 409, 'error', 'Some document pages are missing. Processing is not complete.');
     end if;
-    if btrim(coalesce(v_combined_text, '')) = '' then
+    if length(regexp_replace(coalesce(v_combined_text, ''), '[[:space:]]', '', 'g')) = 0 then
       update public.documents set status = 'failed',
         failed_reason = 'No selectable text was found. OCR is not available yet.',
         locked_at = null, page_count = p_page_count, processed_at = clock_timestamp()
