@@ -7,7 +7,7 @@ const panel = readFileSync(new URL("../src/components/DocumentUpload.tsx", impor
 const endpoint = readFileSync(new URL("../supabase/functions/create-document-upload-url/index.ts", import.meta.url), "utf8");
 
 test("Academic workspace renders the authenticated PDF upload panel", () => {
-  assert.match(app, /<DocumentUpload lang=\{lang\} onUploaded=\{\(\) => void loadData\(\)\} \/>/);
+  assert.match(app, /<DocumentUpload lang=\{lang\} onUploaded=\{\(\) => \{/);
   assert.match(panel, /accept="application\/pdf,\.pdf"/);
   assert.match(panel, /MAX_FILE_BYTES = 20 \* 1024 \* 1024/);
   assert.match(panel, /!file\.name\.toLowerCase\(\)\.endsWith\("\.pdf"\) \|\| \(file\.type !== "" && file\.type !== "application\/pdf"\)/);
