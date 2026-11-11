@@ -10,7 +10,7 @@ create or replace function public.create_generated_quiz(
 )
 returns table(quiz_id uuid, questions jsonb)
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $function$
 declare
