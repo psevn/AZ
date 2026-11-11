@@ -27,7 +27,7 @@ test("counts only completed, non-future learning actions", () => {
   assert.equal(result.activity.completedQuizAttempts, 1);
   assert.equal(result.activity.completedFocusSessions, 1);
   assert.equal(result.activity.reviewedMistakes, 1);
-  assert.equal(result.activity.studyDays, 3);
+  assert.equal(result.activity.studyDaysLastSevenDays, 3);
 });
 
 test("streaks use Qatar-local calendar days and allow today or yesterday as the endpoint", () => {
