@@ -6,6 +6,10 @@ const page = readFileSync(
   new URL("../src/components/QuizPage.tsx", import.meta.url),
   "utf8",
 );
+const app = readFileSync(
+  new URL("../src/App.tsx", import.meta.url),
+  "utf8",
+);
 
 test("generates a quiz from the selected ready document through the server function", () => {
   assert.match(page, /functions\.invoke\("generate-quiz"/);
@@ -38,4 +42,40 @@ test("finishes attempts and reads the authoritative score from the server", () =
 test("keeps synthetic grading confined to explicit visual demo mode", () => {
   assert.match(page, /if \(demoMode\) \{[\s\S]*?const correct = questionIndex % 2 === 0/);
   assert.match(page, /if \(!supabase \|\| !attemptId\)/);
+});
+
+test("starts a quiz-backed daily challenge from its existing quiz without regenerating", () => {
+  assert.match(page, /challenge\?\.id/);
+  assert.match(page, /beginAttempt\(challenge\.quizId, challenge\.questionCount\)/);
+  assert.match(page, /if \(demoMode \|\| qaState \|\| challenge\) return/);
+  assert.match(page, /Number\(attempt\.question_count\) !== requestedQuestionCount/);
+});
+
+test("reports challenge completion only after a valid server-finished attempt", () => {
+  const finishIndex = page.indexOf('rpc("finish_attempt"');
+  const validationIndex = page.indexOf('result.total_questions !== questions.length', finishIndex);
+  const callbackIndex = page.indexOf('onChallengeCompleted?.({', finishIndex);
+  assert.ok(finishIndex >= 0);
+  assert.ok(validationIndex > finishIndex);
+  assert.ok(callbackIndex > validationIndex);
+  assert.match(page, /challengeId: challenge\.id/);
+  assert.match(page, /quizId,/);
+  assert.match(page, /attemptId,/);
+  assert.match(page, /finishedAt: result\.finished_at/);
+  assert.match(page, /score: finalScore/);
+});
+
+test("Home selects only a ready document with an existing five-question quiz", () => {
+  assert.match(app, /from\("documents"\)[\s\S]*?eq\("status", "ready"\)/);
+  assert.match(app, /from\("quizzes"\)[\s\S]*?quiz_questions\(id\)/);
+  assert.match(app, /available_question_count: questionRows\.length/);
+  assert.match(app, /selectDailyChallenge\(\{ studyPacks/);
+  assert.match(app, /setSection\("quiz"\)/);
+});
+
+test("Home retains challenge, quiz, and attempt IDs only after the QuizPage callback", () => {
+  assert.match(app, /challengeId: string; quizId: string; attemptId: string/);
+  assert.match(app, /onChallengeCompleted=\{\(completion\)=>setDailyChallengeCompletion\(completion\)\}/);
+  assert.match(app, /dailyChallengeCompletion\?\.challengeId === dailyChallenge\.id/);
+  assert.doesNotMatch(app, /awardPoints|grantPoints|points\s*\+=/i);
 });

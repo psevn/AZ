@@ -214,3 +214,17 @@ PR #45 (feature/azi-daily-challenge-minimum-five), stacked above PR #44:
 - Extends the engagement-test workflow to run for this stacked PR base branch.
 
 This is a selector-contract alignment only. It does not yet persist challenge state, launch the quiz UI, associate a challenge with quiz_id/attempt_id, or award points. Per the engagement specification, completion must remain tied to a verified completed attempt; no challenge reward is granted by selection or by merely starting a quiz.
+
+
+## Daily Challenge → Study Pack attempt binding — PR #46
+
+PR #46 (feature/azi-daily-challenge-study-pack-link), stacked above PR #45:
+
+- The Home view reads only the signed-in user's ready documents and saved quizzes, counts saved quiz questions, and offers a challenge only when an existing quiz has at least five questions.
+- The deterministic challenge selector now carries the selected document ID, existing quiz ID, document title, and requested question count. A Study Pack challenge without a concrete existing quiz binding is not selectable.
+- Starting the Home challenge opens the existing quiz attempt flow directly; it does not call the AI generator again.
+- QuizPage verifies that start_attempt returned the requested question count and loads the server-owned attempt_questions snapshot.
+- The Home completion callback receives challenge_id, quiz_id, attempt_id, finished_at, and score only after finish_attempt returns a valid completed result with the expected question count and a parseable finish timestamp.
+- No points are awarded in this slice. The challenge completion is held in current application state only; it is not durable across refreshes and is not a server-side reward record. Durable challenge state/idempotent rewards require a separate database/RPC proposal and local PostgreSQL validation.
+
+No live Supabase writes, schema changes, API-key creation, Edge Function deployment, or production deployment were performed.

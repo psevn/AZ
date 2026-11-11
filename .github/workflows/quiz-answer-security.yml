@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - "src/components/QuizPage.tsx"
+      - "src/App.tsx"
+      - "src/lib/aziDailyChallenge.d.mts"
+      - "tests/aziDailyChallenge.test.mjs"
       - "src/lib/aziDailyChallenge.mjs"
       - "tests/aziDailyChallenge.test.mjs"
       - "supabase/proposals/secure_quiz_answer_response.sql"
@@ -38,6 +41,8 @@ jobs:
         run: npm run build
       - name: Verify quiz runtime contract
         run: npm run test:quiz-runtime
+      - name: Verify Daily Challenge selection
+        run: npm run test:azi-daily-challenge
       - name: Verify safe answer response proposal
         run: node --test tests/quizAnswerSecurity.test.mjs
       - name: Verify quiz generation contract

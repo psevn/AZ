@@ -27,7 +27,7 @@ test("selects an available topic when no reviewable mistakes exist", () => {
       { id: "topic-b", is_available: true, available_question_count: 5 },
       { id: "topic-a", is_available: true, available_question_count: 5 },
     ],
-    studyPacks: [{ id: "pack-1", status: "ready", available_question_count: 9 }],
+    studyPacks: [{ id: "pack-1", document_id: "doc-1", quiz_id: "quiz-1", title: "Lecture 1", status: "ready", available_question_count: 9 }],
   });
 
   assert.equal(result.type, "practice_topic");
@@ -41,12 +41,13 @@ test("falls back to a ready Study Pack when no topic is available", () => {
     topics: [{ id: "topic", is_available: false, available_question_count: 10 }],
     studyPacks: [
       { id: "processing", status: "processing", available_question_count: 8 },
-      { id: "ready", status: "ready", available_question_count: 5 },
+      { id: "ready", document_id: "doc-ready", quiz_id: "quiz-ready", title: "Ready Pack", status: "ready", available_question_count: 5 },
     ],
   });
 
   assert.equal(result.type, "practice_study_pack");
-  assert.equal(result.sourceId, "ready");
+  assert.equal(result.sourceId, "doc-ready");
+  assert.equal(result.quizId, "quiz-ready");
 });
 
 test("does not select unavailable, undersized, or non-reviewable sources", () => {
@@ -112,7 +113,7 @@ test("requires at least five practice questions to match generated quiz persiste
   const undersized = selectDailyChallenge({
     now,
     topics: [{ id: "topic-small", is_available: true, available_question_count: 4 }],
-    studyPacks: [{ id: "pack-small", status: "ready", available_question_count: 4 }],
+    studyPacks: [{ id: "pack-small", document_id: "doc-small", quiz_id: "quiz-small", status: "ready", available_question_count: 4 }],
   });
   const valid = selectDailyChallenge({
     now,
@@ -123,4 +124,37 @@ test("requires at least five practice questions to match generated quiz persiste
   assert.equal(valid.type, "practice_topic");
   assert.equal(valid.questionCount, 5);
   assert.throws(() => selectDailyChallenge({ now, minimumPracticeQuestions: 4 }), /at least 5/);
+});
+
+test("returns a concrete quiz and document binding for a Study Pack challenge", () => {
+  const result = selectDailyChallenge({
+    now,
+    studyPacks: [{
+      id: "quiz-42",
+      quiz_id: "quiz-42",
+      document_id: "doc-42",
+      title: "Biology notes",
+      status: "ready",
+      available_question_count: 7,
+    }],
+  });
+
+  assert.equal(result.type, "practice_study_pack");
+  assert.equal(result.sourceId, "doc-42");
+  assert.equal(result.sourceTitle, "Biology notes");
+  assert.equal(result.quizId, "quiz-42");
+  assert.deepEqual(result.action, {
+    type: "start_study_pack_practice",
+    studyPackId: "doc-42",
+    quizId: "quiz-42",
+    questionCount: 5,
+  });
+});
+
+test("does not select a Study Pack without a concrete existing quiz binding", () => {
+  const result = selectDailyChallenge({
+    now,
+    studyPacks: [{ id: "doc-only", status: "ready", available_question_count: 8 }],
+  });
+  assert.equal(result.type, "unavailable");
 });

@@ -13,14 +13,25 @@ export type DailyChallenge =
   | {
       id: string;
       date: string;
-      type: "practice_topic" | "practice_study_pack";
+      type: "practice_topic";
       sourceId: string;
       titleKey: string;
       descriptionKey: string;
       questionCount: number;
-      action:
-        | { type: "start_topic_practice"; topicId: string; questionCount: number }
-        | { type: "start_study_pack_practice"; studyPackId: string; questionCount: number };
+      action: { type: "start_topic_practice"; topicId: string; questionCount: number };
+      status: "active";
+    }
+  | {
+      id: string;
+      date: string;
+      type: "practice_study_pack";
+      sourceId: string;
+      sourceTitle: string | null;
+      quizId: string;
+      titleKey: string;
+      descriptionKey: string;
+      questionCount: number;
+      action: { type: "start_study_pack_practice"; studyPackId: string; quizId: string; questionCount: number };
       status: "active";
     }
   | {
@@ -43,6 +54,9 @@ export function selectDailyChallenge(input?: {
     id?: string;
     is_available?: boolean;
     available_question_count?: number;
+    document_id?: string;
+    quiz_id?: string;
+    title?: string;
   }>;
   studyPacks?: Array<{
     id?: string;

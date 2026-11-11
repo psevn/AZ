@@ -115,21 +115,27 @@ export function selectDailyChallenge({
     const sourceId = stableId(pack?.id);
     if (!sourceId || pack?.status !== "ready") continue;
     if (positiveCount(pack.available_question_count) < minimumPracticeQuestions) continue;
-    const key = challengeKey("practice_study_pack", sourceId);
+    const quizId = stableId(pack.quiz_id);
+    const documentId = stableId(pack.document_id);
+    if (!quizId || !documentId) continue;
+    const key = challengeKey("practice_study_pack", documentId);
     if (excluded.has(key)) continue;
     candidates.push({
       priority: 2,
       challenge: {
-        id: `${date}:${key}`,
+        id: `${date}:${key}:${quizId}`,
         date,
         type: "practice_study_pack",
-        sourceId,
+        sourceId: documentId,
+        sourceTitle: typeof pack.title === "string" && pack.title.trim() ? pack.title.trim() : null,
+        quizId,
         titleKey: "dailyChallenge.practiceStudyPack.title",
         descriptionKey: "dailyChallenge.practiceStudyPack.description",
         questionCount: minimumPracticeQuestions,
         action: {
           type: "start_study_pack_practice",
-          studyPackId: sourceId,
+          studyPackId: documentId,
+          quizId,
           questionCount: minimumPracticeQuestions,
         },
         status: "active",
