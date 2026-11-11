@@ -17,6 +17,12 @@ test("browser delegates document creation and failure status to the trusted endp
   assert.match(panel, /functions\.invoke\(\s*"create-document-upload-url"/);
   assert.match(panel, /title: file\.name/);
   assert.match(panel, /action: "mark_failed"/);
+  assert.match(panel, /process-document-pages/);
+  assert.match(panel, /action: "start"/);
+  assert.match(panel, /action: "save_pages"/);
+  assert.match(panel, /action: "complete"/);
+  assert.match(panel, /extractPdfPages/);
+  assert.doesNotMatch(panel, /document_pages/);
   assert.match(panel, /uploadToSignedUrl\(signed\.path, signed\.token, file/);
   assert.doesNotMatch(panel, /\.from\(["']documents["']\)\.insert/);
   assert.doesNotMatch(panel, /\.from\(["']documents["']\)\.update/);
