@@ -28,7 +28,7 @@ The Edge Function calls `public.create_generated_quiz` to atomically insert the 
 
 This proposal has **not** been applied to any database. Until it is reviewed, converted into a proper migration, and explicitly approved/applied, the function will return a storage-not-ready error after generation. Do not deploy the function before the RPC exists.
 
-The RPC grants execution only to `service_role`; it verifies document ownership and ready status again, validates each cited page, stores answer keys in the private schema, and returns a safe projection without keys or explanations.
+The RPC grants execution only to `service_role`; it verifies document ownership and ready status again, validates each cited page, stores answer keys in the private schema, and returns a safe projection without keys or explanations.\n\nA second proposal, `supabase/proposals/secure_submit_answer_rpc.sql`, adds `public.submit_answer_safe` and revokes browser execution of the legacy key-bearing `public.submit_answer` entry point. It returns only correctness, explanation, and timestamp; it never returns `correct_index`. This is also proposal-only and must be reviewed together with any existing callers before adoption.
 
 ## Verification
 
