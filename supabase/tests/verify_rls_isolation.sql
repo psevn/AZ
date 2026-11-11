@@ -31,6 +31,30 @@ insert into public.project_tasks (id, project_id, title, assignee_id, created_by
   ('c4000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000001', 'A task assigned to C', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
   ('b4000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000001', 'B project task', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
 
+insert into public.documents (id, user_id, title, storage_path, status) values
+  ('d1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'A study pack', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a.pdf', 'ready'),
+  ('d2000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'B study pack', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/b.pdf', 'ready');
+
+insert into public.quizzes (id, user_id, document_id, mode) values
+  ('e1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'd1000000-0000-4000-8000-000000000001', 'standard'),
+  ('e2000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'd2000000-0000-4000-8000-000000000001', 'standard');
+
+insert into public.quiz_questions (id, user_id, quiz_id, prompt, choices) values
+  ('f1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 1', '["correct","wrong"]'::jsonb),
+  ('f1000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 2', '["correct","wrong"]'::jsonb),
+  ('f1000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 3', '["correct","wrong"]'::jsonb),
+  ('f1000000-0000-4000-8000-000000000004', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 4', '["correct","wrong"]'::jsonb),
+  ('f1000000-0000-4000-8000-000000000005', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 5', '["correct","wrong"]'::jsonb),
+  ('f2000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'e2000000-0000-4000-8000-000000000001', 'B question', '["correct","wrong"]'::jsonb);
+
+insert into private.question_keys (question_id, user_id, correct_index, explanation) values
+  ('f1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 0, 'A explanation 1'),
+  ('f1000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 0, 'A explanation 2'),
+  ('f1000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 0, 'A explanation 3'),
+  ('f1000000-0000-4000-8000-000000000004', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 0, 'A explanation 4'),
+  ('f1000000-0000-4000-8000-000000000005', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 0, 'A explanation 5'),
+  ('f2000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 0, 'B explanation');
+
 insert into storage.objects (bucket_id, name) values
   ('documents', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a.pdf'),
   ('documents', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/b.pdf');
@@ -74,6 +98,16 @@ begin
       v_storage_count, auth.uid(), v_storage_rls, v_bypass, v_policy_count;
   end if;
 
+  if not has_function_privilege('authenticated', to_regprocedure('public.create_project(text,text,uuid,timestamptz)'), 'EXECUTE')
+     or has_function_privilege('anon', to_regprocedure('public.create_project(text,text,uuid,timestamptz)'), 'EXECUTE')
+     or not has_function_privilege('authenticated', to_regprocedure('public.start_attempt(uuid,text,integer,integer)'), 'EXECUTE')
+     or not has_function_privilege('authenticated', to_regprocedure('public.submit_answer(uuid,uuid,smallint)'), 'EXECUTE')
+     or not has_function_privilege('authenticated', to_regprocedure('public.finish_attempt(uuid)'), 'EXECUTE')
+     or not has_function_privilege('authenticated', to_regprocedure('public.complete_daily_challenge(text,date,uuid,uuid,uuid)'), 'EXECUTE')
+     or has_function_privilege('authenticated', to_regprocedure('public.reserve_credits(uuid,text,text,numeric)'), 'EXECUTE') then
+    raise exception 'A sensitive RPC has an unexpected execute grant';
+  end if;
+
   if has_table_privilege(current_user, 'public.documents', 'INSERT')
      or has_table_privilege(current_user, 'public.quizzes', 'INSERT')
      or has_table_privilege(current_user, 'public.quiz_questions', 'INSERT')
@@ -112,10 +146,101 @@ begin
 end
 $$;
 
--- Student B must not see or mutate project A.
+-- Exercise the real practice/grading and Daily Challenge RPC chain as student A.
+do $
+declare
+  v_attempt_id uuid;
+  v_question_id uuid;
+  v_correct_index smallint;
+  v_is_correct boolean;
+  v_explanation text;
+  v_challenge_date date := (now() at time zone 'Asia/Qatar')::date;
+  v_challenge_id text;
+  v_completion_id uuid;
+  v_already_completed boolean;
+  r record;
+begin
+  select attempt_id into v_attempt_id
+    from public.start_attempt('e1000000-0000-4000-8000-000000000001', 'practice', 5, null);
+
+  for r in
+    select question_id from public.attempt_questions
+     where attempt_id = v_attempt_id order by position_no
+  loop
+    select correct_index, is_correct, explanation
+      into v_correct_index, v_is_correct, v_explanation
+      from public.submit_answer(v_attempt_id, r.question_id, 0);
+    if v_correct_index <> 0 or v_is_correct is not true or v_explanation is null then
+      raise exception 'Practice grading RPC returned an unexpected result';
+    end if;
+  end loop;
+
+  perform * from public.finish_attempt(v_attempt_id);
+
+  v_challenge_id := to_char(v_challenge_date, 'YYYY-MM-DD')
+    || ':practice_study_pack:d1000000-0000-4000-8000-000000000001:e1000000-0000-4000-8000-000000000001';
+
+  select completion_id, already_completed into v_completion_id, v_already_completed
+    from public.complete_daily_challenge(
+      v_challenge_id,
+      v_challenge_date,
+      'd1000000-0000-4000-8000-000000000001',
+      'e1000000-0000-4000-8000-000000000001',
+      v_attempt_id
+    );
+
+  if v_completion_id is null or v_already_completed then
+    raise exception 'First Daily Challenge completion did not create a new receipt';
+  end if;
+
+  select completion_id, already_completed into v_completion_id, v_already_completed
+    from public.complete_daily_challenge(
+      v_challenge_id,
+      v_challenge_date,
+      'd1000000-0000-4000-8000-000000000001',
+      'e1000000-0000-4000-8000-000000000001',
+      v_attempt_id
+    );
+
+  if v_completion_id is null or not v_already_completed then
+    raise exception 'Daily Challenge completion replay was not idempotent';
+  end if;
+end
+$;
+
+-- Student B must not see or mutate project A. B also cannot use A's quiz or attempt.
+
 select set_config('request.jwt.claim.sub', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', true);
 do $$
 begin
+  begin
+    perform * from public.start_attempt('e1000000-0000-4000-8000-000000000001', 'practice', 5, null);
+    raise exception 'Student B unexpectedly started Student A quiz';
+  exception when sqlstate 'P0002' then null;
+  end;
+
+  begin
+    perform * from public.submit_answer(
+      (select id from public.quiz_attempts where quiz_id = 'e1000000-0000-4000-8000-000000000001' limit 1),
+      'f1000000-0000-4000-8000-000000000001',
+      0
+    );
+    raise exception 'Student B unexpectedly submitted an answer to Student A attempt';
+  exception when sqlstate 'P0002' then null;
+  end;
+
+  begin
+    perform * from public.complete_daily_challenge(
+      'invalid-cross-user-challenge',
+      (now() at time zone 'Asia/Qatar')::date,
+      'd1000000-0000-4000-8000-000000000001',
+      'e1000000-0000-4000-8000-000000000001',
+      (select id from public.quiz_attempts where quiz_id = 'e1000000-0000-4000-8000-000000000001' limit 1)
+    );
+    raise exception 'Student B unexpectedly completed Student A Daily Challenge';
+  exception when sqlstate 'P0002' then null;
+  end;
+
   if (select count(*) from public.projects where id = 'a3000000-0000-4000-8000-000000000001') <> 0
      or (select count(*) from public.project_tasks where project_id = 'a3000000-0000-4000-8000-000000000001') <> 0 then
     raise exception 'Non-member can read another team project';
