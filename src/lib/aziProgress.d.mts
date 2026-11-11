@@ -36,7 +36,7 @@ export type LearningProgressMetrics = {
   timeZone: string;
   window: { startDate: string; endDate: string };
   activity: {
-    studyDays: number;
+    studyDaysLastSevenDays: number;
     currentStreak: number;
     longestStreak: number;
     completedQuizAttempts: number;
