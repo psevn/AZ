@@ -29,3 +29,10 @@ test("workspace mounts the library and refreshes it after upload", () => {
   assert.match(app, /setDocumentsRefresh\(value => value \+ 1\)/);
   assert.match(app, /<DocumentLibrary userId=\{user\.id\}/);
 });
+
+test("document library offers recovery only for uploaded or stale processing documents", () => {
+  assert.match(library, /locked_at/);
+  assert.match(library, /Date\.now\(\) - lockTime >= 30 \* 60 \* 1000/);
+  assert.match(library, /recoverDocumentProcessing\(document\.id, document\.title/);
+  assert.match(library, /document-library-resume/);
+});
