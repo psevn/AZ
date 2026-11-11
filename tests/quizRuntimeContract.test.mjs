@@ -39,3 +39,24 @@ test("keeps synthetic grading confined to explicit visual demo mode", () => {
   assert.match(page, /if \(demoMode\) \{[\s\S]*?const correct = questionIndex % 2 === 0/);
   assert.match(page, /if \(!supabase \|\| !attemptId\)/);
 });
+
+test("starts a quiz-backed daily challenge from its existing quiz without regenerating", () => {
+  assert.match(page, /challenge\?\.id/);
+  assert.match(page, /beginAttempt\(challenge\.quizId, challenge\.questionCount\)/);
+  assert.match(page, /if \(demoMode \|\| qaState \|\| challenge\) return/);
+  assert.match(page, /Number\(attempt\.question_count\) !== requestedQuestionCount/);
+});
+
+test("reports challenge completion only after a valid server-finished attempt", () => {
+  const finishIndex = page.indexOf('rpc("finish_attempt"');
+  const validationIndex = page.indexOf('result.total_questions !== questions.length', finishIndex);
+  const callbackIndex = page.indexOf('onChallengeCompleted?.({', finishIndex);
+  assert.ok(finishIndex >= 0);
+  assert.ok(validationIndex > finishIndex);
+  assert.ok(callbackIndex > validationIndex);
+  assert.match(page, /challengeId: challenge\.id/);
+  assert.match(page, /quizId,/);
+  assert.match(page, /attemptId,/);
+  assert.match(page, /finishedAt: result\.finished_at/);
+  assert.match(page, /score: finalScore/);
+});
