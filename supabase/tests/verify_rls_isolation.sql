@@ -47,17 +47,17 @@ begin
      or (select count(*) from public.tasks) <> 1
      or (select count(*) from public.projects) <> 1
      or (select count(*) from public.project_tasks) <> 1 then
-    raise exception 'Authenticated user can see another user\'s personal or project rows';
+    raise exception 'Authenticated user can see another user''s personal or project rows';
   end if;
 
   if (select count(*) from public.planning_items where item_type = 'personal_task') <> 1
      or (select count(*) from public.planning_items where item_type = 'project_task') <> 1
      or (select count(*) from public.planning_items where item_type = 'project_deadline') <> 1 then
-    raise exception 'Unified planning view does not respect the current user\'s ownership/membership';
+    raise exception 'Unified planning view does not respect the current user''s ownership/membership';
   end if;
 
   if (select count(*) from storage.objects) <> 1 then
-    raise exception 'Storage document policy exposed another user\'s object';
+    raise exception 'Storage document policy exposed another user''s object';
   end if;
 
   if has_table_privilege(current_user, 'public.documents', 'INSERT')
