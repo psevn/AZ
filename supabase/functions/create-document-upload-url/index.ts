@@ -13,7 +13,7 @@ function json(status: number, body: Record<string, unknown>) {
 }
 
 function readBearerToken(request: Request) {
-  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\\s+(.+)$/i);
+  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
 }
 
