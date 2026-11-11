@@ -27,28 +27,22 @@ export default function DocumentUpload({ userId, lang, onUploaded }: Props) {
 
     setBusy(true);
     const documentId = crypto.randomUUID();
-    const storagePath = `${userId}/${documentId}.pdf`;
-    let rowCreated = false;
+    let uploadRecordCreated = false;
     try {
-      const { error: insertError } = await supabase.from("documents").insert({
-        id: documentId,
-        user_id: userId,
-        title: file.name.replace(/\.pdf$/i, "").slice(0, 255) || "Study document",
-        storage_path: storagePath,
-        status: "uploaded",
-        kind: "other",
-      });
-      if (insertError) throw insertError;
-      rowCreated = true;
-
       const { data: signed, error: signedError } = await supabase.functions.invoke(
         "create-document-upload-url",
-        { body: { documentId } },
+        {
+          body: {
+            documentId,
+            title: file.name.replace(/\.pdf$/i, "").slice(0, 255) || "Study document",
+          },
+        },
       );
       if (signedError) throw signedError;
-      if (!signed || typeof signed.path !== "string" || typeof signed.token !== "string") {
+      if (!signed || signed.documentId !== documentId || typeof signed.path !== "string" || typeof signed.token !== "string") {
         throw new Error("The upload service returned an invalid response.");
       }
+      uploadRecordCreated = true;
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
@@ -64,8 +58,14 @@ export default function DocumentUpload({ userId, lang, onUploaded }: Props) {
       setFile(null);
       onUploaded();
     } catch (cause) {
-      if (rowCreated) {
-        await supabase.from("documents").update({ status: "failed", failed_reason: "Upload did not complete." }).eq("id", documentId).eq("user_id", userId);
+      if (uploadRecordCreated && supabase) {
+        const { error: statusError } = await supabase.functions.invoke(
+          "create-document-upload-url",
+          { body: { documentId, action: "mark_failed" } },
+        );
+        if (statusError) {
+          console.error("Could not mark failed document upload:", statusError.message);
+        }
       }
       setError(cause instanceof Error ? cause.message : (ar ? "تعذر رفع الملف." : "Could not upload the file."));
     } finally {
