@@ -1,0 +1,40 @@
+name: Quiz Generation Contract Tests
+
+on:
+  pull_request:
+    paths:
+      - "supabase/functions/_shared/quizGeneration.*"
+      - "supabase/functions/generate-quiz/**"
+      - "tests/quizGeneration.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/quiz-generation-tests.yml"
+  push:
+    branches:
+      - "feature/azi-openai-quiz-foundation"
+    paths:
+      - "supabase/functions/_shared/quizGeneration.*"
+      - "supabase/functions/generate-quiz/**"
+      - "tests/quizGeneration.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/quiz-generation-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  quiz-generation-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Test quiz generation contract
+        run: npm run test:quiz-generation
