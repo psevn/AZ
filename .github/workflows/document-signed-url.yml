@@ -1,0 +1,42 @@
+name: Document Signed URL Contract
+
+on:
+  pull_request:
+    paths:
+      - "src/App.tsx"
+      - "supabase/functions/create-document-signed-url/**"
+      - "tests/documentSignedUrlContract.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/document-signed-url.yml"
+  push:
+    branches:
+      - "fix/document-signed-url-endpoint-20261111"
+    paths:
+      - "src/App.tsx"
+      - "supabase/functions/create-document-signed-url/**"
+      - "tests/documentSignedUrlContract.test.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/document-signed-url.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  document-signed-url:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Test document signed URL security contract
+        run: npm run test:document-signed-url
+      - name: Build web application
+        run: npm run build
