@@ -228,8 +228,8 @@ begin
   begin
     perform * from public.submit_answer(
       current_setting('test.daily_attempt_id')::uuid,
-      'f1000000-0000-4000-8000-000000000001',
-      0
+      'f1000000-0000-4000-8000-000000000001'::uuid,
+      0::smallint
     );
     raise exception 'Student B unexpectedly submitted an answer to Student A attempt';
   exception when sqlstate 'P0002' then null;
