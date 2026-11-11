@@ -6,6 +6,7 @@ type DocumentRow = {
   title: string;
   status: "uploaded" | "processing" | "ready" | "failed";
   created_at: string;
+  page_count: number | null;
 };
 
 type Props = {
@@ -23,7 +24,7 @@ const COPY = {
     loading: "جارٍ تحميل المستندات…",
     empty: "لم ترفع أي مستند بعد.",
     retry: "إعادة المحاولة",
-    ready: "جاهز للفتح",
+    ready: "جاهز للدراسة",
     uploaded: "تم الرفع · بانتظار المعالجة",
     processing: "قيد المعالجة",
     failed: "تعذّر إكمال الرفع",
@@ -39,7 +40,7 @@ const COPY = {
     loading: "Loading documents…",
     empty: "You haven’t uploaded a document yet.",
     retry: "Try again",
-    ready: "Ready to open",
+    ready: "Ready to study",
     uploaded: "Uploaded · awaiting processing",
     processing: "Processing",
     failed: "Upload did not complete",
@@ -68,7 +69,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
     setError("");
     const { data, error: queryError } = await supabase
       .from("documents")
-      .select("id,title,status,created_at")
+      .select("id,title,status,created_at,page_count")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (queryError) {
@@ -118,7 +119,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
               <span className="document-library-icon" aria-hidden="true">PDF</span>
               <span className="document-library-meta">
                 <strong title={document.title}>{document.title}</strong>
-                <small>{new Date(document.created_at).toLocaleDateString(ar ? "ar-QA" : "en-QA", { day: "numeric", month: "short", year: "numeric" })}</small>
+                <small>{new Date(document.created_at).toLocaleDateString(ar ? "ar-QA" : "en-QA", { day: "numeric", month: "short", year: "numeric" })}{document.status === "ready" && document.page_count ? ` · ${document.page_count} ${ar ? "صفحة" : "pages"}` : ""}</small>
               </span>
               <span className={"document-library-status is-" + document.status}>{statusLabel(document.status)}</span>
               {document.status !== "failed" ? (
