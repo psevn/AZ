@@ -19,7 +19,7 @@ function json(status: number, body: Record<string, unknown>) {
 }
 
 function readBearerToken(request: Request) {
-  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\\s+(.+)$/i);
+  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
 }
 
@@ -120,7 +120,7 @@ Deno.serve(async (request: Request) => {
       if (!isRecord(page) || typeof page.pageNo !== "number" || !Number.isInteger(page.pageNo) ||
           page.pageNo < 1 || page.pageNo > MAX_DOCUMENT_PAGES ||
           typeof page.text !== "string" || page.text.length > MAX_PAGE_CHARS ||
-          page.text.includes("\\u0000")) {
+          page.text.includes("\u0000")) {
         return json(400, { error: "A page contains invalid text or page metadata." });
       }
       if (seen.has(page.pageNo)) return json(400, { error: "A batch cannot contain duplicate page numbers." });
