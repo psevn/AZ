@@ -59,7 +59,7 @@ test("CLI-generated migration preserves the tested proposal SQL", () => {
   assert.match(migration, /Generated with Supabase CLI v3\.1\.0/);
   assert.match(migration, /full AZ migration baseline reconciliation is still required/);
   assert.doesNotMatch(migration, /PROPOSAL ONLY/i);
-  const migrationBody = migration.slice(migration.indexOf("\\n", migration.indexOf("\\n") + 1) + 1);
-  const proposalBody = proposal.slice(proposal.indexOf("\\n") + 1);
+  const migrationBody = migration.slice(migration.indexOf("\n", migration.indexOf("\n") + 1) + 1);
+  const proposalBody = proposal.slice(proposal.indexOf("\n") + 1);
   assert.equal(migrationBody, proposalBody);
 });
