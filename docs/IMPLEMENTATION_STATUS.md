@@ -193,7 +193,7 @@ PR #44 (feature/azi-secure-generated-quiz-persistence) hardens the existing prop
 - Enforces 5–20 questions, exact question-object keys, four distinct non-empty choices, bounded text sizes, valid numeric metadata, unique prompts, and page references that exist in the selected ready document.
 - Separates JSON type checks before calling array/object accessors, so scalar/null input is rejected without relying on boolean-expression evaluation order.
 - Stores correct_index and explanation only in private.question_keys; the returned JSON contains question content and source metadata only.
-- Uses a SECURITY DEFINER function with an empty search_path, revokes execution from PUBLIC, anon, and authenticated, and grants execution only to service_role.
+- Uses a SECURITY INVOKER function with an empty search_path. Read-only privilege checks confirmed service_role already has the required schema usage, document/page SELECT, and quiz/question/key INSERT privileges; execution is revoked from PUBLIC, anon, and authenticated and granted only to service_role.
 - The Edge Function derives p_user_id from a verified Supabase Auth user, checks document ownership with the user-scoped client, and performs persistence using the server-only service-role client.
 - The shared generator validator now applies matching object-shape and text-size limits before persistence.
 - Adds static contract tests and a dedicated GitHub Actions step.
