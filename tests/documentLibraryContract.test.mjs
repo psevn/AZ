@@ -11,8 +11,10 @@ test("document library reads only the signed-in user's documents", () => {
   assert.match(library, /\.order\("created_at", \{ ascending: false \}\)/);
 });
 
-test("only ready documents can be opened from the library", () => {
-  assert.match(library, /document\.status === "ready"/);
+test("non-failed documents can be previewed and ready documents offer practice", () => {
+  assert.match(library, /document\.status !== "failed"/);
+  assert.match(library, /document\.status === "ready" \? t\.open : t\.preview/);
+  assert.match(library, /onClick=\{onStartQuiz\}/);
   assert.match(library, /onOpenDocument\(document\.id\)/);
   assert.match(library, /uploaded: "تم الرفع · بانتظار المعالجة"/);
   assert.match(library, /processing: "قيد المعالجة"/);

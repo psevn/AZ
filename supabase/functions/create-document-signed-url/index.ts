@@ -67,20 +67,20 @@ Deno.serve(async (request: Request) => {
     .select("id,user_id,storage_path,status")
     .eq("id", documentId)
     .eq("user_id", userId)
-    .eq("status", "ready")
+    .in("status", ["uploaded", "processing", "ready"])
     .maybeSingle();
 
   if (documentError) {
     console.error("create-document-signed-url document lookup failed:", documentError.code);
     return json(500, { error: "Could not verify document access." });
   }
-  if (!document) return json(404, { error: "Ready document not found." });
+  if (!document) return json(404, { error: "Document not found." });
 
   // The database also enforces this ownership prefix; repeat it before privileged Storage access.
   // Never accept a bucket or object path from the browser.
   if (typeof document.storage_path !== "string" || !document.storage_path.startsWith(`${userId}/`)) {
     console.error("create-document-signed-url rejected a document with an invalid storage path.");
-    return json(404, { error: "Ready document not found." });
+    return json(404, { error: "Document not found." });
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -95,5 +95,5 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Could not create a document link. Please try again." });
   }
 
-  return json(200, { signedUrl: signed.signedUrl, expiresIn: 300 });
+  return json(200, { signedUrl: signed.signedUrl, expiresIn: 300, status: document.status });
 });

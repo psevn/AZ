@@ -1297,3 +1297,14 @@ button.primary-button:disabled,
   .document-library-status { width:calc(100% - 47px); margin-inline-start:47px; }
   .document-library-open { margin-inline-start:47px; }
 }
+
+.document-viewer-head > div { display:grid; gap:4px; min-width:0; }
+.document-viewer-head small { color:var(--muted); font-size:11px; font-weight:400; }
+.document-library-actions { display:flex; align-items:center; gap:7px; flex:none; }
+.document-library-practice { min-height:36px; padding-inline:10px; font-size:11px; }
+@media(max-width:620px) {
+  .document-library-actions { width:100%; margin-inline-start:47px; flex-wrap:wrap; }
+}
+@media(max-width:420px) {
+  .document-library-actions { margin-inline-start:47px; }
+}
