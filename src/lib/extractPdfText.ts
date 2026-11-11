@@ -13,7 +13,6 @@ export async function extractPdfPages(
   const bytes = new Uint8Array(await file.arrayBuffer());
   const loadingTask = pdfjsLib.getDocument({
     data: bytes,
-    isEvalSupported: false,
     useWorkerFetch: false,
   });
 
