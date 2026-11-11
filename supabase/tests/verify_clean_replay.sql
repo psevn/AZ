@@ -1,4 +1,6 @@
-do $$
+do $
+declare
+  v_atomic_rpc oid;
 begin
   if to_regclass('public.profiles') is null
      or to_regclass('public.academic_terms') is null
@@ -28,6 +30,25 @@ begin
 
   if to_regprocedure('public.complete_daily_challenge(text,date,uuid,uuid,uuid)') is null then
     raise exception 'AZI Daily Challenge completion RPC is missing';
+  end if;
+
+
+  v_atomic_rpc := to_regprocedure('public.process_document_pages_atomic(text,uuid,uuid,timestamptz,jsonb,integer,text)');
+  if v_atomic_rpc is null then
+    raise exception 'Atomic document processing RPC is missing';
+  end if;
+
+  if not has_function_privilege('service_role', v_atomic_rpc, 'EXECUTE') then
+    raise exception 'service_role cannot execute the atomic document processing RPC';
+  end if;
+
+  if has_function_privilege('authenticated', v_atomic_rpc, 'EXECUTE')
+     or has_function_privilege('anon', v_atomic_rpc, 'EXECUTE') then
+    raise exception 'The atomic document processing RPC is exposed to browser roles';
+  end if;
+
+  if (select prosecdef from pg_proc where oid = v_atomic_rpc) then
+    raise exception 'The atomic document processing RPC must remain SECURITY INVOKER';
   end if;
 
   if (select count(*) from cron.job where jobname = 'sweep-stuck-reservations') <> 1 then
