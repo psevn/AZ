@@ -4,7 +4,7 @@
 
 begin;
 
--- Stable fixtures make failures reproducible and keep the test independent of auth services.
+-- Stable fixtures make the test reproducible and independent of auth services.
 insert into auth.users (id, email) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'rls-a@example.invalid'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'rls-b@example.invalid');
@@ -29,7 +29,7 @@ insert into public.project_tasks (id, project_id, title, assignee_id, created_by
   ('a4000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000001', 'A project task', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
   ('b4000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000001', 'B project task', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
 
-insert into storage.buckets (id, name, public) values ('documents', 'documents', false);
+-- The storage migration already creates the private 'documents' bucket.
 insert into storage.objects (bucket_id, name) values
   ('documents', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/a.pdf'),
   ('documents', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/b.pdf');
