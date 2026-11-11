@@ -5,10 +5,25 @@ set -euo pipefail
 : "${DATABASE_URL:?Set DATABASE_URL to a throwaway local/test database}"
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-PSQL=(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -q)
+if [[ -n "${PSQL_DOCKER_CONTAINER:-}" ]]; then
+  psql_file() {
+    docker exec -i "$PSQL_DOCKER_CONTAINER" psql -U postgres -d az_clean_replay -X -v ON_ERROR_STOP=1 -q -f - < "$1"
+  }
+  psql_command() {
+    docker exec "$PSQL_DOCKER_CONTAINER" psql -U postgres -d az_clean_replay -X -v ON_ERROR_STOP=1 -q -c "$1"
+  }
+  psql_stdin() {
+    docker exec -i "$PSQL_DOCKER_CONTAINER" psql -U postgres -d az_clean_replay -X -v ON_ERROR_STOP=1 -q
+  }
+else
+  PSQL=(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -q)
+  psql_file() { "${PSQL[@]}" -f "$1"; }
+  psql_command() { "${PSQL[@]}" -c "$1"; }
+  psql_stdin() { "${PSQL[@]}"; }
+fi
 
-"${PSQL[@]}" -f "$ROOT/supabase/tests/clean_replay_stubs.sql"
-"${PSQL[@]}" -c "create publication supabase_realtime"
+psql_file "$ROOT/supabase/tests/clean_replay_stubs.sql"
+psql_command "create publication supabase_realtime"
 
 count=0
 for f in "$ROOT"/supabase/migrations/*.sql; do
@@ -17,18 +32,19 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   if [[ "$name" == "20261105161922_schedule_sweep_stuck_reservations.sql" ]]; then
     # pg_cron is not installed in this disposable CI database. The migration's
     # scheduling calls still execute against the local cron.* test stub.
-    sed '/^create extension if not exists pg_cron with schema pg_catalog;$/d' "$f" | "${PSQL[@]}"
+    sed '/^create extension if not exists pg_cron with schema pg_catalog;$/d' "$f" | psql_stdin
   else
-    "${PSQL[@]}" -f "$f"
+    psql_file "$f"
   fi
   count=$((count + 1))
 done
 
-if [[ "$count" -ne 31 ]]; then
-  echo "Expected 31 migrations, replayed $count" >&2
+if [[ "$count" -ne 32 ]]; then
+  echo "Expected 32 migrations, replayed $count" >&2
   exit 1
 fi
 
-"${PSQL[@]}" -f "$ROOT/supabase/tests/verify_clean_replay.sql"
-"${PSQL[@]}" -f "$ROOT/supabase/tests/verify_rls_isolation.sql"
-echo "PASS: all 31 migrations replayed and representative authenticated RLS checks passed on a disposable PostgreSQL database."
+psql_file "$ROOT/supabase/tests/verify_clean_replay.sql"
+psql_file "$ROOT/supabase/tests/verify_atomic_document_processing.sql"
+psql_file "$ROOT/supabase/tests/verify_rls_isolation.sql"
+echo "PASS: all 32 migrations replayed and representative authenticated RLS checks passed on a disposable PostgreSQL database."
