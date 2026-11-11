@@ -309,7 +309,8 @@ export default function QuizPage({
       p_time_limit_seconds: null,
     });
     const attempt = Array.isArray(attemptData) ? attemptData[0] : attemptData;
-    if (attemptError || !attempt?.attempt_id) {
+    if (attemptError || !attempt?.attempt_id ||
+        Number(attempt.question_count) !== requestedQuestionCount) {
       setLoadError(attemptError?.message || t.generationUnavailable);
       setScreen("error");
       return;
@@ -464,7 +465,9 @@ export default function QuizPage({
       const result = Array.isArray(data) ? data[0] : data;
       const finalScore = Number(result?.score);
       if (error || !result || !Number.isFinite(finalScore) ||
-          typeof result.correct_count !== "number" || typeof result.total_questions !== "number") {
+          typeof result.correct_count !== "number" || typeof result.total_questions !== "number" ||
+          !Number.isInteger(result.total_questions) || result.total_questions !== questions.length ||
+          typeof result.finished_at !== "string" || Number.isNaN(Date.parse(result.finished_at))) {
         setLoadError(error?.message || t.errorTitle);
         setScreen("error");
         return;
