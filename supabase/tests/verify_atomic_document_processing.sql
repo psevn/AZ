@@ -32,6 +32,23 @@ begin
   end if;
   v_first_token := (v_result->>'processingToken')::timestamptz;
 
+  v_result := public.process_document_pages_atomic(
+    'resume', '00000000-0000-4000-8000-000000000642',
+    '00000000-0000-4000-8000-000000000641', null, null, null, null
+  );
+  if v_result->>'ok' <> 'false' or (v_result->>'statusCode')::integer <> 409 then
+    raise exception 'An active processing lock was reclaimed too early: %', v_result;
+  end if;
+
+  v_result := public.process_document_pages_atomic(
+    'save_pages', '00000000-0000-4000-8000-000000000642',
+    '00000000-0000-4000-8000-000000000643', v_first_token,
+    jsonb_build_array(jsonb_build_object('pageNo', 1, 'text', 'Wrong owner attempt')), null, null
+  );
+  if v_result->>'ok' <> 'false' or (v_result->>'statusCode')::integer <> 404 then
+    raise exception 'A mismatched owner was allowed to process the document: %', v_result;
+  end if;
+
   update public.documents
   set locked_at = clock_timestamp() - interval '31 minutes'
   where id = '00000000-0000-4000-8000-000000000642';
@@ -52,6 +69,22 @@ begin
   );
   if v_result->>'ok' <> 'false' or (v_result->>'statusCode')::integer <> 409 then
     raise exception 'Old attempt was not fenced after recovery: %', v_result;
+  end if;
+
+  v_result := public.process_document_pages_atomic(
+    'complete', '00000000-0000-4000-8000-000000000642',
+    '00000000-0000-4000-8000-000000000641', v_first_token, null, 1, null
+  );
+  if v_result->>'ok' <> 'false' or (v_result->>'statusCode')::integer <> 409 then
+    raise exception 'Old attempt was allowed to complete after recovery: %', v_result;
+  end if;
+
+  v_result := public.process_document_pages_atomic(
+    'fail', '00000000-0000-4000-8000-000000000642',
+    '00000000-0000-4000-8000-000000000641', v_first_token, null, null, 'invalid_pdf'
+  );
+  if v_result->>'ok' <> 'false' or (v_result->>'statusCode')::integer <> 409 then
+    raise exception 'Old attempt was allowed to fail the resumed document: %', v_result;
   end if;
 
   v_result := public.process_document_pages_atomic(
