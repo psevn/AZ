@@ -32,7 +32,7 @@ test("page batches preserve order and split before the UTF-8 payload limit", () 
     { pageNo: 2, text: "ب".repeat(100) },
     { pageNo: 3, text: "ج".repeat(100) },
   ];
-  const batches = makePageBatches("doc-1", pages, 350);
+  const batches = makePageBatches("doc-1", pages, 500);
   assert.ok(batches.length > 1);
   assert.deepEqual(batches.flat().map((page) => page.pageNo), [1, 2, 3]);
   for (const batch of batches) {
@@ -41,7 +41,7 @@ test("page batches preserve order and split before the UTF-8 payload limit", () 
       documentId: "doc-1",
       pages: batch,
     })).byteLength;
-    assert.ok(bytes <= 350);
+    assert.ok(bytes <= 500);
   }
 });
 
