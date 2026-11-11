@@ -30,4 +30,5 @@ if [[ "$count" -ne 31 ]]; then
 fi
 
 "${PSQL[@]}" -f "$ROOT/supabase/tests/verify_clean_replay.sql"
-echo "PASS: all 31 migrations replayed on a disposable empty PostgreSQL database."
+"${PSQL[@]}" -f "$ROOT/supabase/tests/verify_rls_isolation.sql"
+echo "PASS: all 31 migrations replayed and representative authenticated RLS checks passed on a disposable PostgreSQL database."
