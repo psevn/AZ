@@ -93,7 +93,7 @@ const COPY = {
     addDocumentText: "Upload a study document in your AZ workspace, then return here to practise from it.",
     openWorkspace: "Open workspace",
     noQuestions: "No questions are available for this subject yet.",
-    generationUnavailable: "Secure quiz generation is not connected yet. Your documents are safe; try again when the study service is available.",
+    generationUnavailable: "The AI study service is not configured yet. Your document is safe; try again when quiz generation is enabled.",
     retry: "Retry",
     loading: "Preparing your quiz…",
     errorTitle: "We couldn’t prepare this quiz",
@@ -135,7 +135,7 @@ const COPY = {
     addDocumentText: "ارفع مستنداً دراسياً في مساحة عمل AZ، ثم عُد إلى هنا للتدرب عليه.",
     openWorkspace: "افتح مساحة العمل",
     noQuestions: "لا توجد أسئلة متاحة لهذه المادة بعد.",
-    generationUnavailable: "لم يتم ربط خدمة إنشاء الاختبارات الآمنة بعد. مستنداتك آمنة؛ حاول مجدداً عند توفر خدمة الدراسة.",
+    generationUnavailable: "خدمة إنشاء الاختبارات بالذكاء الاصطناعي غير مهيأة بعد. مستندك آمن؛ حاول مجدداً عند تفعيل خدمة الدراسة.",
     retry: "إعادة المحاولة",
     loading: "جارٍ تجهيز الاختبار…",
     errorTitle: "تعذّر تجهيز هذا الاختبار",
@@ -321,9 +321,10 @@ export default function QuizPage({
       return;
     }
 
-    const attemptQuestions: Question[] = rows.map((row: any) => {
+    const attemptQuestions: Question[] = rows.flatMap((row: any) => {
       const nested = Array.isArray(row.quiz_questions) ? row.quiz_questions[0] : row.quiz_questions;
-      return {
+      if (!nested || typeof nested.id !== "string" || typeof nested.prompt !== "string") return [];
+      return [{
         id: nested.id,
         subject_id: selectedSubject || null,
         prompt: nested.prompt,
@@ -331,7 +332,7 @@ export default function QuizPage({
         topic: nested.topic || (ar ? "موضوع عام" : "General"),
         source_page: nested.source_page ?? null,
         difficulty: nested.difficulty ?? null,
-      };
+      }];
     });
     if (attemptQuestions.some((question) => !question.id || !question.prompt || question.choices.length !== 4)) {
       setLoadError(t.errorTitle);
@@ -449,14 +450,15 @@ export default function QuizPage({
       setScreen("loading");
       const { data, error } = await supabase.rpc("finish_attempt", { p_attempt_id: attemptId });
       const result = Array.isArray(data) ? data[0] : data;
-      if (error || !result || typeof result.score !== "number" ||
+      const finalScore = Number(result?.score);
+      if (error || !result || !Number.isFinite(finalScore) ||
           typeof result.correct_count !== "number" || typeof result.total_questions !== "number") {
         setLoadError(error?.message || t.errorTitle);
         setScreen("error");
         return;
       }
       setAttemptResult({
-        score: result.score,
+        score: finalScore,
         correct_count: result.correct_count,
         total_questions: result.total_questions,
         finished_at: result.finished_at,
