@@ -27,8 +27,9 @@ export default function DocumentUpload({ userId, lang, onUploaded }: Props) {
 
     setBusy(true);
     const documentId = crypto.randomUUID();
-    let uploadRecordCreated = false;
+    let uploadRecordMayExist = false;
     try {
+      uploadRecordMayExist = true;
       const { data: signed, error: signedError } = await supabase.functions.invoke(
         "create-document-upload-url",
         {
@@ -42,7 +43,6 @@ export default function DocumentUpload({ userId, lang, onUploaded }: Props) {
       if (!signed || signed.documentId !== documentId || typeof signed.path !== "string" || typeof signed.token !== "string") {
         throw new Error("The upload service returned an invalid response.");
       }
-      uploadRecordCreated = true;
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
@@ -58,7 +58,7 @@ export default function DocumentUpload({ userId, lang, onUploaded }: Props) {
       setFile(null);
       onUploaded();
     } catch (cause) {
-      if (uploadRecordCreated && supabase) {
+      if (uploadRecordMayExist && supabase) {
         const { error: statusError } = await supabase.functions.invoke(
           "create-document-upload-url",
           { body: { documentId, action: "mark_failed" } },
