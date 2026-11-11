@@ -48,7 +48,7 @@ Limits: 400 KiB request body, 20 pages per batch, 18,000 characters per page, an
 
 The function verifies that all page numbers from 1 through `pageCount` exist before setting the document to `ready`. It records page count, processing time, and a basic Arabic/English/mixed language label.
 
-If fewer than 20 non-whitespace characters were extracted, the document is marked `failed` with an explicit OCR-not-available reason. Image-only PDFs are not falsely marked ready.
+If no non-whitespace text was extracted, the document is marked `failed` with an explicit OCR-not-available reason. Image-only PDFs are not falsely marked ready.
 
 ### Fail
 

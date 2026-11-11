@@ -43,7 +43,7 @@ test("a document becomes ready only after every sequential page has been saved",
 });
 
 test("image-only PDFs are not falsely marked ready when no selectable text exists", () => {
-  assert.match(endpoint, /combinedText\.trim\(\)\.length < 20/);
+  assert.match(endpoint, /combinedText\.trim\(\)\.length === 0/);
   assert.match(endpoint, /No selectable text was found\. OCR is not available yet\./);
   assert.match(endpoint, /status: "failed"/);
 });
