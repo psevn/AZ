@@ -16,7 +16,7 @@ test("document library reads only the signed-in user's documents", () => {
 test("non-failed documents can be previewed and ready documents offer practice", () => {
   assert.match(library, /document\.status !== "failed"/);
   assert.match(library, /document\.status === "ready" \? t\.open : t\.preview/);
-  assert.match(library, /onClick=\{onStartQuiz\}/);
+  assert.match(library, /onClick=\{\(\) => onStartQuiz\(document\.id\)\}/);
   assert.match(library, /onOpenDocument\(document\.id\)/);
   assert.match(library, /uploaded: "تم الرفع · بانتظار المعالجة"/);
   assert.match(library, /processing: "قيد المعالجة"/);
