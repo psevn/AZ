@@ -54,15 +54,17 @@ test("starts a quiz-backed daily challenge from its existing quiz without regene
 test("reports challenge completion only after a valid server-finished attempt", () => {
   const finishIndex = page.indexOf('rpc("finish_attempt"');
   const validationIndex = page.indexOf('result.total_questions !== questions.length', finishIndex);
+  const receiptIndex = page.indexOf('rpc("complete_daily_challenge"', finishIndex);
   const callbackIndex = page.indexOf('onChallengeCompleted?.({', finishIndex);
   assert.ok(finishIndex >= 0);
   assert.ok(validationIndex > finishIndex);
-  assert.ok(callbackIndex > validationIndex);
-  assert.match(page, /challengeId: challenge\.id/);
-  assert.match(page, /quizId,/);
-  assert.match(page, /attemptId,/);
-  assert.match(page, /finishedAt: result\.finished_at/);
-  assert.match(page, /score: finalScore/);
+  assert.ok(receiptIndex > validationIndex);
+  assert.ok(callbackIndex > receiptIndex);
+  assert.match(page, /challengeId: completion\.challenge_id/);
+  assert.match(page, /quizId: completion\.quiz_id/);
+  assert.match(page, /attemptId: completion\.attempt_id/);
+  assert.match(page, /finishedAt: completion\.finished_at/);
+  assert.match(page, /score: Number\(completion\.score\)/);
 });
 
 test("Home selects only a ready document with an existing five-question quiz", () => {
@@ -77,5 +79,7 @@ test("Home retains challenge, quiz, and attempt IDs only after the QuizPage call
   assert.match(app, /challengeId: string; quizId: string; attemptId: string/);
   assert.match(app, /onChallengeCompleted=\{\(completion\)=>setDailyChallengeCompletion\(completion\)\}/);
   assert.match(app, /dailyChallengeCompletion\?\.challengeId === dailyChallenge\.id/);
+  assert.match(app, /from\("azi_daily_challenge_completions"\)/);
+  assert.match(app, /eq\("challenge_date", qatarDateKey\(\)\)/);
   assert.doesNotMatch(app, /awardPoints|grantPoints|points\s*\+=/i);
 });

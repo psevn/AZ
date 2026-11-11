@@ -96,6 +96,7 @@ const COPY = {
     openWorkspace: "Open workspace",
     noQuestions: "No questions are available for this subject yet.",
     generationUnavailable: "The AI study service is not configured yet. Your document is safe; try again when quiz generation is enabled.",
+    challengeSavePending: "Your quiz is complete, but the Daily Challenge receipt could not be saved yet.",
     retry: "Retry",
     loading: "Preparing your quiz…",
     errorTitle: "We couldn’t prepare this quiz",
@@ -138,6 +139,7 @@ const COPY = {
     openWorkspace: "افتح مساحة العمل",
     noQuestions: "لا توجد أسئلة متاحة لهذه المادة بعد.",
     generationUnavailable: "خدمة إنشاء الاختبارات بالذكاء الاصطناعي غير مهيأة بعد. مستندك آمن؛ حاول مجدداً عند تفعيل خدمة الدراسة.",
+    challengeSavePending: "اكتمل الاختبار، لكن تعذّر حفظ إثبات إكمال تحدي اليوم حتى الآن.",
     retry: "إعادة المحاولة",
     loading: "جارٍ تجهيز الاختبار…",
     errorTitle: "تعذّر تجهيز هذا الاختبار",
@@ -206,6 +208,7 @@ export default function QuizPage({
     { questionId: DEMO_QUESTIONS[2].id, topic: DEMO_QUESTIONS[2].topic, correct: true },
   ] : []);
   const [loadError, setLoadError] = useState("");
+  const [challengeNotice, setChallengeNotice] = useState("");
 
   const filteredDemoQuestions = useMemo(() => DEMO_QUESTIONS.filter((question) =>
     (!selectedSubject || question.subject_id === selectedSubject) &&
@@ -480,13 +483,29 @@ export default function QuizPage({
       });
       if (challenge && quizId === challenge.quizId && attemptId &&
           typeof result.finished_at === "string" && result.finished_at.length > 0) {
-        onChallengeCompleted?.({
-          challengeId: challenge.id,
-          quizId,
-          attemptId,
-          finishedAt: result.finished_at,
-          score: finalScore,
+        const { data: completionData, error: completionError } = await supabase.rpc("complete_daily_challenge", {
+          p_challenge_id: challenge.id,
+          p_challenge_date: challenge.date,
+          p_document_id: challenge.documentId,
+          p_quiz_id: quizId,
+          p_attempt_id: attemptId,
         });
+        const completion = Array.isArray(completionData) ? completionData[0] : completionData;
+        if (completionError || !completion?.completion_id ||
+            completion.challenge_id !== challenge.id ||
+            completion.quiz_id !== quizId ||
+            typeof completion.attempt_id !== "string" ||
+            typeof completion.finished_at !== "string") {
+          setChallengeNotice(t.challengeSavePending);
+        } else {
+          onChallengeCompleted?.({
+            challengeId: completion.challenge_id,
+            quizId: completion.quiz_id,
+            attemptId: completion.attempt_id,
+            finishedAt: completion.finished_at,
+            score: Number(completion.score),
+          });
+        }
       }
       setScreen("result");
       return;
@@ -619,6 +638,7 @@ export default function QuizPage({
         {missedTopics.length ? <ul>{missedTopics.map((missedTopic) => <li key={missedTopic}>{missedTopic}</li>)}</ul> : <p>{t.noneMissed}</p>}
       </div>
       <EmptyInsights lang={lang} />
+      {challengeNotice && <p className="quiz-demo-note" role="status">{challengeNotice}</p>}
       <div className="quiz-result-actions">
         <button type="button" className="az-btn az-btn--primary" onClick={repeatQuiz}>{t.repeat}</button>
         <p>{t.repeatNote}</p>

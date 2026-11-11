@@ -12,6 +12,10 @@ on:
       - "supabase/proposals/secure_quiz_answer_response.sql"
       - "tests/quizAnswerSecurity.test.mjs"
       - "tests/quizRuntimeContract.test.mjs"
+      - "tests/dailyChallengePersistenceContract.test.mjs"
+      - "tests/sql/**"
+      - "supabase/proposals/azi_daily_challenge_completion.sql"
+      - "supabase/migrations/**"
       - "tests/quizPersistenceContract.test.mjs"
       - "tests/quizGeneration.test.mjs"
       - "supabase/functions/generate-quiz/**"
@@ -51,3 +55,42 @@ jobs:
         run: npm run test:quiz-persistence
       - name: Verify Daily Challenge question minimum
         run: npm run test:azi-daily-challenge
+      - name: Verify Daily Challenge completion persistence
+        run: npm run test:daily-challenge-persistence
+
+  daily-challenge-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: az_sql_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d az_sql_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: az_sql_test
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Create isolated Supabase-compatible test schema
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/daily-challenge-fixture.sql
+      - name: Apply Daily Challenge proposal to isolated PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111073233_azi_daily_challenge_completion.sql
+      - name: Verify completion, idempotency, ownership, RLS, and grants
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/daily-challenge-integration.sql
+

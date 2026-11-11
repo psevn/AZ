@@ -171,10 +171,26 @@ export default function App() {
 
     // Select only an existing, user-owned quiz with enough saved questions.
     // The challenge never triggers AI generation or fabricates question availability.
-    const [readyDocuments, savedQuizzes] = await Promise.all([
+    const [readyDocuments, savedQuizzes, completedChallenge] = await Promise.all([
       supabase.from("documents").select("id,title").eq("user_id", user.id).eq("status", "ready"),
       supabase.from("quizzes").select("id,document_id,quiz_questions(id)").eq("user_id", user.id).not("document_id", "is", null).order("created_at", { ascending: false }),
+      supabase.from("azi_daily_challenge_completions").select("challenge_id,quiz_id,attempt_id,finished_at,score").eq("user_id", user.id).eq("challenge_date", qatarDateKey()).maybeSingle(),
     ]);
+    if (!completedChallenge.error && completedChallenge.data) {
+      const row = completedChallenge.data;
+      if (typeof row.challenge_id === "string" && typeof row.quiz_id === "string" &&
+          typeof row.attempt_id === "string" && typeof row.finished_at === "string") {
+        setDailyChallengeCompletion({
+          challengeId: row.challenge_id,
+          quizId: row.quiz_id,
+          attemptId: row.attempt_id,
+          finishedAt: row.finished_at,
+          score: Number(row.score),
+        });
+      }
+    } else {
+      setDailyChallengeCompletion(null);
+    }
     if (!readyDocuments.error && !savedQuizzes.error) {
       const documentsById = new Map<string, { id: string; title: string }>((readyDocuments.data ?? []).map((document: any) => [document.id, document] as [string, { id: string; title: string }]));
       const studyPacks = (savedQuizzes.data ?? []).flatMap((quiz: any) => {
