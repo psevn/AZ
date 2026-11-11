@@ -65,7 +65,7 @@ test("PDF.js extracts selectable text locally with a version-matched worker", ()
   assert.match(extractor, /page\.getTextContent\(\)/);
   assert.match(extractor, /page\.cleanup\(\)/);
   assert.match(extractor, /loadingTask\.destroy\(\)/);
-  assert.match(extractor, /isEvalSupported: false/);
+  assert.doesNotMatch(extractor, /isEvalSupported/);
   assert.match(extractor, /pdf\.numPages > 1_000/);
   assert.doesNotMatch(extractor, /fetch\(/);
 });
