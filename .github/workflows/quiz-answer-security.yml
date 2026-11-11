@@ -83,14 +83,19 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
       - name: Create isolated Supabase-compatible test schema
-        run: psql -v ON_ERROR_STOP=1 -f tests/sql/daily-challenge-fixture.sql
+        run: |
+          POSTGRES_CONTAINER_ID="$(docker ps --filter "ancestor=postgres:17" --format "{{.ID}}" | head -n 1)"
+          test -n "$POSTGRES_CONTAINER_ID"
+          docker exec -i "$POSTGRES_CONTAINER_ID" psql -U postgres -d az_sql_test -v ON_ERROR_STOP=1 < tests/sql/daily-challenge-fixture.sql
       - name: Apply Daily Challenge proposal to isolated PostgreSQL
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261111073233_azi_daily_challenge_completion.sql
+        run: |
+          POSTGRES_CONTAINER_ID="$(docker ps --filter "ancestor=postgres:17" --format "{{.ID}}" | head -n 1)"
+          test -n "$POSTGRES_CONTAINER_ID"
+          docker exec -i "$POSTGRES_CONTAINER_ID" psql -U postgres -d az_sql_test -v ON_ERROR_STOP=1 < supabase/migrations/20261111073233_azi_daily_challenge_completion.sql
       - name: Verify completion, idempotency, ownership, RLS, and grants
-        run: psql -v ON_ERROR_STOP=1 -f tests/sql/daily-challenge-integration.sql
+        run: |
+          POSTGRES_CONTAINER_ID="$(docker ps --filter "ancestor=postgres:17" --format "{{.ID}}" | head -n 1)"
+          test -n "$POSTGRES_CONTAINER_ID"
+          docker exec -i "$POSTGRES_CONTAINER_ID" psql -U postgres -d az_sql_test -v ON_ERROR_STOP=1 < tests/sql/daily-challenge-integration.sql
 
