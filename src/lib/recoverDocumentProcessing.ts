@@ -35,6 +35,7 @@ export async function recoverDocumentProcessing(
   if (!client) throw new Error("Document storage is not configured.");
 
   let processingStarted = false;
+  let processingToken: string | null = null;
   try {
     onProgress?.("downloading");
     const { data: signed, error: signedError } = await client.functions.invoke(
@@ -61,7 +62,7 @@ export async function recoverDocumentProcessing(
     if (typeof started.processingToken !== "string") {
       throw new Error("The processing service returned an invalid attempt token.");
     }
-    const processingToken = started.processingToken;
+    processingToken = started.processingToken;
     processingStarted = true;
 
     onProgress?.("extracting", 0, 0);
