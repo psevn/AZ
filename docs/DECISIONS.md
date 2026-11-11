@@ -26,6 +26,11 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 7. Provider-independent AI interface + quality metrics next to cost, incl. automatic page-reference check (SPEC §8).
 8. Vertical slices, P0/P1/P2 priorities, date gated by quality (SPEC §12).
 
+## Approved 2026-11-11 — feature naming (PSEVN)
+- The document-based study feature (upload a lecture -> summary, questions, quiz) is named **Study Pack** (Arabic working name: "حقيبة المذاكرة"). Rejected for this feature: "AZ Workspace" (generic, sounds like Google Workspace/Notion) and "AZ Intelligence" (AI-hype, overlaps the AZI character).
+- Brand stays **AZ**. **AZI** stays the separate AI-character inside the product.
+- NOT verified: trademark/domain availability and how the Arabic name sounds to real students. Check both before any paid marketing.
+
 ## Postponed (not rejected)
 - Ambassador program: after beta; count activated users (not sign-ups), higher points for paid conversions, rewards in AI credits/free Pro months/titles, pseudonymous leaderboard, universities only (schools need legal review), start with 3–5 ambassadors.
 - Cafe/library/neon concept: separate EZORD-level idea, revisit only after AZ is profitable. Cheap test later: partner discount with an existing cafe/bookstore. Coffee-redeemable points = financial liability; not in AZ.
