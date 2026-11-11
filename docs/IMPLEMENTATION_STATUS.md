@@ -201,3 +201,16 @@ PR #44 (feature/azi-secure-generated-quiz-persistence) hardens the existing prop
 The model default gpt-6-astra was checked against the current OpenAI Responses API model documentation on 2026-11-11. This is documentation verification only; no API request or key was used.
 
 **Verification boundary:** PR #44 is proposal/code/test work only. The SQL has not been executed against PostgreSQL, converted to a numbered migration, or applied to Supabase. Static contract tests do not replace a local database test. The generate-quiz Edge Function remains undeployed, OPENAI_API_KEY remains unset, and there has been no live database write, API-key creation, or production deployment.
+
+
+## Daily Challenge minimum-question alignment — PR #45
+
+The generated quiz persistence contract accepts 5–20 questions. The original Daily Challenge selector defaulted to 3, which could produce an action that the current generator cannot fulfill.
+
+PR #45 (feature/azi-daily-challenge-minimum-five), stacked above PR #44:
+- Raises the selector default to 5 and rejects caller overrides below 5.
+- Requires topic and ready Study Pack candidates to have at least the requested count; four-question sources no longer qualify.
+- Updates the selector tests for the five-question boundary and Qatar-local date fixture.
+- Extends the engagement-test workflow to run for this stacked PR base branch.
+
+This is a selector-contract alignment only. It does not yet persist challenge state, launch the quiz UI, associate a challenge with quiz_id/attempt_id, or award points. Per the engagement specification, completion must remain tied to a verified completed attempt; no challenge reward is granted by selection or by merely starting a quiz.
