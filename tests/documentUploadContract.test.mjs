@@ -22,6 +22,7 @@ test("browser creates an owner-scoped document row and uploads only with a signe
 
 test("upload URL endpoint authenticates the owner and accepts only their pending upload row", () => {
   assert.match(endpoint, /auth\.getUser\(token\)/);
+  assert.match(endpoint, /Bearer\\s\+/);
   assert.match(endpoint, /\.eq\("user_id", userId\)/);
   assert.match(endpoint, /\.eq\("status", "uploaded"\)/);
   assert.match(endpoint, /document\.storage_path !== `\$\{userId\}\/\$\{documentId\}\.pdf`/);
