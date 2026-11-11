@@ -19,7 +19,7 @@ function json(status: number, body: Record<string, unknown>) {
 }
 
 function readBearerToken(request: Request) {
-  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\\s+(.+)$/i);
+  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
 }
 
@@ -56,7 +56,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function detectLanguage(text: string): "ar" | "en" | "mixed" {
-  const arabicCount = (text.match(/[\\u0600-\\u06FF]/g) ?? []).length;
+  const arabicCount = (text.match(/[\u0600-\u06FF]/g) ?? []).length;
   const latinCount = (text.match(/[A-Za-z]/g) ?? []).length;
   if (arabicCount > 0 && latinCount > 0) return "mixed";
   if (arabicCount > 0) return "ar";
