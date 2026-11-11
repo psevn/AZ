@@ -13,6 +13,7 @@ type Props = {
   lang: "ar" | "en";
   refreshKey: number;
   onOpenDocument: (documentId: string) => void;
+  onStartQuiz: () => void;
 };
 
 const COPY = {
@@ -27,6 +28,8 @@ const COPY = {
     processing: "قيد المعالجة",
     failed: "تعذّر إكمال الرفع",
     open: "فتح المستند",
+    preview: "معاينة PDF",
+    practice: "ابدأ التدريب",
     count: "مستند",
     error: "تعذّر تحميل قائمة المستندات.",
   },
@@ -41,12 +44,14 @@ const COPY = {
     processing: "Processing",
     failed: "Upload did not complete",
     open: "Open document",
+    preview: "Preview PDF",
+    practice: "Practice",
     count: "documents",
     error: "Could not load your documents.",
   },
 };
 
-export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocument }: Props) {
+export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocument, onStartQuiz }: Props) {
   const ar = lang === "ar";
   const t = COPY[lang];
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
@@ -116,11 +121,12 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
                 <small>{new Date(document.created_at).toLocaleDateString(ar ? "ar-QA" : "en-QA", { day: "numeric", month: "short", year: "numeric" })}</small>
               </span>
               <span className={"document-library-status is-" + document.status}>{statusLabel(document.status)}</span>
-              {document.status === "ready" ? (
-                <button type="button" className="az-btn az-btn--ghost document-library-open" onClick={() => onOpenDocument(document.id)}>{t.open} ↗</button>
-              ) : (
-                <span className="document-library-pending" aria-hidden="true">·</span>
-              )}
+              {document.status !== "failed" ? (
+                <div className="document-library-actions">
+                  <button type="button" className="az-btn az-btn--ghost document-library-open" onClick={() => onOpenDocument(document.id)}>{document.status === "ready" ? t.open : t.preview} ↗</button>
+                  {document.status === "ready" && <button type="button" className="az-btn az-btn--primary document-library-practice" onClick={onStartQuiz}>{t.practice}</button>}
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
