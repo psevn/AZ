@@ -1,22 +1,24 @@
 -- PROPOSAL ONLY — not applied to Supabase.
--- Review against the exact live function definitions before creating a migration.
--- This secures one answer submission; it does NOT create a quiz-session lifecycle.
+-- This contract was reconciled against the live AZ database schema on 2026-11-11.
+-- It uses the existing quiz-attempt lifecycle; it does not add or duplicate tables.
 
--- The existing public function exposes correct_index in its return type. PostgreSQL
--- cannot change a function's OUT/RETURNS TABLE shape with CREATE OR REPLACE.
-DROP FUNCTION IF EXISTS public.submit_answer(uuid, smallint);
+-- PostgreSQL cannot change a function's OUT/RETURNS TABLE shape with CREATE OR REPLACE.
+-- Drop only the public wrapper; the private implementation remains the grading source.
+DROP FUNCTION IF EXISTS public.submit_answer(uuid, uuid, smallint);
 
--- The private implementation also returns the answer key. Keep it callable only by
--- trusted function owners; the public SECURITY DEFINER wrapper below calls it.
-REVOKE ALL ON FUNCTION private.submit_answer(uuid, smallint)
+-- The private function returns correct_index. Browser users must not call it directly.
+REVOKE ALL ON FUNCTION private.submit_answer(uuid, uuid, smallint)
   FROM PUBLIC, anon, authenticated;
 
-CREATE FUNCTION public.submit_answer_safe(
+-- Keep the existing RPC name and arguments so the browser contract remains stable,
+-- but expose no answer-key field. Exam mode intentionally returns NULL correctness
+-- and explanation until the attempt is finished and reviewed.
+CREATE FUNCTION public.submit_answer(
+  p_attempt_id uuid,
   p_question_id uuid,
   p_chosen_index smallint
 )
 RETURNS TABLE (
-  answer_id uuid,
   is_correct boolean,
   explanation text,
   answered_at timestamptz
@@ -31,18 +33,18 @@ BEGIN
   END IF;
 
   RETURN QUERY
-    SELECT
-      result.attempt_id AS answer_id,
-      result.is_correct,
-      result.explanation,
-      result.created_at AS answered_at
-    FROM private.submit_answer(p_question_id, p_chosen_index) AS result;
+    SELECT result.is_correct, result.explanation, result.answered_at
+    FROM private.submit_answer(
+      p_attempt_id,
+      p_question_id,
+      p_chosen_index
+    ) AS result;
 END;
 $function$;
 
-REVOKE ALL ON FUNCTION public.submit_answer_safe(uuid, smallint)
+REVOKE ALL ON FUNCTION public.submit_answer(uuid, uuid, smallint)
   FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.submit_answer_safe(uuid, smallint)
+GRANT EXECUTE ON FUNCTION public.submit_answer(uuid, uuid, smallint)
   TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
