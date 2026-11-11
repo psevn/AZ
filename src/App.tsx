@@ -9,12 +9,15 @@ import QuizPage from "./components/QuizPage";
 import { getStudyInsights } from "./lib/studyInsights";
 import { qatarDateKey } from "./lib/qatarTime.mjs";
 import { formatArabicCount } from "./lib/arabicPlural.mjs";
+import { selectDailyChallenge } from "./lib/aziDailyChallenge.mjs";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
 type Section = "home" | "planning" | "az" | "community" | "me" | "quiz";
 type Subject = { id: string; name: string; color: string | null; exam_date: string | null; created_at: string };
 type Task = { id: string; user_id: string; subject_id: string | null; title: string; due_at: string | null; priority: number; est_minutes: number | null; status: "todo" | "doing" | "done"; note: string | null; completed_at?: string | null; document_id?: string | null; created_at: string };
+type DailyChallengeContext = { id: string; date: string; documentId: string; documentTitle: string; quizId: string; questionCount: number };
+type DailyChallengeCompletion = { challengeId: string; quizId: string; attemptId: string; finishedAt: string; score: number };
 
 const labels = {
   ar: { eyebrow:"مساحتك الأكاديمية", headline:"خطّط بوضوح. ادرس بتركيز.", intro:"مكان واحد يجمع خطتك ومذاكرتك وتقدّمك.", email:"البريد الإلكتروني", password:"كلمة المرور", signIn:"تسجيل الدخول", signUp:"إنشاء حساب", create:"ابدأ حسابك", have:"عندك حساب؟", none:"ما عندك حساب؟", signOut:"تسجيل الخروج", language:"English", loading:"لحظة...", config:"نحتاج إعداد الاتصال بـ Supabase", configText:"انسخ .env.example إلى .env.local وأضف رابط المشروع ومفتاح Publishable. لا تستخدم service_role في المتصفح.", checkEmail:"أرسلنا لك رسالة تأكيد. افتح بريدك ثم ارجع لتسجيل الدخول.", welcome:"تم تسجيل الدخول بنجاح.", workspace:"مساحة العمل", notebook:"دفتر الملاحظات", arena:"ARENA", az:"AZ", community:"المجتمع", me:"أنا",quiz:"اختبار قصير", communityTitle:"مجتمع AZ", communityText:"مساحة تجمع الطلاب لتبادل المعرفة والتجارب. ستتوفر في مرحلة لاحقة.", meTitle:"ملفي الشخصي", meText:"إدارة حسابك وتفضيلاتك الشخصية.", account:"الحساب", appearance:"المظهر", home:"الرئيسية", planning:"التخطيط", focus:"التركيز", study:"المذاكرة", today:"مساحة اليوم", todayText:"خطوة صغيرة ومنتظمة تصنع تقدماً كبيراً.", tasks:"المهام", completed:"مكتملة", subjects:"المواد الدراسية", subjectName:"اسم المادة", addSubject:"إضافة مادة", addTask:"إضافة مهمة", taskTitle:"عنوان المهمة", chooseSubject:"المادة", noSubject:"بدون مادة", due:"تاريخ الإنجاز", minutes:"المدة بالدقائق", priority:"الأولوية", high:"عالية", medium:"متوسطة", low:"منخفضة", todo:"لم تبدأ", doing:"قيد التنفيذ", done:"مكتملة", all:"الكل", todayFilter:"اليوم", upcoming:"القادمة", overdue:"المتأخرة", start:"ابدأ التركيز", stop:"إنهاء الجلسة", focusTitle:"وقت تركيزك", focusText:"اختر مهمة وابدأ جلسة تركيز.", studyTitle:"مساحة العمل الأكاديمية", studyText:"غرفة عملياتك لتنظيم الدراسة والعمل على أدواتك الأكاديمية.", notebookTitle:"دفتر الملاحظات", notebookText:"مساحة تدوين أفكارك وملاحظاتك الأكاديمية. ستتوفر أدواتها في مرحلة لاحقة.", arenaTitle:"ARENA", arenaText:"مساحة التحديات والتنافس الأكاديمي بين الطلاب.", studyNext:"الخطوة التالية: رفع ملفات PDF واستخراج محتواها وبناء أدوات الدراسة.", empty:"لا توجد مهام هنا بعد.", emptySubjects:"لا توجد مواد بعد.", remove:"حذف", startTask:"ابدأ", finishTask:"أنجزت", reopen:"إعادة فتح", saved:"تم حفظ جلسة التركيز.", noDue:"بدون موعد", footer:"AZ — خطّط، ادرس، تطوّر." },
@@ -63,6 +66,8 @@ export default function App() {
   const [page,setPage] = useState<Page>("workspace");
   const [subjects,setSubjects] = useState<Subject[]>([]);
   const [tasks,setTasks] = useState<Task[]>([]);
+  const [dailyChallenge,setDailyChallenge] = useState<DailyChallengeContext|null>(null);
+  const [dailyChallengeCompletion,setDailyChallengeCompletion] = useState<DailyChallengeCompletion|null>(null);
   const [taskDocumentLinkAvailable,setTaskDocumentLinkAvailable] = useState(false);
   const [activeDocument,setActiveDocument] = useState<{id:string;title:string;url:string}|null>(null);
   const [focusTask,setFocusTask] = useState("");
@@ -163,6 +168,44 @@ export default function App() {
     setTaskDocumentLinkAvailable(hasDocumentLink);
     if (s.error) setError(s.error.message); else setSubjects((s.data||[]) as Subject[]);
     if (taskError) setError(taskError.message); else setTasks(taskData);
+
+    // Select only an existing, user-owned quiz with enough saved questions.
+    // The challenge never triggers AI generation or fabricates question availability.
+    const [readyDocuments, savedQuizzes] = await Promise.all([
+      supabase.from("documents").select("id,title").eq("user_id", user.id).eq("status", "ready"),
+      supabase.from("quizzes").select("id,document_id,quiz_questions(id)").eq("user_id", user.id).not("document_id", "is", null).order("created_at", { ascending: false }),
+    ]);
+    if (!readyDocuments.error && !savedQuizzes.error) {
+      const documentsById = new Map((readyDocuments.data ?? []).map((document: any) => [document.id, document]));
+      const studyPacks = (savedQuizzes.data ?? []).flatMap((quiz: any) => {
+        const document = documentsById.get(quiz.document_id);
+        const questionRows = Array.isArray(quiz.quiz_questions) ? quiz.quiz_questions : [];
+        if (!document || questionRows.length < 5) return [];
+        return [{
+          id: quiz.id,
+          quiz_id: quiz.id,
+          document_id: document.id,
+          title: document.title,
+          status: "ready",
+          available_question_count: questionRows.length,
+        }];
+      });
+      const selected = selectDailyChallenge({ studyPacks, now: new Date(), minimumPracticeQuestions: 5 });
+      if (selected.type === "practice_study_pack") {
+        setDailyChallenge({
+          id: selected.id,
+          date: selected.date,
+          documentId: selected.sourceId,
+          documentTitle: selected.sourceTitle ?? (ar ? "مستند دراسي" : "Study document"),
+          quizId: selected.quizId,
+          questionCount: selected.questionCount,
+        });
+      } else {
+        setDailyChallenge(null);
+      }
+    } else {
+      setDailyChallenge(null);
+    }
     setLoading(false);
   }
   useEffect(() => { if (user) void loadData(); else { setSubjects([]); setTasks([]); } },[user]);
@@ -323,6 +366,15 @@ export default function App() {
                 <span className="universe-coordinate coordinate-top">AZ · 01</span><span className="universe-coordinate coordinate-bottom">From A to Z</span>
               </div>
             </section>
+            {dailyChallenge && <section className="az-card home-daily-challenge" aria-label={ar ? "تحدي اليوم" : "Daily challenge"}>
+              <div>
+                <span className="eyebrow">{ar ? "تحدي اليوم · اختياري" : "Daily challenge · Optional"}</span>
+                <h2>{dailyChallengeCompletion?.challengeId === dailyChallenge.id ? (ar ? "أكملت تحدي اليوم" : "Daily challenge completed") : (ar ? "تدريب من مستندك" : "Practice from your Study Pack")}</h2>
+                <p>{dailyChallenge.documentTitle} · {dailyChallenge.questionCount} {ar ? "أسئلة" : "questions"}</p>
+                {dailyChallengeCompletion?.challengeId === dailyChallenge.id && <small>{ar ? "تم تأكيد اكتمال المحاولة من الخادم." : "Attempt completion was confirmed by the server."}</small>}
+              </div>
+              {dailyChallengeCompletion?.challengeId !== dailyChallenge.id && <button type="button" className="az-btn az-btn--primary" onClick={() => setSection("quiz")}>{ar ? "ابدأ التحدي" : "Start challenge"} ↗</button>}
+            </section>}
             <section className="home-insights-slot" data-insights-slot aria-label={ar?"موضع رؤى الدراسة":"Study insights"}>{homeInsights.map(insight=><p key={insight.id}>{insight.message}</p>)}</section>
             {showHomeError&&<div className="home-state" role="alert"><p>{ar?"تعذّر تحميل بياناتك. حاول مرة أخرى.":"Could not load your data. Please try again."}</p><button type="button" className="az-btn az-btn--primary" onClick={()=>void loadData()}>{ar?"إعادة المحاولة":"Retry"}</button></div>}
             {showHomeLoading?<section className="home-skeleton" aria-label={t.loading}><span/><span/><span/></section>:<>
@@ -345,7 +397,7 @@ export default function App() {
             </>}
           </div>}
           {section==="planning" && <PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} hasError={Boolean(error)} onRetry={loadData} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}} onStartQuiz={()=>setSection("quiz")}/>}
-          {section==="quiz" && <QuizPage userId={user.id} lang={lang} subjects={subjects} offline={offline} onBackPlanning={()=>setSection("planning")} onOpenWorkspace={()=>{setSection("az");setPage("workspace");}}/>}
+          {section==="quiz" && <QuizPage userId={user.id} lang={lang} subjects={subjects} offline={offline} challenge={dailyChallenge} onChallengeCompleted={(completion)=>setDailyChallengeCompletion(completion)} onBackPlanning={()=>setSection(dailyChallenge ? "home" : "planning")} onOpenWorkspace={()=>{setSection("az");setPage("workspace");}}/>}
           {section==="az" && page==="focus" && <section className="focus-view content-panel">{finishedFocus&&<div className="focus-finish-card"><strong>{ar?"أحسنت!":"Nice work."} {finishedFocus.minutes} {ar?"دقيقة على":"min on"} {finishedFocus.taskTitle}.</strong><div><button type="button" onClick={async()=>{if(finishedFocus.taskId){const finishedTask=tasks.find(x=>x.id===finishedFocus.taskId);if(finishedTask)await changeTask(finishedTask,"done");}setFinishedFocus(null);}}>{ar?"وضع علامة مكتملة":"Mark done"}</button><button type="button" onClick={()=>setFinishedFocus(null)}>{ar?"ليس الآن":"Not yet"}</button></div></div>}<span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && (activeDocument?<section className="document-viewer content-panel"><div className="document-viewer-head"><strong>{activeDocument.title}</strong><button type="button" onClick={()=>setActiveDocument(null)}>{ar?"إغلاق المستند":"Close document"}</button></div><iframe title={activeDocument.title} src={activeDocument.url}/></section>:<section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">Knowledge system / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>)}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Notebook</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
