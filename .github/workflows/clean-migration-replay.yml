@@ -1,0 +1,43 @@
+name: Clean migration replay
+
+on:
+  push:
+    branches:
+      - test/azi-migration-replay-ci-20261111
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - ".github/workflows/clean-migration-replay.yml"
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - ".github/workflows/clean-migration-replay.yml"
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: az_clean_replay
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d az_clean_replay"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Replay migrations on an empty disposable database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/az_clean_replay
+        run: bash supabase/tests/run_clean_replay.sh
