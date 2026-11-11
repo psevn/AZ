@@ -71,6 +71,7 @@ export default function DocumentReader({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     setPageNo(1);
@@ -111,7 +112,7 @@ export default function DocumentReader({
       });
 
     return () => { cancelled = true; };
-  }, [documentId, pageNo, status, totalPages, t.loadError]);
+  }, [documentId, pageNo, status, totalPages, t.loadError, retryKey]);
 
   const matches = useMemo(() => {
     const query = search.trim();
@@ -187,7 +188,7 @@ export default function DocumentReader({
                 ) : error ? (
                   <div className="document-reader-state" role="alert">
                     <p>{error}</p>
-                    <button type="button" className="az-btn az-btn--ghost" onClick={() => changePage(pageNo)}>{t.retry}</button>
+                    <button type="button" className="az-btn az-btn--ghost" onClick={() => setRetryKey(value => value + 1)}>{t.retry}</button>
                   </div>
                 ) : pageText ? (
                   <pre dir={ar ? "rtl" : "ltr"}>{highlightedText}</pre>
