@@ -44,7 +44,11 @@ Deno.serve(async (request: Request) => {
 
   let body: { documentId?: unknown; language?: unknown; questionCount?: unknown; topic?: unknown };
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 8192) {
+      return json(413, { error: "Quiz request is too large." });
+    }
+    body = JSON.parse(rawBody);
   } catch {
     return json(400, { error: "Invalid JSON request body." });
   }
