@@ -124,4 +124,36 @@ test("requires at least five practice questions to match generated quiz persiste
   assert.equal(valid.questionCount, 5);
   assert.throws(() => selectDailyChallenge({ now, minimumPracticeQuestions: 4 }), /at least 5/);
 });
-\ntest("returns a concrete quiz and document binding for a Study Pack challenge", () => {\n  const result = selectDailyChallenge({\n    now,\n    studyPacks: [{\n      id: "quiz-42",\n      quiz_id: "quiz-42",\n      document_id: "doc-42",\n      title: "Biology notes",\n      status: "ready",\n      available_question_count: 7,\n    }],\n  });\n\n  assert.equal(result.type, "practice_study_pack");\n  assert.equal(result.sourceId, "doc-42");\n  assert.equal(result.sourceTitle, "Biology notes");\n  assert.equal(result.quizId, "quiz-42");\n  assert.deepEqual(result.action, {\n    type: "start_study_pack_practice",\n    studyPackId: "doc-42",\n    quizId: "quiz-42",\n    questionCount: 5,\n  });\n});\n\ntest("does not select a Study Pack without a concrete existing quiz binding", () => {\n  const result = selectDailyChallenge({\n    now,\n    studyPacks: [{ id: "doc-only", status: "ready", available_question_count: 8 }],\n  });\n  assert.equal(result.type, "unavailable");\n});\n
+
+test("returns a concrete quiz and document binding for a Study Pack challenge", () => {
+  const result = selectDailyChallenge({
+    now,
+    studyPacks: [{
+      id: "quiz-42",
+      quiz_id: "quiz-42",
+      document_id: "doc-42",
+      title: "Biology notes",
+      status: "ready",
+      available_question_count: 7,
+    }],
+  });
+
+  assert.equal(result.type, "practice_study_pack");
+  assert.equal(result.sourceId, "doc-42");
+  assert.equal(result.sourceTitle, "Biology notes");
+  assert.equal(result.quizId, "quiz-42");
+  assert.deepEqual(result.action, {
+    type: "start_study_pack_practice",
+    studyPackId: "doc-42",
+    quizId: "quiz-42",
+    questionCount: 5,
+  });
+});
+
+test("does not select a Study Pack without a concrete existing quiz binding", () => {
+  const result = selectDailyChallenge({
+    now,
+    studyPacks: [{ id: "doc-only", status: "ready", available_question_count: 8 }],
+  });
+  assert.equal(result.type, "unavailable");
+});
