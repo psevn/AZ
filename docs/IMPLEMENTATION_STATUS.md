@@ -228,3 +228,16 @@ PR #46 (feature/azi-daily-challenge-study-pack-link), stacked above PR #45:
 - No points are awarded in this slice. The challenge completion is held in current application state only; it is not durable across refreshes and is not a server-side reward record. Durable challenge state/idempotent rewards require a separate database/RPC proposal and local PostgreSQL validation.
 
 No live Supabase writes, schema changes, API-key creation, Edge Function deployment, or production deployment were performed.
+
+
+## Durable Daily Challenge completion receipt — PR #48
+
+PR #48 (feature/azi-daily-challenge-completion-rpc), stacked above PR #47:
+
+- Adds a proposal-only table for one completion receipt per user and Qatar-local challenge date, with unique challenge and attempt constraints plus composite ownership foreign keys to documents, quizzes, and quiz attempts.
+- Adds a SECURITY DEFINER RPC with an empty search_path. It derives the user from auth.uid(), accepts only a matching finished practice attempt, verifies the ready document/quiz relationship, requires exactly five attempt questions, validates the challenge ID against the document/quiz/date, and returns an idempotent receipt.
+- The completion table has RLS enabled, authenticated users can read only their own rows, and client roles have no direct insert/update/delete permissions. Writes occur only through the authenticated RPC.
+- QuizPage now requests this receipt only after finish_attempt succeeds. Home is notified only after the RPC returns the matching persisted receipt.
+- No points are awarded; the proposal stores verified completion evidence only.
+
+**Verification boundary:** the SQL remains a proposal and has not been executed locally or applied to Supabase. The UI call will report that the receipt could not be saved until the proposal is reviewed, converted into a migration, tested locally, and separately deployed. No live DB changes or deployments were made.
