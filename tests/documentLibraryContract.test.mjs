@@ -9,6 +9,8 @@ test("document library reads only the signed-in user's documents", () => {
   assert.match(library, /\.from\("documents"\)/);
   assert.match(library, /\.eq\("user_id", userId\)/);
   assert.match(library, /\.order\("created_at", \{ ascending: false \}\)/);
+  assert.match(library, /page_count/);
+  assert.match(library, /failed_reason/);
 });
 
 test("non-failed documents can be previewed and ready documents offer practice", () => {
@@ -18,7 +20,8 @@ test("non-failed documents can be previewed and ready documents offer practice",
   assert.match(library, /onOpenDocument\(document\.id\)/);
   assert.match(library, /uploaded: "تم الرفع · بانتظار المعالجة"/);
   assert.match(library, /processing: "قيد المعالجة"/);
-  assert.match(library, /failed: "تعذّر إكمال الرفع"/);
+  assert.match(library, /failed: "تعذّرت المعالجة"/);
+  assert.match(library, /scanned: "ملف مصوّر · يحتاج OCR"/);
 });
 
 test("workspace mounts the library and refreshes it after upload", () => {

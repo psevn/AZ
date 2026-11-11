@@ -1308,3 +1308,6 @@ button.primary-button:disabled,
 @media(max-width:420px) {
   .document-library-actions { margin-inline-start:47px; }
 }
+
+.document-upload-progress { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px 0 0; color:var(--muted); font-size:11px; line-height:1.6; }
+.document-upload-progress span { flex:none; font-variant-numeric:tabular-nums; color:var(--accent); }
