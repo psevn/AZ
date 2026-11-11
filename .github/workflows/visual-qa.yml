@@ -31,14 +31,14 @@ jobs:
         env:
           VITE_DEMO: "1"
       - run: npm install --no-save --no-audit --no-fund playwright@1.49.0
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
       - name: Serve and capture
         run: |
           npx vite preview --host 127.0.0.1 --port 4173 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173 >/dev/null && break; sleep 1; done
           node scripts/visual-qa.mjs http://127.0.0.1:4173 visual-qa-output
       - name: Publish screenshots to a review branch (so they can be reviewed from git)
-        if: always()
+        if: success()
         run: |
           cd visual-qa-output
           git init -q

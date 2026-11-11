@@ -1,0 +1,429 @@
+import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+import { supabase } from "../lib/supabase";
+import { getStudyInsights } from "../lib/studyInsights";
+import "./QuizPage.css";
+
+type Subject = { id: string; name: string; color: string | null; exam_date: string | null };
+type Question = {
+  id: string;
+  subject_id: string;
+  prompt: string;
+  choices: string[];
+  topic: string;
+  source_page: number;
+  difficulty: number;
+};
+type AnswerResult = { questionId: string; topic: string; correct: boolean };
+type Feedback = { correct: boolean; explanation: string; demo: boolean };
+type Screen = "setup" | "question" | "feedback" | "result" | "loading" | "empty" | "error";
+
+const DEMO_QUESTIONS: Question[] = [
+  {
+    id: "demo-econ-1",
+    subject_id: "00000000-0000-4000-8000-0000000000a1",
+    prompt: "What happens to the equilibrium price when demand increases and supply stays the same?",
+    choices: ["It increases", "It decreases", "It stays the same", "The market disappears"],
+    topic: "Supply and demand",
+    source_page: 12,
+    difficulty: 1,
+  },
+  {
+    id: "demo-econ-2",
+    subject_id: "00000000-0000-4000-8000-0000000000a1",
+    prompt: "Which change would shift the supply curve to the right?",
+    choices: ["Higher production costs", "Improved production technology", "A new sales tax", "Fewer suppliers"],
+    topic: "Market supply",
+    source_page: 18,
+    difficulty: 2,
+  },
+  {
+    id: "demo-accounting-1",
+    subject_id: "00000000-0000-4000-8000-0000000000a2",
+    prompt: "Which statement describes the accounting equation?",
+    choices: ["Assets = Liabilities + Equity", "Revenue = Assets − Expenses", "Cash = Profit + Debt", "Equity = Expenses + Revenue"],
+    topic: "Accounting equation",
+    source_page: 4,
+    difficulty: 1,
+  },
+  {
+    id: "demo-stats-1",
+    subject_id: "00000000-0000-4000-8000-0000000000a3",
+    prompt: "What does the median represent in an ordered data set?",
+    choices: ["The most frequent value", "The middle value", "The total of all values", "The difference between extremes"],
+    topic: "Descriptive statistics",
+    source_page: 7,
+    difficulty: 1,
+  },
+];
+
+const COPY = {
+  en: {
+    eyebrow: "Study / Practice",
+    title: "Short quiz",
+    intro: "A few focused questions to help you check your understanding.",
+    subject: "Subject",
+    chooseSubject: "Choose a subject",
+    topic: "Topic (optional)",
+    topicPlaceholder: "e.g. Supply and demand",
+    start: "Start quiz",
+    question: "Question",
+    of: "of",
+    confirm: "Confirm answer",
+    next: "Continue",
+    correct: "Correct",
+    incorrect: "Not quite",
+    demoNote: "Demo feedback is illustrative only. Live grading is not connected yet.",
+    explanation: "Explanation",
+    source: "Source",
+    page: "page",
+    result: "Quiz complete",
+    score: "Your score",
+    missed: "Topics to revisit",
+    noneMissed: "No missed topics this time.",
+    repeat: "Quiz me on what I missed",
+    repeatNote: "For now, this repeats the same short quiz. Topic-only retry will come with the next server slice.",
+    back: "Back to Planning",
+    addDocument: "Add a document first",
+    addDocumentText: "Upload a study document in your AZ workspace, then return here to practise from it.",
+    openWorkspace: "Open workspace",
+    noQuestions: "No questions are available for this subject yet.",
+    generationUnavailable: "Secure quiz generation is not connected yet. Your documents are safe; try again when the study service is available.",
+    retry: "Retry",
+    loading: "Preparing your quiz…",
+    errorTitle: "We couldn’t prepare this quiz",
+    offline: "You’re offline. Your quiz progress may not sync.",
+    selected: "Selected",
+    insights: "Study insights",
+    difficulty: ["", "Foundational", "Intermediate", "Advanced"],
+  },
+  ar: {
+    eyebrow: "المذاكرة / التدريب",
+    title: "اختبار قصير",
+    intro: "أسئلة قصيرة تساعدك على التحقق من فهمك بهدوء.",
+    subject: "المادة",
+    chooseSubject: "اختر المادة",
+    topic: "الموضوع (اختياري)",
+    topicPlaceholder: "مثال: العرض والطلب",
+    start: "ابدأ الاختبار",
+    question: "السؤال",
+    of: "من",
+    confirm: "تأكيد الإجابة",
+    next: "متابعة",
+    correct: "إجابة صحيحة",
+    incorrect: "ليست الإجابة الصحيحة",
+    demoNote: "التصحيح هنا توضيحي لوضع العرض فقط. لم يتم ربط التصحيح الفعلي بعد.",
+    explanation: "التوضيح",
+    source: "المصدر",
+    page: "صفحة",
+    result: "اكتمل الاختبار",
+    score: "نتيجتك",
+    missed: "موضوعات للمراجعة",
+    noneMissed: "لم تفُتك أي موضوع هذه المرة.",
+    repeat: "اختبرني فيما أخطأت فيه",
+    repeatNote: "حالياً يعيد هذا الزر الاختبار نفسه. إعادة الأسئلة حسب الأخطاء ستتوفر في خطوة خادم لاحقة.",
+    back: "العودة إلى التخطيط",
+    addDocument: "أضف مستنداً أولاً",
+    addDocumentText: "ارفع مستنداً دراسياً في مساحة عمل AZ، ثم عُد إلى هنا للتدرب عليه.",
+    openWorkspace: "افتح مساحة العمل",
+    noQuestions: "لا توجد أسئلة متاحة لهذه المادة بعد.",
+    generationUnavailable: "لم يتم ربط خدمة إنشاء الاختبارات الآمنة بعد. مستنداتك آمنة؛ حاول مجدداً عند توفر خدمة الدراسة.",
+    retry: "إعادة المحاولة",
+    loading: "جارٍ تجهيز الاختبار…",
+    errorTitle: "تعذّر تجهيز هذا الاختبار",
+    offline: "أنت غير متصل بالإنترنت. قد لا تتم مزامنة تقدم الاختبار.",
+    selected: "محدد",
+    insights: "رؤى الدراسة",
+    difficulty: ["", "أساسي", "متوسط", "متقدم"],
+  },
+};
+
+function EmptyInsights({ lang }: { lang: "ar" | "en" }) {
+  const insights = getStudyInsights();
+  if (!insights.length) return <div className="quiz-insights-slot" data-insights-slot aria-label={lang === "ar" ? "موضع رؤى الدراسة" : "Study insights slot"} />;
+  return <section className="quiz-insights-slot" data-insights-slot aria-label={lang === "ar" ? "رؤى الدراسة" : "Study insights"}>
+    {insights.map((insight) => <p key={insight.id}>{insight.message}</p>)}
+  </section>;
+}
+
+export default function QuizPage({
+  userId,
+  lang,
+  subjects,
+  offline,
+  onBackPlanning,
+  onOpenWorkspace,
+}: {
+  userId: string;
+  lang: "ar" | "en";
+  subjects: Subject[];
+  offline: boolean;
+  onBackPlanning: () => void;
+  onOpenWorkspace: () => void;
+}) {
+  const ar = lang === "ar";
+  const t = COPY[lang];
+  const demoMode = import.meta.env.VITE_DEMO === "1";
+  const qaState = demoMode ? new URLSearchParams(window.location.search).get("qa-quiz-state") : null;
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (qaState === "question" || qaState === "feedback" || qaState === "result" || qaState === "loading" || qaState === "empty" || qaState === "error") return qaState;
+    return demoMode ? "setup" : "loading";
+  });
+  const [documentCount, setDocumentCount] = useState<number | null>(demoMode ? 2 : null);
+  const [selectedSubject, setSelectedSubject] = useState(subjects[0]?.id ?? "");
+  const [topic, setTopic] = useState("");
+  const [questions, setQuestions] = useState<Question[]>(DEMO_QUESTIONS);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(qaState === "feedback" ? 1 : null);
+  const [feedback, setFeedback] = useState<Feedback | null>(() => qaState === "feedback" ? {
+    correct: false,
+    explanation: "This is sample feedback for the visual demo. The secure grading service will provide the real explanation after submission.",
+    demo: true,
+  } : null);
+  const [answers, setAnswers] = useState<AnswerResult[]>(() => qaState === "result" ? [
+    { questionId: DEMO_QUESTIONS[0].id, topic: DEMO_QUESTIONS[0].topic, correct: true },
+    { questionId: DEMO_QUESTIONS[1].id, topic: DEMO_QUESTIONS[1].topic, correct: false },
+    { questionId: DEMO_QUESTIONS[2].id, topic: DEMO_QUESTIONS[2].topic, correct: true },
+  ] : []);
+  const [loadError, setLoadError] = useState("");
+
+  const filteredDemoQuestions = useMemo(() => DEMO_QUESTIONS.filter((question) =>
+    (!selectedSubject || question.subject_id === selectedSubject) &&
+    (!topic.trim() || question.topic.toLocaleLowerCase().includes(topic.trim().toLocaleLowerCase())),
+  ), [selectedSubject, topic]);
+  const current = questions[questionIndex] ?? DEMO_QUESTIONS[0];
+  const correctCount = answers.filter((answer) => answer.correct).length;
+  const score = answers.length ? Math.round((correctCount / answers.length) * 100) : 0;
+  const missedTopics = [...new Set(answers.filter((answer) => !answer.correct).map((answer) => answer.topic))];
+
+  async function loadDocuments() {
+    if (demoMode) {
+      setDocumentCount(2);
+      setLoadError("");
+      setScreen("setup");
+      return;
+    }
+    if (!supabase) {
+      setLoadError(t.generationUnavailable);
+      setScreen("error");
+      return;
+    }
+    setScreen("loading");
+    setLoadError("");
+    const { count, error } = await supabase
+      .from("documents")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "ready");
+    if (error) {
+      setLoadError(t.errorTitle);
+      setScreen("error");
+      return;
+    }
+    setDocumentCount(count ?? 0);
+    setScreen((count ?? 0) === 0 ? "empty" : "setup");
+  }
+
+  useEffect(() => {
+    if (demoMode || qaState) return;
+    void loadDocuments();
+  }, [userId]);
+
+  useEffect(() => {
+    if (qaState === "empty" || qaState === "error" || qaState === "loading") return;
+    if (qaState === "question") {
+      setQuestions(DEMO_QUESTIONS.slice(0, 3));
+      setQuestionIndex(0);
+    }
+    if (qaState === "result") {
+      setQuestions(DEMO_QUESTIONS.slice(0, 3));
+      setQuestionIndex(2);
+    }
+  }, [qaState]);
+
+  useEffect(() => {
+    if (screen !== "question" && screen !== "feedback") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = !!target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      if (typing || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (screen === "question" && !feedback && /^[1-4]$/.test(event.key)) {
+        const next = Number(event.key) - 1;
+        if (next < (current?.choices.length ?? 0)) {
+          event.preventDefault();
+          setSelectedIndex(next);
+        }
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        document.querySelector<HTMLButtonElement>(feedback ? ".quiz-next" : ".quiz-confirm")?.click();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [screen, feedback, current?.choices.length]);
+
+  function startQuiz() {
+    if (!demoMode) {
+      setLoadError(t.generationUnavailable);
+      setScreen("error");
+      return;
+    }
+    if (!filteredDemoQuestions.length) {
+      setQuestions([]);
+      setScreen("empty");
+      return;
+    }
+    setQuestions(filteredDemoQuestions);
+    setQuestionIndex(0);
+    setSelectedIndex(null);
+    setFeedback(null);
+    setAnswers([]);
+    setScreen("question");
+  }
+
+  function submitDemoAnswer() {
+    if (selectedIndex === null || !current) return;
+    // Visual-QA fixtures deliberately do not contain answer keys. Outcomes are synthetic
+    // presentation data and are never tied to the selected choice or exposed as correct indexes.
+    const correct = questionIndex % 2 === 0;
+    const nextFeedback: Feedback = {
+      correct,
+      explanation: ar
+        ? "هذا توضيح تجريبي لعرض حالة التصحيح. سيأتي التفسير الفعلي من خدمة التصحيح الآمنة بعد الإرسال."
+        : "This is illustrative demo feedback. The secure grading service will return the real explanation after submission.",
+      demo: true,
+    };
+    setFeedback(nextFeedback);
+    setAnswers((existing) => [...existing.filter((answer) => answer.questionId !== current.id), {
+      questionId: current.id,
+      topic: current.topic,
+      correct,
+    }]);
+    setScreen("feedback");
+  }
+
+  function continueQuiz() {
+    if (questionIndex + 1 >= questions.length) {
+      setScreen("result");
+      return;
+    }
+    setQuestionIndex((index) => index + 1);
+    setSelectedIndex(null);
+    setFeedback(null);
+    setScreen("question");
+  }
+
+  function repeatQuiz() {
+    setQuestionIndex(0);
+    setSelectedIndex(null);
+    setFeedback(null);
+    setAnswers([]);
+    setScreen("question");
+  }
+
+  const questionProgress = questions.length ? ((questionIndex + 1) / questions.length) * 100 : 0;
+
+  return <main className="quiz-page" dir={ar ? "rtl" : "ltr"} lang={lang}>
+    {offline && <div className="quiz-offline" role="status">{t.offline}</div>}
+    <header className="quiz-heading">
+      <div>
+        <span className="eyebrow">{t.eyebrow}</span>
+        <h1>{t.title}</h1>
+        <p>{t.intro}</p>
+      </div>
+      <button type="button" className="az-btn az-btn--ghost" onClick={onBackPlanning}>{t.back}</button>
+    </header>
+
+    {screen === "loading" && <section className="quiz-card az-card quiz-loading" aria-label={t.loading}>
+      <span /><span /><span /><span />
+      <p>{t.loading}</p>
+    </section>}
+
+    {screen === "empty" && <section className="quiz-card az-card quiz-state" role="status">
+      <span className="quiz-state-mark" aria-hidden="true">▤</span>
+      <h2>{t.addDocument}</h2>
+      <p>{t.addDocumentText}</p>
+      <button type="button" className="az-btn az-btn--primary" onClick={onOpenWorkspace}>{t.openWorkspace}</button>
+      <button type="button" className="az-btn az-btn--ghost" onClick={onBackPlanning}>{t.back}</button>
+    </section>}
+
+    {screen === "error" && <section className="quiz-card az-card quiz-state" role="alert">
+      <span className="quiz-state-mark" aria-hidden="true">!</span>
+      <h2>{t.errorTitle}</h2>
+      <p>{loadError || t.generationUnavailable}</p>
+      <button type="button" className="az-btn az-btn--primary" onClick={() => void loadDocuments()}>{t.retry}</button>
+    </section>}
+
+    {screen === "setup" && <section className="quiz-card az-card quiz-setup">
+      {documentCount !== null && <p className="quiz-document-count">{ar ? `${documentCount} مستندات جاهزة` : `${documentCount} ready documents`}</p>}
+      <label className="quiz-field">
+        <span>{t.subject}</span>
+        <select className="az-input" value={selectedSubject} onChange={(event) => setSelectedSubject(event.target.value)}>
+          <option value="">{t.chooseSubject}</option>
+          {subjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
+        </select>
+      </label>
+      <label className="quiz-field">
+        <span>{t.topic}</span>
+        <input className="az-input" value={topic} onChange={(event) => setTopic(event.target.value)} placeholder={t.topicPlaceholder} />
+      </label>
+      <div className="quiz-setup-footer">
+        <p>{demoMode ? (ar ? "وضع العرض: أسئلة تجريبية بلا مفاتيح إجابة." : "Demo mode: sample questions with no answer keys.") : t.generationUnavailable}</p>
+        <button type="button" className="az-btn az-btn--primary quiz-start" onClick={startQuiz} disabled={!selectedSubject}>{t.start}</button>
+      </div>
+    </section>}
+
+    {(screen === "question" || screen === "feedback") && current && <section className="quiz-card az-card quiz-question-card">
+      <div className="quiz-question-meta">
+        <span>{t.question} {questionIndex + 1} {t.of} {questions.length}</span>
+        <span>{current.topic}</span>
+      </div>
+      <div className="quiz-progress-track" role="progressbar" aria-label={ar ? "تقدم الاختبار" : "Quiz progress"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(questionProgress)}>
+        <span style={{ width: `${questionProgress}%` } as CSSProperties} />
+      </div>
+      <p className="quiz-topic-label">{current.topic}</p>
+      <h2 className="quiz-prompt" dir="auto">{current.prompt}</h2>
+      <div className="quiz-choice-group" role="radiogroup" aria-label={ar ? "خيارات الإجابة" : "Answer choices"}>
+        {current.choices.map((choice, index) => <button
+          key={`${current.id}-${index}`}
+          type="button"
+          className={"az-btn quiz-choice" + (selectedIndex === index ? " is-selected" : "")}
+          role="radio"
+          aria-checked={selectedIndex === index}
+          aria-label={`${String.fromCharCode(65 + index)}. ${choice}`}
+          onClick={() => screen === "question" && setSelectedIndex(index)}
+          disabled={screen === "feedback"}
+        >
+          <span className="quiz-choice-key" aria-hidden="true">{String.fromCharCode(65 + index)}</span>
+          <span>{choice}</span>
+        </button>)}
+      </div>
+      {screen === "question" && <div className="quiz-question-footer">
+        <span className="quiz-key-hint">{ar ? "اختر 1–4 ثم اضغط Enter" : "Press 1–4 to choose, then Enter"}</span>
+        <button type="button" className="az-btn az-btn--primary quiz-confirm" onClick={submitDemoAnswer} disabled={selectedIndex === null}>{t.confirm}</button>
+      </div>}
+      {screen === "feedback" && feedback && <section className={"quiz-feedback " + (feedback.correct ? "is-correct" : "is-incorrect")} role="status" aria-live="polite">
+        <div className="quiz-feedback-heading"><span aria-hidden="true">{feedback.correct ? "✓" : "○"}</span><strong>{feedback.correct ? t.correct : t.incorrect}</strong></div>
+        <p><strong>{t.explanation}:</strong> {feedback.explanation}</p>
+        <p className="quiz-demo-note">{t.demoNote}</p>
+        <div className="quiz-question-footer"><span className="quiz-key-hint">{t.source}: {current.source_page} {t.page}</span><button type="button" className="az-btn az-btn--primary quiz-next" onClick={continueQuiz}>{t.next}</button></div>
+      </section>}
+    </section>}
+
+    {screen === "result" && <section className="quiz-card az-card quiz-result" aria-live="polite">
+      <span className="quiz-result-orbit" aria-hidden="true">✧</span>
+      <span className="eyebrow">{t.result}</span>
+      <div className="quiz-score"><strong>{score}<small>%</small></strong><span>{t.score}</span></div>
+      <div className="quiz-missed-topics">
+        <h2>{t.missed}</h2>
+        {missedTopics.length ? <ul>{missedTopics.map((missedTopic) => <li key={missedTopic}>{missedTopic}</li>)}</ul> : <p>{t.noneMissed}</p>}
+      </div>
+      <EmptyInsights lang={lang} />
+      <div className="quiz-result-actions">
+        <button type="button" className="az-btn az-btn--primary" onClick={repeatQuiz}>{t.repeat}</button>
+        <p>{t.repeatNote}</p>
+        <button type="button" className="az-btn az-btn--ghost" onClick={onBackPlanning}>{t.back}</button>
+      </div>
+    </section>}
+  </main>;
+}

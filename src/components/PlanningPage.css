@@ -185,3 +185,7 @@
 /* Dark theme subject colors remain distinct while meeting WCAG AA on the dark surface. */
 .app-shell:not(.theme-light) .exam-countdown,
 .app-shell:not(.theme-light) .plan-meta-subject { color:color-mix(in srgb,var(--subject-color) 45%,#FFFFFF); }
+
+.planning-topline-actions { display:flex; align-items:center; gap:12px; flex:none; }
+.planning-topline-actions .plan-short-quiz { min-height:44px; white-space:nowrap; }
+@media(max-width:560px) { .planning-topline-actions { gap:8px; } .planning-topline-actions .plan-short-quiz { padding-inline:10px; font-size:12px; } }

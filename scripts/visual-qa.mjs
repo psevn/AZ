@@ -21,7 +21,7 @@ for (const vp of ["desktop", "mobile"]) {
 }
 
 const names = ["home", "planning", "az", "me"];
-const report = { base, startedAt: new Date().toISOString(), shots: [], stateShots: [], componentStates: [], problems: [] };
+const report = { base, startedAt: new Date().toISOString(), shots: [], stateShots: [], componentStates: [], quizShots: [], problems: [] };
 const browser = await chromium.launch();
 
 for (const r of runs) {
@@ -36,8 +36,8 @@ for (const r of runs) {
   const page = await ctx.newPage();
   const tag = `${r.vp}-${r.lang}-${r.theme}-${r.bg}`;
   page.on("pageerror", (e) => report.problems.push({ tag, kind: "pageerror", message: String(e).slice(0, 300) }));
-  page.on("console", (m) => { if (m.type() === "error") report.problems.push({ tag, kind: "console", message: m.text().slice(0, 300) }); });
-  await page.goto(base, { waitUntil: "networkidle" });
+  page.on("console", (m) => { if (m.type() === "error" && !m.text().includes("net::ERR_INTERNET_DISCONNECTED")) report.problems.push({ tag, kind: "console", message: m.text().slice(0, 300) }); });
+  await page.goto(base, { waitUntil: "domcontentloaded" });
   for (let i = 0; i < names.length; i++) {
     try {
       if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 }).catch(() => {});
@@ -138,7 +138,7 @@ for (const r of runs) {
   // Exercise real PlanningPage loading, empty and error branches with demo fixtures.
   for (const state of ["loading", "empty", "error"]) {
     try {
-      await page.goto(`${base}/?qa-planning-state=${state}`, { waitUntil: "networkidle" });
+      await page.goto(`${base}/?qa-planning-state=${state}`, { waitUntil: "domcontentloaded" });
       if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
       await page.waitForTimeout(250);
@@ -153,7 +153,7 @@ for (const r of runs) {
   // Exercise Home loading, empty and error branches using demo-only fixtures.
   for (const state of ["loading", "empty", "error"]) {
     try {
-      await page.goto(`${base}/?qa-home-state=${state}`, { waitUntil: "networkidle" });
+      await page.goto(`${base}/?qa-home-state=${state}`, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(250);
       const file = `${tag}-home-${state}.png`;
       await page.screenshot({ path: `${out}/${file}`, fullPage: true });
@@ -163,9 +163,59 @@ for (const r of runs) {
       report.problems.push({ tag, kind: "home-state", state, message: String(e).slice(0, 300) });
     }
   }
+
+  // Quiz QA matrix: cover both background modes across every viewport, theme and language combination.
+  for (const state of ["setup", "question", "feedback", "result", "empty", "error", "loading"]) {
+    try {
+      await page.goto(`${base}/?qa-quiz-state=${state}`, { waitUntil: "domcontentloaded" });
+      await page.locator(".home-quiz-action").click({ timeout: 6000 });
+      await page.locator(".quiz-page").waitFor({ timeout: 6000 });
+      const file = `${tag}-quiz-${state}.png`;
+      await page.screenshot({ path: `${out}/${file}`, fullPage: true });
+      const metrics = await page.evaluate(() => ({
+        horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+        visible: !!document.querySelector(".quiz-page"),
+      }));
+      if (!metrics.visible) report.problems.push({ tag, kind: "quiz-navigation", state, message: "Quiz page did not render after Home action." });
+      report.quizShots.push({ file, state, horizontalOverflow: metrics.horizontalOverflow });
+    } catch (e) {
+      report.problems.push({ tag, kind: "quiz-state", state, message: String(e).slice(0, 300) });
+    }
+  }
+
+  // Confirm Planning has its own Short quiz entry point.
+  if (r.vp === "desktop" && r.lang === "en" && r.theme === "dark" && r.bg === "plain") {
+    try {
+      await page.goto(base, { waitUntil: "domcontentloaded" });
+      await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
+      await page.locator(".plan-short-quiz").click({ timeout: 4000 });
+      await page.locator(".quiz-page").waitFor({ timeout: 4000 });
+    } catch (e) {
+      report.problems.push({ tag, kind: "quiz-planning-entry", message: String(e).slice(0, 300) });
+    }
+  }
+
+  // Verify number-key selection and Enter confirmation on the demo question interaction.
+  if (r.vp === "desktop" && r.lang === "en" && r.theme === "dark" && r.bg === "plain") {
+    try {
+      await page.goto(base, { waitUntil: "domcontentloaded" });
+      await page.locator(".home-quiz-action").click({ timeout: 6000 });
+      await page.locator(".quiz-page").waitFor();
+      await page.locator(".quiz-start").click({ timeout: 4000 });
+      await page.locator(".quiz-choice").first().waitFor();
+      await page.keyboard.press("1");
+      const selected = await page.locator(".quiz-choice").first().getAttribute("aria-checked");
+      await page.keyboard.press("Enter");
+      await page.locator(".quiz-feedback").waitFor({ timeout: 3000 });
+      if (selected !== "true") report.problems.push({ tag, kind: "quiz-keyboard", message: "Number key 1 did not select the first radio choice." });
+    } catch (e) {
+      report.problems.push({ tag, kind: "quiz-keyboard", message: String(e).slice(0, 300) });
+    }
+  }
+
   // Check accent, subject-label, primary-action and danger-action contrast in both themes.
   if (r.theme === "light" || r.theme === "dark") {
-    await page.goto(base, { waitUntil: "networkidle" });
+    await page.goto(base, { waitUntil: "domcontentloaded" });
     if (r.vp === "mobile") await page.locator(".mobile-nav-toggle").first().click({ timeout: 4000 });
       await page.locator(".primary-nav > .primary-nav-item > button").nth(1).click({ timeout: 6000 });
     await page.waitForTimeout(150);
@@ -202,7 +252,7 @@ for (const r of runs) {
 
   // Offline remains a small, non-blocking banner.
   try {
-    await page.goto(base, { waitUntil: "networkidle" });
+    await page.goto(base, { waitUntil: "domcontentloaded" });
     await page.context().setOffline(true);
     await page.waitForTimeout(150);
     const homeOfflineVisible = await page.locator(".home-offline").isVisible().catch(() => false);
@@ -223,7 +273,7 @@ for (const r of runs) {
 await browser.close();
 report.finishedAt = new Date().toISOString();
 await writeFile(`${out}/report.json`, JSON.stringify(report, null, 2));
-console.log(`shots: ${report.shots.length}, state shots: ${report.stateShots.length}, component states: ${report.componentStates.length}, problems: ${report.problems.length}, overflow: ${report.shots.concat(report.stateShots).filter((s) => s.horizontalOverflow).length}`);
+console.log(`shots: ${report.shots.length}, state shots: ${report.stateShots.length}, component states: ${report.componentStates.length}, quiz shots: ${report.quizShots.length}, problems: ${report.problems.length}, overflow: ${report.shots.concat(report.stateShots, report.quizShots).filter((s) => s.horizontalOverflow).length}`);
 if (report.problems.length > 0) {
   throw new Error(`Visual QA failed with ${report.problems.length} problem(s). See report.json for details.`);
 }
