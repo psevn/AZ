@@ -12,6 +12,8 @@ on:
       - "supabase/proposals/secure_quiz_answer_response.sql"
       - "tests/quizAnswerSecurity.test.mjs"
       - "tests/quizRuntimeContract.test.mjs"
+      - "tests/dailyChallengePersistenceContract.test.mjs"
+      - "supabase/proposals/azi_daily_challenge_completion.sql"
       - "tests/quizPersistenceContract.test.mjs"
       - "tests/quizGeneration.test.mjs"
       - "supabase/functions/generate-quiz/**"
@@ -51,3 +53,5 @@ jobs:
         run: npm run test:quiz-persistence
       - name: Verify Daily Challenge question minimum
         run: npm run test:azi-daily-challenge
+      - name: Verify Daily Challenge completion persistence
+        run: npm run test:daily-challenge-persistence
