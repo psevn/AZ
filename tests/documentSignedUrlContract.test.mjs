@@ -33,11 +33,11 @@ test("the endpoint authenticates the bearer token with Supabase Auth", () => {
   assert.match(endpoint, /if \(authError \|\| !authData\.user\) return json\(401/);
 });
 
-test("the endpoint resolves only a ready document owned by the authenticated user", () => {
+test("the endpoint resolves only an owned document that is not failed", () => {
   assert.match(endpoint, /\.from\("documents"\)/);
   assert.match(endpoint, /\.eq\("id", documentId\)/);
   assert.match(endpoint, /\.eq\("user_id", userId\)/);
-  assert.match(endpoint, /\.eq\("status", "ready"\)/);
+  assert.match(endpoint, /\.in\("status", \["uploaded", "processing", "ready"\]\)/);
   assert.match(endpoint, /if \(!document\) return json\(404/);
 });
 
