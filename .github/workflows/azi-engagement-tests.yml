@@ -5,6 +5,7 @@ on:
     branches:
       - feature/learning-engagement-spec
       - feature/azi-learning-progress-foundation
+      - feature/azi-secure-generated-quiz-persistence
     paths:
       - "src/lib/aziProgress.mjs"
       - "src/lib/aziProgress.d.mts"
