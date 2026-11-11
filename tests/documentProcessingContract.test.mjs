@@ -69,3 +69,12 @@ test("Arabic language detection recognizes Arabic Unicode text", () => {
   const arabicPattern = new RegExp(literal.slice(1, slash), literal.slice(slash + 1));
   assert.ok("محاضرة".match(arabicPattern));
 });
+
+test("stale processing can be reclaimed only after the lock expires and writes are fenced by attempt token", () => {
+  assert.match(endpoint, /STALE_PROCESSING_MS = 30 \* 60 \* 1000/);
+  assert.match(endpoint, /action === "resume"/);
+  assert.match(endpoint, /Date\.now\(\) - lockTime >= STALE_PROCESSING_MS/);
+  assert.match(endpoint, /\.eq\("locked_at", lockedAt\)/);
+  assert.match(endpoint, /body\.processingToken !== document\.locked_at/);
+  assert.match(endpoint, /processingToken\s*\}\)/);
+});

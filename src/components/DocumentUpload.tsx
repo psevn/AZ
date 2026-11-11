@@ -72,6 +72,7 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
     let uploadRecordMayExist = false;
     let uploadCompleted = false;
     let processingStarted = false;
+    let processingToken: string | null = null;
     try {
       uploadRecordMayExist = true;
       const { data: signed, error: signedError } = await client.functions.invoke(
@@ -97,7 +98,9 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
       if (uploadError) throw uploadError;
       uploadCompleted = true;
 
-      await invokeProcessing(client, { action: "start", documentId });
+      const started = await invokeProcessing(client, { action: "start", documentId });
+      if (typeof started.processingToken !== "string") throw new Error("The processing service returned an invalid attempt token.");
+      processingToken = started.processingToken;
       processingStarted = true;
 
       setStage("extracting");
@@ -114,13 +117,14 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
         await invokeProcessing(client, {
           action: "save_pages",
           documentId,
+          processingToken,
           pages: batches[index],
         });
         setProgress({ current: index + 1, total: batches.length });
       }
 
       setStage("finalizing");
-      await invokeProcessing(client, { action: "complete", documentId, pageCount });
+      await invokeProcessing(client, { action: "complete", documentId, pageCount, processingToken });
       processingStarted = false;
       setMessage(ar
         ? "تم استخراج نص المستند وتجهيزه. أصبح جاهزاً للفتح والتدريب."
@@ -131,7 +135,7 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
       if (processingStarted) {
         const { error: statusError } = await client.functions.invoke(
           "process-document-pages",
-          { body: { action: "fail", documentId, reasonCode: failureReason(cause) } },
+          { body: { action: "fail", documentId, processingToken, reasonCode: failureReason(cause) } },
         );
         if (statusError) console.error("Could not record document processing failure:", statusError.message);
       } else if (uploadRecordMayExist && !uploadCompleted) {

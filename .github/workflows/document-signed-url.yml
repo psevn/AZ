@@ -9,6 +9,7 @@ on:
       - "src/components/DocumentReader.tsx"
       - "src/lib/extractPdfText.ts"
       - "src/lib/pdfTextPipeline.mjs"
+      - "src/lib/recoverDocumentProcessing.ts"
       - "src/lib/pdfTextPipeline.d.mts"
       - "src/styles.css"
       - "supabase/functions/create-document-signed-url/**"
@@ -18,6 +19,7 @@ on:
       - "tests/documentUploadContract.test.mjs"
       - "tests/documentLibraryContract.test.mjs"
       - "tests/documentProcessingContract.test.mjs"
+      - "tests/documentRecoveryContract.test.mjs"
       - "tests/pdfTextPipeline.test.mjs"
       - "tests/documentReaderContract.test.mjs"
       - "package.json"
@@ -63,6 +65,8 @@ jobs:
         run: npm run test:document-processing
       - name: Test PDF text pipeline
         run: npm run test:pdf-pipeline
+      - name: Test interrupted document recovery
+        run: npm run test:document-recovery
       - name: Test document reader contract
         run: npm run test:document-reader
       - name: Build web application

@@ -77,3 +77,13 @@ test("the upload flow extracts locally, persists bounded batches, then completes
   assert.match(uploadPanel, /action: "complete"/);
   assert.match(uploadPanel, /process-document-pages/);
 });
+
+test("recovery downloads the private source PDF and uses the processing attempt token", () => {
+  const recovery = readFileSync(new URL("../src/lib/recoverDocumentProcessing.ts", import.meta.url), "utf8");
+  assert.match(recovery, /create-document-signed-url/);
+  assert.match(recovery, /fetch\(signed\.signedUrl\)/);
+  assert.match(recovery, /action: status === "uploaded" \? "start" : "resume"/);
+  assert.match(recovery, /processingToken/);
+  assert.match(recovery, /action: "save_pages"/);
+  assert.match(recovery, /action: "complete"/);
+});
