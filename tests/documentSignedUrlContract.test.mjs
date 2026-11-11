@@ -15,6 +15,18 @@ test("the browser requests a signed URL by document ID and does not sign Storage
   assert.doesNotMatch(app, /storage_path/);
 });
 
+test("the endpoint rejects null, arrays, and primitive JSON bodies before reading documentId", () => {
+  assert.match(endpoint, /const parsedBody: unknown = JSON\.parse\(rawBody\)/);
+  assert.match(
+    endpoint,
+    /typeof parsedBody !== "object" \|\| parsedBody === null \|\| Array\.isArray\(parsedBody\)/,
+  );
+  assert.ok(
+    endpoint.indexOf("Array.isArray(parsedBody)") < endpoint.indexOf("body = parsedBody as"),
+    "the parsed JSON shape must be validated before documentId is accessed",
+  );
+});
+
 test("the endpoint authenticates the bearer token with Supabase Auth", () => {
   assert.match(endpoint, /readBearerToken\(request\)/);
   assert.match(endpoint, /auth\.getUser\(token\)/);
