@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "src/components/QuizPage.tsx"
+      - "src/lib/aziDailyChallenge.mjs"
+      - "tests/aziDailyChallenge.test.mjs"
       - "supabase/proposals/secure_quiz_answer_response.sql"
       - "tests/quizAnswerSecurity.test.mjs"
       - "tests/quizRuntimeContract.test.mjs"
@@ -42,3 +44,5 @@ jobs:
         run: npm run test:quiz-generation
       - name: Verify generated quiz persistence security
         run: npm run test:quiz-persistence
+      - name: Verify Daily Challenge question minimum
+        run: npm run test:azi-daily-challenge
