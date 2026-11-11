@@ -139,11 +139,14 @@ Deno.serve(async (request: Request) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const processingToken = typeof body.processingToken === "string" && Number.isFinite(Date.parse(body.processingToken))
+    ? body.processingToken
+    : null;
   const { data, error } = await adminClient.rpc("process_document_pages_atomic", {
     p_action: action,
     p_document_id: documentId,
     p_user_id: userId,
-    p_processing_token: typeof body.processingToken === "string" ? body.processingToken : null,
+    p_processing_token: processingToken,
     p_pages: action === "save_pages" ? body.pages : null,
     p_page_count: action === "complete" ? body.pageCount : null,
     p_failure_reason: action === "fail" && typeof body.reasonCode === "string" ? body.reasonCode : "processing_failed",
