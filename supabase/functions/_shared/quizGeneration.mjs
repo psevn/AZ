@@ -50,7 +50,14 @@ export function validateGeneratedQuestions(value, allowedPageNumbers, expectedCo
   const seenPrompts = new Set();
 
   return value.questions.map((question, index) => {
-    if (!question || typeof question.prompt !== "string" || question.prompt.trim().length < 8) {
+    const expectedKeys = ["choices", "correct_index", "difficulty", "explanation", "prompt", "source_page", "topic"];
+    if (!question || typeof question !== "object" || Array.isArray(question) ||
+        Object.keys(question).length !== expectedKeys.length ||
+        expectedKeys.some((key) => !Object.hasOwn(question, key))) {
+      throw new Error(`Question ${index + 1} has an invalid object shape.`);
+    }
+    if (typeof question.prompt !== "string" ||
+        question.prompt.trim().length < 8 || question.prompt.trim().length > 2000) {
       throw new Error(`Question ${index + 1} has an invalid prompt.`);
     }
     const promptKey = question.prompt.trim().toLocaleLowerCase();
@@ -58,7 +65,8 @@ export function validateGeneratedQuestions(value, allowedPageNumbers, expectedCo
     seenPrompts.add(promptKey);
 
     if (!Array.isArray(question.choices) || question.choices.length !== 4 ||
-        question.choices.some((choice) => typeof choice !== "string" || !choice.trim())) {
+        question.choices.some((choice) => typeof choice !== "string" ||
+          !choice.trim() || choice.trim().length > 500)) {
       throw new Error(`Question ${index + 1} must contain four non-empty choices.`);
     }
     if (new Set(question.choices.map((choice) => choice.trim().toLocaleLowerCase())).size !== 4) {
@@ -70,10 +78,11 @@ export function validateGeneratedQuestions(value, allowedPageNumbers, expectedCo
     if (!Number.isInteger(question.source_page) || !allowed.has(question.source_page)) {
       throw new Error(`Question ${index + 1} cites a page that was not supplied.`);
     }
-    if (typeof question.topic !== "string" || !question.topic.trim()) {
+    if (typeof question.topic !== "string" || !question.topic.trim() || question.topic.trim().length > 120) {
       throw new Error(`Question ${index + 1} has no topic.`);
     }
-    if (typeof question.explanation !== "string" || !question.explanation.trim()) {
+    if (typeof question.explanation !== "string" ||
+        !question.explanation.trim() || question.explanation.trim().length > 4000) {
       throw new Error(`Question ${index + 1} has no explanation.`);
     }
     if (![1, 2, 3].includes(question.difficulty)) {

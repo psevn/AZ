@@ -87,3 +87,39 @@ test("extracts Responses API output text and handles refusal/incomplete response
   assert.throws(() => extractResponsesOutput({ status: "incomplete", output: [] }), /incomplete/);
   assert.throws(() => extractResponsesOutput({ output: [{ content: [{ type: "refusal" }] }] }), /refused/);
 });
+
+
+test("rejects unexpected question fields and text beyond database-safe limits", () => {
+  const valid = Array.from({ length: 5 }, (_, i) => question({ prompt: `Unique prompt ${i}` }));
+  assert.throws(
+    () => validateGeneratedQuestions({ questions: valid.map((item) => ({ ...item, internal_note: "unexpected" })) }, [3, 4], 5),
+    /invalid object shape/,
+  );
+  assert.throws(
+    () => validateGeneratedQuestions({ questions: valid.map((item, i) => question({
+      prompt: i === 0 ? "P".repeat(2001) : `Unique prompt ${i}`,
+    })) }, [3, 4], 5),
+    /invalid prompt/,
+  );
+  assert.throws(
+    () => validateGeneratedQuestions({ questions: valid.map((item, i) => question({
+      prompt: `Unique prompt ${i}`,
+      choices: i === 0 ? ["C".repeat(501), "B", "C", "D"] : item.choices,
+    })) }, [3, 4], 5),
+    /four non-empty choices/,
+  );
+  assert.throws(
+    () => validateGeneratedQuestions({ questions: valid.map((item, i) => question({
+      prompt: `Unique prompt ${i}`,
+      topic: i === 0 ? "T".repeat(121) : item.topic,
+    })) }, [3, 4], 5),
+    /no topic/,
+  );
+  assert.throws(
+    () => validateGeneratedQuestions({ questions: valid.map((item, i) => question({
+      prompt: `Unique prompt ${i}`,
+      explanation: i === 0 ? "E".repeat(4001) : item.explanation,
+    })) }, [3, 4], 5),
+    /no explanation/,
+  );
+});

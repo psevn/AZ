@@ -177,3 +177,27 @@ PR #43 connects the non-demo QuizPage to the existing server attempt lifecycle:
 GitHub Actions verified on 2026-11-11: `npm ci`, `npm run build`, quiz runtime contract tests, safe answer SQL proposal tests, and quiz generation contract tests passed. These are build/static-contract checks, not an authenticated end-to-end test against Supabase.
 
 **Not live-enabled:** the `generate-quiz` Edge Function is not deployed, `OPENAI_API_KEY` is not configured, and the live database does not yet contain `public.create_generated_quiz` (the SQL remains a proposal). Therefore the UI integration is committed for review but real document-to-quiz generation is not yet operational. No API key was created, no function was deployed, and no database migration was applied.
+
+## Generated quiz persistence security — PR #44
+
+Read-only schema reconciliation on 2026-11-11 confirmed that the live database already has the exact persistence tables and ownership relationships needed by the Study Pack generator:
+
+- public.quizzes(user_id, document_id, mode) with a composite owner FK to documents(id, user_id).
+- public.quiz_questions with prompt, choices, question_type, source_page, topic, and difficulty; its composite FK binds each question to its quiz and user.
+- private.question_keys(question_id, user_id, correct_index, explanation) with a composite owner FK to quiz_questions(id, user_id).
+- public.document_pages(document_id, user_id, page_no, text) with a composite owner FK to the source document.
+- The relevant public tables have RLS enabled and authenticated read policies scoped to auth.uid(). private.question_keys remains default-deny for client roles.
+
+PR #44 (feature/azi-secure-generated-quiz-persistence) hardens the existing proposal and validation contract:
+
+- Enforces 5–20 questions, exact question-object keys, four distinct non-empty choices, bounded text sizes, valid numeric metadata, unique prompts, and page references that exist in the selected ready document.
+- Separates JSON type checks before calling array/object accessors, so scalar/null input is rejected without relying on boolean-expression evaluation order.
+- Stores correct_index and explanation only in private.question_keys; the returned JSON contains question content and source metadata only.
+- Uses a SECURITY INVOKER function with an empty search_path. Read-only privilege checks confirmed service_role already has the required schema usage, document/page SELECT, and quiz/question/key INSERT privileges; execution is revoked from PUBLIC, anon, and authenticated and granted only to service_role.
+- The Edge Function derives p_user_id from a verified Supabase Auth user, checks document ownership with the user-scoped client, and performs persistence using the server-only service-role client.
+- The shared generator validator now applies matching object-shape and text-size limits before persistence.
+- Adds static contract tests and a dedicated GitHub Actions step.
+
+The model default gpt-6-astra was checked against the current OpenAI Responses API model documentation on 2026-11-11. This is documentation verification only; no API request or key was used.
+
+**Verification boundary:** PR #44 is proposal/code/test work only. The SQL has not been executed against PostgreSQL, converted to a numbered migration, or applied to Supabase. Static contract tests do not replace a local database test. The generate-quiz Edge Function remains undeployed, OPENAI_API_KEY remains unset, and there has been no live database write, API-key creation, or production deployment.
