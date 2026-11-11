@@ -54,10 +54,12 @@ test("starts a quiz-backed daily challenge from its existing quiz without regene
 test("reports challenge completion only after a valid server-finished attempt", () => {
   const finishIndex = page.indexOf('rpc("finish_attempt"');
   const validationIndex = page.indexOf('result.total_questions !== questions.length', finishIndex);
+  const receiptIndex = page.indexOf('rpc("complete_daily_challenge"', finishIndex);
   const callbackIndex = page.indexOf('onChallengeCompleted?.({', finishIndex);
   assert.ok(finishIndex >= 0);
   assert.ok(validationIndex > finishIndex);
-  assert.ok(callbackIndex > validationIndex);
+  assert.ok(receiptIndex > validationIndex);
+  assert.ok(callbackIndex > receiptIndex);
   assert.match(page, /challengeId: challenge\.id/);
   assert.match(page, /quizId,/);
   assert.match(page, /attemptId,/);
