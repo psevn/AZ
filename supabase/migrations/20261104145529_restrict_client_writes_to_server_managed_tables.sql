@@ -1,8 +1,4 @@
--- Restrict client writes to server-managed resources.
--- Documents and quizzes are created/processed by trusted backend functions.
--- Usage logs are written by trusted backend code only.
--- Profile users may edit presentation fields, never entitlement/role fields.
-
+-- Server-generated resources are read-only to authenticated clients.
 DROP POLICY IF EXISTS documents_own ON public.documents;
 CREATE POLICY documents_read_own
   ON public.documents FOR SELECT TO authenticated
@@ -17,9 +13,11 @@ CREATE POLICY quizzes_read_own
 REVOKE ALL PRIVILEGES ON TABLE public.quizzes FROM anon, authenticated;
 GRANT SELECT ON TABLE public.quizzes TO authenticated;
 
+-- Usage records are written by trusted backend code, never by the browser.
 REVOKE ALL PRIVILEGES ON TABLE public.ai_usage_log FROM anon, authenticated;
 GRANT SELECT ON TABLE public.ai_usage_log TO authenticated;
 
+-- Users may view their profile and edit only display_name/language.
 DROP POLICY IF EXISTS profiles_own ON public.profiles;
 CREATE POLICY profiles_read_own
   ON public.profiles FOR SELECT TO authenticated
