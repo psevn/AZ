@@ -93,8 +93,10 @@ begin
    where schemaname = 'storage' and tablename = 'objects' and 'authenticated' = any(roles);
   select count(*) into v_storage_count from storage.objects;
 
-  if v_storage_count <> 1 then
-    raise exception 'Storage RLS diagnostic: visible %, uid %, RLS %, BYPASSRLS %, authenticated policies %',
+  -- Migration 20261105122212 deliberately drops all client Storage policies.
+  -- In this design the browser has no direct Storage access; trusted server code owns it.
+  if v_storage_count <> 0 or v_storage_rls is not true or v_bypass is not false or v_policy_count <> 0 then
+    raise exception 'Expected locked client Storage: visible %, uid %, RLS %, BYPASSRLS %, authenticated policies %',
       v_storage_count, auth.uid(), v_storage_rls, v_bypass, v_policy_count;
   end if;
 
@@ -104,7 +106,10 @@ begin
      or not has_function_privilege('authenticated', to_regprocedure('public.submit_answer(uuid,uuid,smallint)'), 'EXECUTE')
      or not has_function_privilege('authenticated', to_regprocedure('public.finish_attempt(uuid)'), 'EXECUTE')
      or not has_function_privilege('authenticated', to_regprocedure('public.complete_daily_challenge(text,date,uuid,uuid,uuid)'), 'EXECUTE')
-     or has_function_privilege('authenticated', to_regprocedure('public.reserve_credits(uuid,text,text,numeric)'), 'EXECUTE') then
+     or has_function_privilege('authenticated', to_regprocedure('public.reserve_credits(uuid,text,text,numeric)'), 'EXECUTE')
+     or has_function_privilege('authenticated', to_regprocedure('public.settle_credits(uuid,text,text,numeric,text,text,text,integer,text)'), 'EXECUTE')
+     or has_function_privilege('authenticated', to_regprocedure('public.refund_credits(uuid,text,text,text)'), 'EXECUTE')
+     or has_function_privilege('authenticated', to_regprocedure('public.sweep_stuck_reservations(integer)'), 'EXECUTE') then
     raise exception 'A sensitive RPC has an unexpected execute grant';
   end if;
 
@@ -139,8 +144,8 @@ begin
 
   begin
     insert into storage.objects (bucket_id, name)
-    values ('documents', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/intrusion.pdf');
-    raise exception 'Cross-tenant storage insert unexpectedly succeeded';
+    values ('documents', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/intrusion.pdf');
+    raise exception 'Authenticated client unexpectedly wrote to locked Storage';
   exception when insufficient_privilege then null;
   end;
 end
@@ -162,6 +167,7 @@ declare
 begin
   select attempt_id into v_attempt_id
     from public.start_attempt('e1000000-0000-4000-8000-000000000001', 'practice', 5, null);
+  perform set_config('test.daily_attempt_id', v_attempt_id::text, true);
 
   for r in
     select question_id from public.attempt_questions
@@ -221,7 +227,7 @@ begin
 
   begin
     perform * from public.submit_answer(
-      (select id from public.quiz_attempts where quiz_id = 'e1000000-0000-4000-8000-000000000001' limit 1),
+      current_setting('test.daily_attempt_id')::uuid,
       'f1000000-0000-4000-8000-000000000001',
       0
     );
