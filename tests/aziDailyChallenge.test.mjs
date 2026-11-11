@@ -25,14 +25,14 @@ test("selects an available topic when no reviewable mistakes exist", () => {
     now,
     topics: [
       { id: "topic-b", is_available: true, available_question_count: 5 },
-      { id: "topic-a", is_available: true, available_question_count: 3 },
+      { id: "topic-a", is_available: true, available_question_count: 5 },
     ],
     studyPacks: [{ id: "pack-1", status: "ready", available_question_count: 9 }],
   });
 
   assert.equal(result.type, "practice_topic");
   assert.equal(result.sourceId, "topic-a");
-  assert.equal(result.questionCount, 3);
+  assert.equal(result.questionCount, 5);
 });
 
 test("falls back to a ready Study Pack when no topic is available", () => {
@@ -41,7 +41,7 @@ test("falls back to a ready Study Pack when no topic is available", () => {
     topics: [{ id: "topic", is_available: false, available_question_count: 10 }],
     studyPacks: [
       { id: "processing", status: "processing", available_question_count: 8 },
-      { id: "ready", status: "ready", available_question_count: 4 },
+      { id: "ready", status: "ready", available_question_count: 5 },
     ],
   });
 
@@ -53,7 +53,7 @@ test("does not select unavailable, undersized, or non-reviewable sources", () =>
   const result = selectDailyChallenge({
     now,
     reviewableMistakes: [{ id: "m1", is_reviewable: false }],
-    topics: [{ id: "topic", is_available: true, available_question_count: 2 }],
+    topics: [{ id: "topic", is_available: true, available_question_count: 4 }],
     studyPacks: [{ id: "pack", status: "deleted", available_question_count: 20 }],
   });
 
@@ -65,7 +65,7 @@ test("does not repeat recently selected or dismissed sources", () => {
   const result = selectDailyChallenge({
     now,
     reviewableMistakes: [{ id: "m1", is_reviewable: true }],
-    topics: [{ id: "topic", is_available: true, available_question_count: 3 }],
+    topics: [{ id: "topic", is_available: true, available_question_count: 5 }],
     recentChallengeKeys: ["review_mistake:m1"],
     dismissedChallengeKeys: ["practice_topic:topic"],
   });
@@ -81,8 +81,8 @@ test("returns an already active challenge for the same local day", () => {
     sourceId: "old-topic",
     titleKey: "title",
     descriptionKey: "description",
-    questionCount: 3,
-    action: { type: "start_topic_practice", topicId: "old-topic", questionCount: 3 },
+    questionCount: 5,
+    action: { type: "start_topic_practice", topicId: "old-topic", questionCount: 5 },
     status: "active",
   };
 
@@ -104,5 +104,23 @@ test("uses Qatar-local day boundaries and rejects invalid input", () => {
   assert.equal(result.date, "2026-11-11");
   assert.throws(() => selectDailyChallenge({ now: "invalid" }), /valid date/);
   assert.throws(() => selectDailyChallenge({ now, timeZone: "Not/AZone" }));
-  assert.throws(() => selectDailyChallenge({ now, minimumPracticeQuestions: 0 }), /positive integer/);
+  assert.throws(() => selectDailyChallenge({ now, minimumPracticeQuestions: 4 }), /at least 5/);
+});
+
+
+test("requires at least five practice questions to match generated quiz persistence", () => {
+  const undersized = selectDailyChallenge({
+    now,
+    topics: [{ id: "topic-small", is_available: true, available_question_count: 4 }],
+    studyPacks: [{ id: "pack-small", status: "ready", available_question_count: 4 }],
+  });
+  const valid = selectDailyChallenge({
+    now,
+    topics: [{ id: "topic-valid", is_available: true, available_question_count: 5 }],
+  });
+
+  assert.equal(undersized.type, "unavailable");
+  assert.equal(valid.type, "practice_topic");
+  assert.equal(valid.questionCount, 5);
+  assert.throws(() => selectDailyChallenge({ now, minimumPracticeQuestions: 4 }), /at least 5/);
 });
