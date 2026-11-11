@@ -27,6 +27,7 @@ ALTER TABLE public.quiz_questions
   DROP COLUMN correct_index,
   DROP COLUMN explanation;
 
+-- Client may read question content and their own submitted attempts only.
 DROP POLICY IF EXISTS quiz_questions_own ON public.quiz_questions;
 DROP POLICY IF EXISTS temporary_block_client_quiz_questions ON public.quiz_questions;
 CREATE POLICY quiz_questions_read_own
@@ -45,6 +46,8 @@ CREATE POLICY quiz_attempts_read_own
 REVOKE ALL PRIVILEGES ON TABLE public.quiz_attempts FROM anon, authenticated;
 GRANT SELECT ON TABLE public.quiz_attempts TO authenticated;
 
+-- The only client-facing grading path: answer keys are read and attempts written
+-- inside this SECURITY DEFINER function after ownership and input validation.
 CREATE OR REPLACE FUNCTION public.submit_answer(
   p_question_id uuid,
   p_chosen_index smallint

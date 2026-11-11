@@ -1,5 +1,5 @@
--- Browser clients need CRUD for user-managed planning and study records only.
--- RLS policies continue to enforce that each row belongs to auth.uid().
+-- Grant browser clients only the CRUD privileges required by AZ V1.
+-- RLS continues to enforce per-user row ownership.
 DO $$
 DECLARE
   t text;
