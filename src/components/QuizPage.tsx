@@ -16,6 +16,8 @@ type Question = {
   difficulty: number | null;
 };
 type AttemptResult = { score: number; correct_count: number; total_questions: number; finished_at: string };
+type DailyChallengeContext = { id: string; date: string; documentId: string; documentTitle: string; quizId: string; questionCount: number };
+type DailyChallengeCompletion = { challengeId: string; quizId: string; attemptId: string; finishedAt: string; score: number };
 type AnswerResult = { questionId: string; topic: string; correct: boolean };
 type Feedback = { correct: boolean; explanation: string; demo: boolean };
 type Screen = "setup" | "question" | "feedback" | "result" | "loading" | "empty" | "error";
@@ -161,6 +163,8 @@ export default function QuizPage({
   offline,
   onBackPlanning,
   onOpenWorkspace,
+  challenge = null,
+  onChallengeCompleted,
 }: {
   userId: string;
   lang: "ar" | "en";
@@ -168,6 +172,8 @@ export default function QuizPage({
   offline: boolean;
   onBackPlanning: () => void;
   onOpenWorkspace: () => void;
+  challenge?: DailyChallengeContext | null;
+  onChallengeCompleted?: (completion: DailyChallengeCompletion) => void;
 }) {
   const ar = lang === "ar";
   const t = COPY[lang];
@@ -252,9 +258,9 @@ export default function QuizPage({
   }
 
   useEffect(() => {
-    if (demoMode || qaState) return;
+    if (demoMode || qaState || challenge) return;
     void loadDocuments();
-  }, [userId]);
+  }, [userId, challenge?.id]);
 
   useEffect(() => {
     if (qaState === "empty" || qaState === "error" || qaState === "loading") return;
@@ -351,6 +357,11 @@ export default function QuizPage({
     setAnswers([]);
     setScreen("question");
   }
+
+  useEffect(() => {
+    if (!challenge || demoMode || qaState) return;
+    void beginAttempt(challenge.quizId, challenge.questionCount);
+  }, [challenge?.id, userId]);
 
   async function startQuiz() {
     if (demoMode) {
@@ -464,6 +475,16 @@ export default function QuizPage({
         total_questions: result.total_questions,
         finished_at: result.finished_at,
       });
+      if (challenge && quizId === challenge.quizId && attemptId &&
+          typeof result.finished_at === "string" && result.finished_at.length > 0) {
+        onChallengeCompleted?.({
+          challengeId: challenge.id,
+          quizId,
+          attemptId,
+          finishedAt: result.finished_at,
+          score: finalScore,
+        });
+      }
       setScreen("result");
       return;
     }
