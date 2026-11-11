@@ -6,11 +6,11 @@
 -- migration sources.
 --
 -- The safe per-question browser response is now defined by:
---   supabase/migrations/20261111090000_secure_quiz_answer_response.sql
+--   supabase/proposals/secure_quiz_answer_response.sql
 --
 -- That migration exposes public.submit_answer_safe(p_question_id, p_chosen_index),
 -- returns answer_id/is_correct/explanation/answered_at, and revokes authenticated
 -- execution of the key-bearing private.submit_answer implementation.
 --
--- This is still a proposal migration in GitHub until explicitly reviewed and applied.
+-- This is a proposal in GitHub, not a migration. Generate a migration with the Supabase CLI only after schema review.
 -- It does not create a quiz-session lifecycle or verify whole-quiz completion.
