@@ -241,7 +241,7 @@ begin
       (now() at time zone 'Asia/Qatar')::date,
       'd1000000-0000-4000-8000-000000000001',
       'e1000000-0000-4000-8000-000000000001',
-      (select id from public.quiz_attempts where quiz_id = 'e1000000-0000-4000-8000-000000000001' limit 1)
+      current_setting('test.daily_attempt_id')::uuid
     );
     raise exception 'Student B unexpectedly completed Student A Daily Challenge';
   exception when sqlstate 'P0002' then null;
