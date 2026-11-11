@@ -26,6 +26,7 @@
     "test:document-upload": "node --test tests/documentUploadContract.test.mjs",
     "test:document-library": "node --test tests/documentLibraryContract.test.mjs",
     "test:document-processing": "node --test tests/documentProcessingContract.test.mjs",
+    "test:document-recovery": "node --test tests/documentRecoveryContract.test.mjs",
     "test:pdf-pipeline": "node --test tests/pdfTextPipeline.test.mjs",
     "test:document-reader": "node --test tests/documentReaderContract.test.mjs"
   },
