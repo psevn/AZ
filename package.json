@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test:quick-add": "node --test tests/quickAdd.test.mjs",
     "test:azi": "node --test tests/aziAnalytics.test.mjs",
+    "test:azi-progress": "node --test tests/aziProgress.test.mjs",
     "test:arabic-plural": "node --test tests/arabicPlural.test.mjs",
     "test:typography": "node --test tests/typographyMinimum.test.mjs",
     "test:quiz-generation": "node --test tests/quizGeneration.test.mjs"
