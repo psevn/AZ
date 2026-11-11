@@ -190,7 +190,7 @@ export default function DocumentReader({
                     <button type="button" className="az-btn az-btn--ghost" onClick={() => changePage(pageNo)}>{t.retry}</button>
                   </div>
                 ) : pageText ? (
-                  <pre>{highlightedText}</pre>
+                  <pre dir={ar ? "rtl" : "ltr"}>{highlightedText}</pre>
                 ) : (
                   <p className="document-reader-state">{t.empty}</p>
                 )}
