@@ -15,7 +15,7 @@ type Props = {
   lang: "ar" | "en";
   refreshKey: number;
   onOpenDocument: (documentId: string) => void;
-  onStartQuiz: () => void;
+  onStartQuiz: (documentId: string) => void;
 };
 
 const COPY = {
@@ -135,7 +135,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
               {document.status !== "failed" ? (
                 <div className="document-library-actions">
                   <button type="button" className="az-btn az-btn--ghost document-library-open" onClick={() => onOpenDocument(document.id)}>{document.status === "ready" ? t.open : t.preview} ↗</button>
-                  {document.status === "ready" && <button type="button" className="az-btn az-btn--primary document-library-practice" onClick={onStartQuiz}>{t.practice}</button>}
+                  {document.status === "ready" && <button type="button" className="az-btn az-btn--primary document-library-practice" onClick={() => onStartQuiz(document.id)}>{t.practice}</button>}
                 </div>
               ) : null}
             </li>
