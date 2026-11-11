@@ -12,7 +12,9 @@ test("document library reads only the signed-in user's documents", () => {
 });
 
 test("only ready documents can be opened from the library", () => {
-  assert.match(library, /document\.status === "ready"/);
+  assert.match(library, /document\.status !== "failed"/);
+  assert.match(library, /document\.status === "ready" \? t\.open : t\.preview/);
+  assert.match(library, /onStartQuiz\(\)/);
   assert.match(library, /onOpenDocument\(document\.id\)/);
   assert.match(library, /uploaded: "تم الرفع · بانتظار المعالجة"/);
   assert.match(library, /processing: "قيد المعالجة"/);
