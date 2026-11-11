@@ -6,6 +6,10 @@ const proposal = readFileSync(
   new URL("../supabase/proposals/azi_daily_challenge_completion.sql", import.meta.url),
   "utf8",
 );
+const migration = readFileSync(
+  new URL("../supabase/migrations/20261111073233_azi_daily_challenge_completion.sql", import.meta.url),
+  "utf8",
+);
 const page = readFileSync(
   new URL("../src/components/QuizPage.tsx", import.meta.url),
   "utf8",
@@ -49,4 +53,14 @@ test("QuizPage requests a durable receipt after finish_attempt and before report
   assert.match(page, /p_quiz_id: quizId/);
   assert.match(page, /p_attempt_id: attemptId/);
   assert.match(page, /challengeSavePending/);
+});
+
+test("CLI-generated migration preserves the tested proposal SQL", () => {
+  assert.match(migration, /Generated with Supabase CLI v3\.1\.0/);
+  assert.match(migration, /full AZ migration baseline reconciliation is still required/);
+  assert.doesNotMatch(migration, /PROPOSAL ONLY/i);
+  assert.equal(
+    migration.replace(/^-- Generated with Supabase CLI v3\.1\.0[^\\n]*\\n-- This migration is not deployed; full AZ migration baseline reconciliation is still required\\n/, ""),
+    proposal.replace(/^-- PROPOSAL ONLY[^\\n]*\\n/, ""),
+  );
 });
