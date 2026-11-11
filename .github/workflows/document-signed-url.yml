@@ -17,8 +17,11 @@ on:
       - "fix/document-signed-url-endpoint-20261111"
     paths:
       - "src/App.tsx"
+      - "src/components/DocumentUpload.tsx"
       - "supabase/functions/create-document-signed-url/**"
+      - "supabase/functions/create-document-upload-url/**"
       - "tests/documentSignedUrlContract.test.mjs"
+      - "tests/documentUploadContract.test.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/document-signed-url.yml"
