@@ -24,7 +24,8 @@ test("proposal is explicitly non-deployable and uses the live quiz schema", () =
 });
 
 test("restricts execution to the trusted service role", () => {
-  assert.match(proposal, /SECURITY DEFINER/i);
+  assert.match(proposal, /SECURITY INVOKER/i);
+  assert.doesNotMatch(proposal, /SECURITY DEFINER/i);
   assert.match(proposal, /SET search_path = ''/i);
   assert.match(proposal, /REVOKE ALL ON FUNCTION public\.create_generated_quiz\(uuid, uuid, jsonb\) FROM PUBLIC, anon, authenticated/i);
   assert.match(proposal, /GRANT EXECUTE ON FUNCTION public\.create_generated_quiz\(uuid, uuid, jsonb\) TO service_role/i);
