@@ -315,7 +315,8 @@ export default function QuizPage({
       .eq("attempt_id", attempt.attempt_id)
       .eq("user_id", userId)
       .order("position_no", { ascending: true });
-    if (questionsError || !rows?.length) {
+    if (questionsError || !rows?.length ||
+        rows.length !== Number(attempt.question_count)) {
       setLoadError(questionsError?.message || t.noQuestions);
       setScreen("error");
       return;
