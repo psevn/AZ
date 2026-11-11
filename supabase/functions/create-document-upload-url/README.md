@@ -11,6 +11,7 @@ Creates a short-lived Supabase Storage signed-upload token and the corresponding
 - Supports a `mark_failed` action that updates only an `uploaded` row matching both the document ID and authenticated owner.
 - Returns only the document ID, path, and short-lived upload token; the browser never receives privileged credentials.
 - Sends `Cache-Control: no-store` on responses.
+- Supabase signed upload tokens remain valid for **2 hours** and cannot be individually revoked. Marking a document as failed does not revoke an already-issued token; any unused token expires naturally.
 
 ## Client flow
 
