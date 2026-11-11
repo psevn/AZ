@@ -15,6 +15,7 @@ on:
       - "tests/dailyChallengePersistenceContract.test.mjs"
       - "tests/sql/**"
       - "supabase/proposals/azi_daily_challenge_completion.sql"
+      - "supabase/migrations/**"
       - "tests/quizPersistenceContract.test.mjs"
       - "tests/quizGeneration.test.mjs"
       - "supabase/functions/generate-quiz/**"
@@ -92,3 +93,29 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/proposals/azi_daily_challenge_completion.sql
       - name: Verify completion, idempotency, ownership, RLS, and grants
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/daily-challenge-integration.sql
+
+  prepare-daily-challenge-migration:
+    runs-on: ubuntu-latest
+    needs: daily-challenge-postgres
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 3.1.0
+      - name: Generate migration filename with Supabase CLI
+        id: migration
+        run: |
+          supabase --version
+          supabase migration new azi_daily_challenge_completion
+          migration_file="$(find supabase/migrations -maxdepth 1 -type f -name '*_azi_daily_challenge_completion.sql' -print -quit)"
+          test -n "$migration_file"
+          cp supabase/proposals/azi_daily_challenge_completion.sql "$migration_file"
+          echo "path=$migration_file" >> "$GITHUB_OUTPUT"
+      - name: Upload CLI-generated migration preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: azi-daily-challenge-migration-preview
+          path: ${{ steps.migration.outputs.path }}
+          if-no-files-found: error
