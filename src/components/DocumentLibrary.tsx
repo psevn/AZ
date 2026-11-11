@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { recoverDocumentProcessing } from "../lib/recoverDocumentProcessing";
 
 type DocumentRow = {
   id: string;
@@ -8,6 +9,7 @@ type DocumentRow = {
   created_at: string;
   page_count: number | null;
   failed_reason: string | null;
+  locked_at: string | null;
 };
 
 type Props = {
@@ -37,6 +39,9 @@ const COPY = {
     practice: "ابدأ التدريب",
     count: "مستند",
     error: "تعذّر تحميل قائمة المستندات.",
+    resume: "استئناف المعالجة",
+    resuming: "جارٍ استعادة المعالجة…",
+    resumeError: "تعذّر استئناف معالجة المستند.",
   },
   en: {
     title: "Your documents",
@@ -56,6 +61,9 @@ const COPY = {
     practice: "Practice",
     count: "documents",
     error: "Could not load your documents.",
+    resume: "Resume processing",
+    resuming: "Recovering processing…",
+    resumeError: "Could not resume document processing.",
   },
 };
 
@@ -65,6 +73,9 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [recoveringId, setRecoveringId] = useState<string | null>(null);
+  const [recoveryProgress, setRecoveryProgress] = useState("");
+  const [recoveryError, setRecoveryError] = useState("");
 
   const load = useCallback(async () => {
     if (!supabase) {
@@ -76,7 +87,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
     setError("");
     const { data, error: queryError } = await supabase
       .from("documents")
-      .select("id,title,status,created_at,page_count,failed_reason")
+      .select("id,title,status,created_at,page_count,failed_reason,locked_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (queryError) {
@@ -89,6 +100,38 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
   }, [userId, t.error]);
 
   useEffect(() => { void load(); }, [load, refreshKey]);
+
+  function canResume(document: DocumentRow) {
+    if (document.status === "uploaded") return true;
+    if (document.status !== "processing") return false;
+    if (!document.locked_at) return true;
+    const lockTime = Date.parse(document.locked_at);
+    return Number.isFinite(lockTime) && Date.now() - lockTime >= 30 * 60 * 1000;
+  }
+
+  async function resume(document: DocumentRow) {
+    if (recoveringId || !canResume(document)) return;
+    setRecoveringId(document.id);
+    setRecoveryError("");
+    setRecoveryProgress(t.resuming);
+    try {
+      await recoverDocumentProcessing(document.id, document.title, document.status as "uploaded" | "processing", (stage, current, total) => {
+        const labels = ar
+          ? { downloading: "جارٍ استرجاع ملف PDF…", extracting: "جارٍ استخراج النص…", saving: "جارٍ حفظ الصفحات…", finalizing: "جارٍ إنهاء المعالجة…" }
+          : { downloading: "Retrieving the PDF…", extracting: "Extracting text…", saving: "Saving pages…", finalizing: "Finishing processing…" };
+        setRecoveryProgress(current !== undefined && total
+          ? labels[stage] + " " + current + " / " + total
+          : labels[stage]);
+      });
+      setRecoveryProgress("");
+      await load();
+    } catch (cause) {
+      setRecoveryError(cause instanceof Error ? cause.message : t.resumeError);
+      await load();
+    } finally {
+      setRecoveringId(null);
+    }
+  }
 
   function statusLabel(document: DocumentRow) {
     if (document.status === "ready") return t.ready;
@@ -136,12 +179,15 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
                 <div className="document-library-actions">
                   <button type="button" className="az-btn az-btn--ghost document-library-open" onClick={() => onOpenDocument(document.id)}>{document.status === "ready" ? t.open : t.preview} ↗</button>
                   {document.status === "ready" && <button type="button" className="az-btn az-btn--primary document-library-practice" onClick={() => onStartQuiz(document.id)}>{t.practice}</button>}
+                  {canResume(document) && <button type="button" className="az-btn az-btn--ghost document-library-resume" disabled={recoveringId !== null} onClick={() => void resume(document)}>{recoveringId === document.id ? t.resuming : t.resume}</button>}
                 </div>
               ) : null}
             </li>
           ))}
         </ul>
       )}
+      {recoveryProgress && <p className="document-library-state" role="status" aria-live="polite">{recoveryProgress}</p>}
+      {recoveryError && <p className="document-upload-error" role="alert">{recoveryError}</p>}
     </section>
   );
 }
