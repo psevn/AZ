@@ -188,13 +188,13 @@ Deno.serve(async (request: Request) => {
     let totalChars = 0;
     const rows: Array<{ document_id: string; user_id: string; page_no: number; text: string }> = [];
     for (const page of body.pages) {
-      if (!isRecord(page) || !Number.isInteger(page.pageNo) ||
+      if (!isRecord(page) || typeof page.pageNo !== "number" || !Number.isInteger(page.pageNo) ||
           Number(page.pageNo) < 1 || Number(page.pageNo) > MAX_DOCUMENT_PAGES ||
           typeof page.text !== "string" || page.text.length > MAX_PAGE_CHARS ||
-          page.text.includes("\\u0000")) {
+          page.text.includes("\u0000")) {
         return json(400, { error: "A page contains invalid text or page metadata." });
       }
-      const pageNo = Number(page.pageNo);
+      const pageNo = page.pageNo;
       if (seen.has(pageNo)) return json(400, { error: "A batch cannot contain duplicate page numbers." });
       seen.add(pageNo);
       totalChars += page.text.length;
@@ -213,8 +213,8 @@ Deno.serve(async (request: Request) => {
   }
 
   if (action === "complete") {
-    const pageCount = Number(body.pageCount);
-    if (!Number.isInteger(pageCount) || pageCount < 1 || pageCount > MAX_DOCUMENT_PAGES) {
+    const pageCount = body.pageCount;
+    if (typeof pageCount !== "number" || !Number.isInteger(pageCount) || pageCount < 1 || pageCount > MAX_DOCUMENT_PAGES) {
       return json(400, { error: "A valid page count is required." });
     }
 
@@ -234,7 +234,7 @@ Deno.serve(async (request: Request) => {
       return json(409, { error: "Some document pages are missing. Processing is not complete." });
     }
 
-    const combinedText = pages.map((page) => page.text).join("\\n");
+    const combinedText = pages.map((page) => page.text).join("\n");
     if (combinedText.trim().length < 20) {
       await adminClient.from("documents")
         .update({
