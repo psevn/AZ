@@ -17,6 +17,11 @@ function readBearerToken(request: Request) {
   return match?.[1] ?? null;
 }
 
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json(405, { error: "Method not allowed." });
@@ -32,7 +37,7 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Document upload is not configured." });
   }
 
-  let body: { documentId?: unknown };
+  let body: { documentId?: unknown; title?: unknown; action?: unknown };
   try {
     const rawBody = await request.text();
     if (new TextEncoder().encode(rawBody).byteLength > 2048) return json(413, { error: "Request is too large." });
@@ -40,14 +45,16 @@ Deno.serve(async (request: Request) => {
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
       return json(400, { error: "Invalid JSON request body." });
     }
-    body = parsed as { documentId?: unknown };
+    body = parsed as { documentId?: unknown; title?: unknown; action?: unknown };
   } catch {
     return json(400, { error: "Invalid JSON request body." });
   }
 
-  const documentId = typeof body.documentId === "string" ? body.documentId.trim() : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(documentId)) {
-    return json(400, { error: "A valid document ID is required." });
+  if (!isUuid(body.documentId)) return json(400, { error: "A valid document ID is required." });
+  const documentId = body.documentId;
+  const action = body.action === undefined ? "create_upload" : body.action;
+  if (action !== "create_upload" && action !== "mark_failed") {
+    return json(400, { error: "Unsupported upload action." });
   }
 
   const userClient = createClient(supabaseUrl, publishableKey, {
@@ -58,33 +65,56 @@ Deno.serve(async (request: Request) => {
   if (authError || !authData.user) return json(401, { error: "Your session is invalid or expired." });
 
   const userId = authData.user.id;
-  const { data: document, error: documentError } = await userClient
-    .from("documents")
-    .select("id,user_id,storage_path,status")
-    .eq("id", documentId)
-    .eq("user_id", userId)
-    .eq("status", "uploaded")
-    .maybeSingle();
-
-  if (documentError) {
-    console.error("create-document-upload-url document lookup failed:", documentError.code);
-    return json(500, { error: "Could not verify document upload." });
-  }
-  if (!document || document.storage_path !== `${userId}/${documentId}.pdf`) {
-    return json(404, { error: "Upload record not found." });
-  }
-
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: signed, error: signError } = await adminClient.storage
-    .from("documents")
-    .createSignedUploadUrl(document.storage_path, { upsert: false });
+  const storagePath = `${userId}/${documentId}.pdf`;
 
+  if (action === "mark_failed") {
+    const { data: existing, error: lookupError } = await adminClient
+      .from("documents").select("id").eq("id", documentId).eq("user_id", userId)
+      .eq("status", "uploaded").maybeSingle();
+    if (lookupError) {
+      console.error("create-document-upload-url failure lookup failed:", lookupError.code);
+      return json(500, { error: "Could not update the upload status." });
+    }
+    if (!existing) return json(404, { error: "Upload record not found." });
+
+    const { error: updateError } = await adminClient.from("documents")
+      .update({ status: "failed", failed_reason: "Upload did not complete." })
+      .eq("id", documentId).eq("user_id", userId).eq("status", "uploaded");
+    if (updateError) {
+      console.error("create-document-upload-url failure update failed:", updateError.code);
+      return json(500, { error: "Could not update the upload status." });
+    }
+    return json(200, { ok: true });
+  }
+
+  const title = typeof body.title === "string" ? body.title.trim().slice(0, 255) : "";
+  if (!title) return json(400, { error: "A document title is required." });
+
+  const { error: insertError } = await adminClient.from("documents").insert({
+    id: documentId,
+    user_id: userId,
+    title,
+    storage_path: storagePath,
+    status: "uploaded",
+    kind: "other",
+  });
+  if (insertError) {
+    console.error("create-document-upload-url document insert failed:", insertError.code);
+    return json(409, { error: "Could not create this document upload." });
+  }
+
+  const { data: signed, error: signError } = await adminClient.storage
+    .from("documents").createSignedUploadUrl(storagePath, { upsert: false });
   if (signError || !signed?.token || !signed?.path) {
+    await adminClient.from("documents")
+      .update({ status: "failed", failed_reason: "Could not prepare the upload." })
+      .eq("id", documentId).eq("user_id", userId).eq("status", "uploaded");
     console.error("create-document-upload-url signing failed:", signError?.name ?? "unknown");
     return json(503, { error: "Could not prepare the upload. Please try again." });
   }
 
-  return json(200, { path: signed.path, token: signed.token });
+  return json(200, { documentId, path: signed.path, token: signed.token });
 });
