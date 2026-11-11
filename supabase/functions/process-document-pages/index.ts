@@ -138,12 +138,13 @@ Deno.serve(async (request: Request) => {
       return json(409, { error: "This document cannot start processing in its current state." });
     }
 
+    const processingToken = new Date().toISOString();
     const { data: started, error: startError } = await adminClient
       .from("documents")
       .update({
         status: "processing",
         attempts: Number(document.attempts ?? 0) + 1,
-        locked_at: new Date().toISOString(),
+        locked_at: processingToken,
         processed_at: null,
         page_count: null,
         language: null,
@@ -173,7 +174,7 @@ Deno.serve(async (request: Request) => {
       console.error("process-document-pages page reset failed:", deleteError.code);
       return json(500, { error: "Could not prepare document pages." });
     }
-    return json(200, { ok: true, status: "processing" });
+    return json(200, { ok: true, status: "processing", processingToken });
   }
 
   if (action === "resume") {
@@ -187,10 +188,11 @@ Deno.serve(async (request: Request) => {
       return json(409, { error: "Document processing is still active. Try again later." });
     }
 
+    const processingToken = new Date().toISOString();
     let reclaimQuery = adminClient.from("documents")
       .update({
         attempts: Number(document.attempts ?? 0) + 1,
-        locked_at: new Date().toISOString(),
+        locked_at: processingToken,
         processed_at: null,
         page_count: null,
         language: null,
@@ -216,11 +218,14 @@ Deno.serve(async (request: Request) => {
       console.error("process-document-pages resume page reset failed:", deleteError.code);
       return json(500, { error: "Could not prepare document pages for recovery." });
     }
-    return json(200, { ok: true, status: "processing", resumed: true });
+    return json(200, { ok: true, status: "processing", resumed: true, processingToken });
   }
 
   if (document.status !== "processing") {
     return json(409, { error: "The document is not currently processing." });
+  }
+  if (typeof body.processingToken !== "string" || body.processingToken !== document.locked_at) {
+    return json(409, { error: "This processing attempt is no longer active. Refresh and resume the document." });
   }
 
   if (action === "save_pages") {
