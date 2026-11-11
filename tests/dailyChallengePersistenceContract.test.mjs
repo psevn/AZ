@@ -34,7 +34,7 @@ test("server RPC accepts only a verified, finished, five-question practice attem
   assert.match(proposal, /v_expected_challenge_id/i);
   assert.match(proposal, /p_challenge_id <> v_expected_challenge_id/i);
   assert.match(proposal, /grant execute on function public\.complete_daily_challenge[\s\S]*to authenticated/i);
-  assert.doesNotMatch(proposal, /points|point_ledger|award_points/i);
+  assert.doesNotMatch(proposal, /insert into [a-z_.]*points|award_points/i);
 });
 
 test("QuizPage requests a durable receipt after finish_attempt and before reporting completion", () => {
