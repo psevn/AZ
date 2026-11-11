@@ -13,6 +13,7 @@ const MAX_BODY_BYTES = 400 * 1024;
 const MAX_PAGES_PER_BATCH = 20;
 const MAX_PAGE_CHARS = 18_000;
 const MAX_DOCUMENT_PAGES = 1_000;
+const STALE_PROCESSING_MS = 30 * 60 * 1000;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -103,7 +104,7 @@ Deno.serve(async (request: Request) => {
   if (!UUID_RE.test(documentId)) return json(400, { error: "A valid document ID is required." });
 
   const action = body.action;
-  if (action !== "start" && action !== "save_pages" && action !== "complete" && action !== "fail") {
+  if (action !== "start" && action !== "save_pages" && action !== "complete" && action !== "fail" && action !== "resume") {
     return json(400, { error: "Unsupported processing action." });
   }
 
@@ -117,7 +118,7 @@ Deno.serve(async (request: Request) => {
   const userId = authData.user.id;
   const { data: document, error: documentError } = await userClient
     .from("documents")
-    .select("id,user_id,status,attempts")
+    .select("id,user_id,status,attempts,locked_at")
     .eq("id", documentId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -173,6 +174,49 @@ Deno.serve(async (request: Request) => {
       return json(500, { error: "Could not prepare document pages." });
     }
     return json(200, { ok: true, status: "processing" });
+  }
+
+  if (action === "resume") {
+    if (document.status !== "processing") {
+      return json(409, { error: "Only an interrupted processing document can be resumed." });
+    }
+    const lockedAt = typeof document.locked_at === "string" ? document.locked_at : null;
+    const lockTime = lockedAt ? Date.parse(lockedAt) : Number.NaN;
+    const isStale = lockedAt === null || (Number.isFinite(lockTime) && Date.now() - lockTime >= STALE_PROCESSING_MS);
+    if (!isStale) {
+      return json(409, { error: "Document processing is still active. Try again later." });
+    }
+
+    let reclaimQuery = adminClient.from("documents")
+      .update({
+        attempts: Number(document.attempts ?? 0) + 1,
+        locked_at: new Date().toISOString(),
+        processed_at: null,
+        page_count: null,
+        language: null,
+        failed_reason: null,
+      })
+      .eq("id", documentId)
+      .eq("user_id", userId)
+      .eq("status", "processing");
+    reclaimQuery = lockedAt ? reclaimQuery.eq("locked_at", lockedAt) : reclaimQuery.is("locked_at", null);
+    const { data: reclaimed, error: reclaimError } = await reclaimQuery.select("id").maybeSingle();
+    if (reclaimError) {
+      console.error("process-document-pages resume failed:", reclaimError.code);
+      return json(500, { error: "Could not resume document processing." });
+    }
+    if (!reclaimed) return json(409, { error: "Document processing state changed. Refresh and try again." });
+
+    const { error: deleteError } = await adminClient.from("document_pages")
+      .delete().eq("document_id", documentId).eq("user_id", userId);
+    if (deleteError) {
+      await adminClient.from("documents")
+        .update({ status: "failed", locked_at: null, failed_reason: "Could not reset extracted pages." })
+        .eq("id", documentId).eq("user_id", userId).eq("status", "processing");
+      console.error("process-document-pages resume page reset failed:", deleteError.code);
+      return json(500, { error: "Could not prepare document pages for recovery." });
+    }
+    return json(200, { ok: true, status: "processing", resumed: true });
   }
 
   if (document.status !== "processing") {
