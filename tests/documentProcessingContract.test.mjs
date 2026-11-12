@@ -60,3 +60,10 @@ test("the processing endpoint parses standard Bearer authorization headers", () 
   const bearerPattern = new RegExp(literal.slice(1, slash), literal.slice(slash + 1));
   assert.equal("Bearer az-test-token".match(bearerPattern)?.[1], "az-test-token");
 });
+
+test("page processing maps database-enforced plan limits to stable 429 codes", () => {
+  assert.match(endpoint, /DOCUMENT_LIMIT_TOTAL_PAGES/);
+  assert.match(endpoint, /DOCUMENT_LIMIT_TOTAL_TEXT_CHARS/);
+  assert.match(endpoint, /DOCUMENT_LIMIT_PER_DOCUMENT_PAGES/);
+  assert.match(endpoint, /limitExceeded \? 429/);
+});

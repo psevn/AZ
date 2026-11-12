@@ -153,6 +153,23 @@ Deno.serve(async (request: Request) => {
   });
 
   if (error) {
+    const code = typeof error.message === "string" ? error.message.trim() : "";
+    const limitMessages: Record<string, string> = {
+      DOCUMENT_LIMIT_TOTAL_PAGES: "Your account has reached its total page limit.",
+      DOCUMENT_LIMIT_TOTAL_TEXT_CHARS: "Your account has reached its extracted-text limit.",
+      DOCUMENT_LIMIT_PER_DOCUMENT_PAGES: "This document exceeds the page limit for your plan.",
+      DOCUMENT_LIMIT_CONFIGURATION_MISSING: "Document limits are not configured for this plan yet.",
+      DOCUMENT_LIMIT_CONFIGURATION_INVALID: "Document limits are configured incorrectly.",
+      DOCUMENT_LIMIT_PROFILE_MISSING: "Your account profile could not be found.",
+    };
+    if (code.startsWith("DOCUMENT_LIMIT_")) {
+      const limitExceeded = code === "DOCUMENT_LIMIT_TOTAL_PAGES" ||
+        code === "DOCUMENT_LIMIT_TOTAL_TEXT_CHARS" || code === "DOCUMENT_LIMIT_PER_DOCUMENT_PAGES";
+      return json(limitExceeded ? 429 : 503, {
+        error: limitMessages[code] ?? "Could not enforce document limits safely.",
+        code,
+      });
+    }
     console.error("process-document-pages atomic RPC failed:", error.code);
     return json(500, { error: "Could not update document processing state." });
   }
