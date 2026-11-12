@@ -117,11 +117,53 @@ begin
 end;
 $function$;
 
+create function public.record_document_upload_token_expiry(
+  p_document_id uuid,
+  p_user_id uuid,
+  p_expires_at timestamptz
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+declare
+  v_updated_id uuid;
+begin
+  if p_document_id is null or p_user_id is null or p_expires_at is null
+     or p_expires_at <= clock_timestamp() then
+    return jsonb_build_object('ok', false, 'statusCode', 400, 'code', 'INVALID_UPLOAD_EXPIRY');
+  end if;
+
+  -- Concurrent token issuances must preserve the latest expiry, regardless of
+  -- which request reaches PostgreSQL last.
+  update public.documents d
+     set upload_token_expires_at = greatest(
+       coalesce(d.upload_token_expires_at, '-infinity'::timestamptz),
+       p_expires_at
+     )
+   where d.id = p_document_id
+     and d.user_id = p_user_id
+     and d.status = 'uploaded'
+  returning d.id into v_updated_id;
+
+  if v_updated_id is null then
+    return jsonb_build_object('ok', false, 'statusCode', 409, 'code', 'DOCUMENT_STATE_CHANGED');
+  end if;
+
+  return jsonb_build_object('ok', true);
+end;
+$function$;
+
 revoke all on function public.begin_document_deletion(uuid, uuid)
   from public, anon, authenticated;
 revoke all on function public.complete_document_deletion(uuid, uuid)
   from public, anon, authenticated;
+revoke all on function public.record_document_upload_token_expiry(uuid, uuid, timestamptz)
+  from public, anon, authenticated;
 grant execute on function public.begin_document_deletion(uuid, uuid)
   to service_role;
 grant execute on function public.complete_document_deletion(uuid, uuid)
+  to service_role;
+grant execute on function public.record_document_upload_token_expiry(uuid, uuid, timestamptz)
   to service_role;
