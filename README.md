@@ -59,3 +59,7 @@ The primary current visual/product reference is [AZ Promo V5 — Web Design Refe
 - Complete V1 schema and Edge Functions.
 
 After installing dependencies, commit the generated `package-lock.json` so installs remain reproducible.
+
+## OpenAI model configuration
+
+Before enabling `generate-quiz`, the owner must set the Edge Function secret `OPENAI_MODEL` explicitly to a model ID that exists and is enabled on their own OpenAI account. There is no repository default; the function returns HTTP 503 with `OPENAI_MODEL_NOT_CONFIGURED` when the setting is missing or blank. Keep `OPENAI_API_KEY` server-side and never expose it in browser variables.
