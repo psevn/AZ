@@ -64,7 +64,7 @@ psql_run "select r_status from public.settle_quiz_generation(
 REPLAY="$(psql_run "select r_status || '|' || r_replay from public.reserve_credits('$USER_ID','$FEATURE','replay-key',0.001,1);")"
 PAYLOAD="$(psql_run "select result_payload->>'quizId' from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
 TOKENS="$(psql_run "select input_tokens || '|' || output_tokens from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
-if [[ "$REPLAY" != "succeeded|t" || "$PAYLOAD" != "test-quiz" || "$TOKENS" != "10|20" ]]; then
+if [[ "$REPLAY" != "succeeded|true" || "$PAYLOAD" != "test-quiz" || "$TOKENS" != "10|20" ]]; then
   echo "Idempotent replay or usage logging failed: replay=$REPLAY payload=$PAYLOAD tokens=$TOKENS" >&2
   exit 1
 fi
