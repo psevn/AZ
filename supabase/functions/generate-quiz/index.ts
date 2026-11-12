@@ -1,3 +1,4 @@
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   extractResponsesOutput,
@@ -15,8 +16,8 @@ const corsHeaders = {
 const FEATURE = "generate_quiz";
 const MODEL_PRICING_CONFIG = "openai_model_pricing";
 
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+function json(status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, ...extraHeaders } });
 }
 
 function readBearerToken(request: Request) {
@@ -133,6 +134,16 @@ Deno.serve(async (request: Request) => {
   if (authError || !authData.user) return json(401, { error: "Your session is invalid or expired." });
   const userId = authData.user.id;
 
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const rateLimit = await checkUserRateLimit(adminClient, userId, "generate_quiz");
+  if (!rateLimit.allowed) {
+    return json(rateLimit.status, {
+      error: rateLimit.message, code: rateLimit.code, retryAfterSeconds: rateLimit.retryAfterSeconds,
+    }, rateLimit.status === 429 ? { "Retry-After": String(rateLimit.retryAfterSeconds) } : {});
+  }
+
   const { data: document, error: documentError } = await userClient
     .from("documents").select("id,title,subject_id,status")
     .eq("id", documentId).eq("user_id", userId).eq("status", "ready").maybeSingle();
@@ -164,9 +175,6 @@ Deno.serve(async (request: Request) => {
   }).filter((page) => page.text.length > 0);
   if (!boundedPages.length) return json(422, { error: "The selected document contains no usable text." });
 
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
   const { data: pricingRow, error: pricingError } = await adminClient
     .from("app_config").select("value").eq("key", MODEL_PRICING_CONFIG).maybeSingle();
   const allPricing = isRecord(pricingRow?.value) ? pricingRow.value : null;
