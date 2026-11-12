@@ -36,6 +36,7 @@ export function makeOpenAIRequest(input: {
   questionCount: number;
   topic: string;
   pages: QuizSourcePage[];
+  maxOutputTokens?: number;
 }): Record<string, unknown>;
 
 export function extractResponsesOutput(response: unknown): unknown;
