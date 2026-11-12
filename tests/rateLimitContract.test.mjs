@@ -22,6 +22,7 @@ test("all four Edge Functions use the shared database-backed per-user limiter", 
   assert.ok(processPages.includes('"process_document_pages"'));
   assert.ok(processPages.includes('"process_document_pages_save_pages"'));
   assert.ok(quiz.includes('"generate_quiz"'));
+  assert.ok(processPages.indexOf("checkUserRateLimit(adminClient") < processPages.indexOf("const seen = new Set<number>()"));
 });
 
 test("save_pages has a distinct stricter rate-limit bucket", () => {
