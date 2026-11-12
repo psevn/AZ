@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const panel = readFileSync(new URL("../src/components/DocumentUpload.tsx", import.meta.url), "utf8");
 const endpoint = readFileSync(new URL("../supabase/functions/create-document-upload-url/index.ts", import.meta.url), "utf8");
+const limitsMigration = readFileSync(new URL("../supabase/migrations/20261112080000_document_usage_limits.sql", import.meta.url), "utf8");
 
 test("Academic workspace renders the authenticated PDF upload panel", () => {
   assert.match(app, /<DocumentUpload lang=\{lang\} onUploaded=\{\(\) => \{/);
@@ -32,12 +33,26 @@ test("browser delegates document creation and failure status to the trusted endp
 test("upload URL endpoint authenticates and creates an owner-scoped record server-side", () => {
   assert.match(endpoint, /auth\.getUser\(token\)/);
   assert.match(endpoint, /Bearer\\s\+/);
-  assert.match(endpoint, /user_id: userId/);
-  assert.match(endpoint, /storage_path: storagePath/);
-  assert.match(endpoint, /\.insert\(\{/);
-  assert.match(endpoint, /status: "uploaded"/);
+  assert.match(endpoint, /rpc\("create_document_upload_record"/);
+  assert.match(endpoint, /p_user_id: userId/);
+  assert.match(endpoint, /p_storage_path: storagePath/);
+  assert.doesNotMatch(endpoint, /\.from\("documents"\)\.insert/);
+  assert.match(endpoint, /DOCUMENT_LIMIT_PENDING_UPLOADS/);
+  assert.match(endpoint, /storage\.from\("documents"\)\.remove/);
   assert.match(endpoint, /createSignedUploadUrl\(storagePath/);
   assert.doesNotMatch(endpoint, /body\.storagePath|body\.path|body\.bucket/);
+});
+
+test("database enforces document, pending upload, page, and text limits transactionally", () => {
+  assert.match(limitsMigration, /create_document_upload_record/);
+  assert.match(limitsMigration, /for update/);
+  assert.match(limitsMigration, /DOCUMENT_LIMIT_DOCUMENTS/);
+  assert.match(limitsMigration, /DOCUMENT_LIMIT_PENDING_UPLOADS/);
+  assert.match(limitsMigration, /DOCUMENT_LIMIT_TOTAL_PAGES/);
+  assert.match(limitsMigration, /DOCUMENT_LIMIT_TOTAL_TEXT_CHARS/);
+  assert.match(limitsMigration, /DOCUMENT_LIMIT_PER_DOCUMENT_PAGES/);
+  assert.match(limitsMigration, /stale_uploaded_minutes/);
+  assert.match(limitsMigration, /before insert or update of text/);
 });
 
 test("upload endpoint scopes failure updates to the authenticated owner", () => {
