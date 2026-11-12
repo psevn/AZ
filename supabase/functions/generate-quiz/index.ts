@@ -49,7 +49,7 @@ function calculateCost(tokens: { input: number; output: number }, pricing: Recor
 
 function estimatedTokens(sourceCharacters: number, questionCount: number) {
   // Conservative reservation estimate; provider-reported usage replaces it at settlement.
-  return { input: Math.ceil(sourceCharacters / 3) + 1_000, output: questionCount * 500 };
+  return { input: Math.ceil(sourceCharacters * 1.5) + 2_000, output: questionCount * 500 };
 }
 
 async function refund(adminClient: ReturnType<typeof createClient>, userId: string, requestKey: string, reason: string) {
