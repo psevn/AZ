@@ -74,6 +74,7 @@ test("extends the existing reservation and settlement RPCs rather than replacing
 
 test("does not claim a refund when the refund RPC cannot be confirmed", () => {
   assert.match(edge, /Promise<boolean>/);
+  assert.match(edge, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/);
   assert.match(edge, /if \(!refunded\) return json\(503/);
   assert.match(edge, /code: "REFUND_PENDING"/);
   assert.match(edge, /rpc_transport_error/);
