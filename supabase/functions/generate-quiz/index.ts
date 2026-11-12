@@ -6,21 +6,12 @@ import {
   validateGeneratedQuestions,
 } from "../_shared/quizGeneration.mjs";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-  "Cache-Control": "no-store",
-};
+import { corsForRequest } from "../_shared/cors.ts";
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 const FEATURE = "generate_quiz";
 const PROMPT_VERSION = "quiz-v1";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_OUTPUT_TOKENS = 6000;
-
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
-}
 
 function readBearerToken(request: Request) {
   const value = request.headers.get("Authorization") ?? "";
@@ -65,7 +56,19 @@ async function refund(
 }
 
 Deno.serve(async (request: Request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = corsForRequest(request);
+  const json = (status: number, body: Record<string, unknown>, extraHeaders?: HeadersInit) => {
+    const headers = new Headers(cors.headers);
+    new Headers(extraHeaders).forEach((value, key) => headers.set(key, value));
+    return new Response(JSON.stringify(body), { status, headers });
+  };
+  if (!cors.allowed) return json(cors.status, {
+    error: cors.code === "CORS_NOT_CONFIGURED"
+      ? "This Edge Function has no configured browser origin allowlist."
+      : "This request origin is not allowed.",
+    code: cors.code ?? "CORS_REJECTED",
+  });
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors.headers });
   if (request.method !== "POST") return json(405, { error: "Method not allowed." });
 
   const token = readBearerToken(request);
@@ -75,7 +78,7 @@ Deno.serve(async (request: Request) => {
   const publishableKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const openAIKey = Deno.env.get("OPENAI_API_KEY");
-  const model = Deno.env.get("OPENAI_MODEL");
+  const model = Deno.env.get("OPENAI_MODEL")?.trim();
 
   if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
     console.error("generate-quiz is missing Supabase server configuration.");
@@ -218,6 +221,17 @@ Deno.serve(async (request: Request) => {
     });
   }
   if (reservation.r_status !== "reserved") return json(503, { error: "Could not reserve quiz-generation credits." });
+
+  // Idempotent replays are resolved above; only a new generation consumes a rate-limit slot.
+  const rateLimit = await checkUserRateLimit(adminClient, userId, "generate_quiz");
+  if (!rateLimit.allowed) {
+    await refund(adminClient, userId, requestKey, `rate_limit_${rateLimit.code}`);
+    return json(rateLimit.status, {
+      error: rateLimit.message,
+      code: rateLimit.code,
+      ...(rateLimit.retryAfterSeconds ? { retryAfterSeconds: rateLimit.retryAfterSeconds } : {}),
+    }, rateLimit.retryAfterSeconds ? { "Retry-After": String(rateLimit.retryAfterSeconds) } : {});
+  }
 
   const startedAt = Date.now();
   let payload: any;
