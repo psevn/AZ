@@ -64,7 +64,8 @@ psql_run "select r_status from public.settle_quiz_generation(
 REPLAY="$(psql_run "select r_status || '|' || r_replay from public.reserve_credits('$USER_ID','$FEATURE','replay-key',0.001,1);")"
 PAYLOAD="$(psql_run "select result_payload->>'quizId' from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
 TOKENS="$(psql_run "select input_tokens || '|' || output_tokens from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
-if [[ "$REPLAY" != "succeeded|true" || "$PAYLOAD" != "test-quiz" || "$TOKENS" != "10|20" ]]; then
+REPLAY_ROWS="$(psql_run "select count(*) from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
+if [[ "$REPLAY" != "succeeded|true" || "$PAYLOAD" != "test-quiz" || "$TOKENS" != "10|20" || "$REPLAY_ROWS" != "1" ]]; then
   echo "Idempotent replay or usage logging failed: replay=$REPLAY payload=$PAYLOAD tokens=$TOKENS" >&2
   exit 1
 fi
@@ -110,4 +111,4 @@ if [[ "$GLOBAL_REASON" != "global_cap" ]]; then
   exit 1
 fi
 
-echo "PASS: concurrent cap (1 allowed/7 denied), refunds, successful replay, safe result persistence, and failed-call token/cost logging."
+echo "PASS: concurrent cap, scaled credits, daily/monthly/global caps, refunds, one-row idempotent replay, safe result persistence, and failed-call token/cost logging."
