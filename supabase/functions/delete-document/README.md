@@ -23,7 +23,7 @@ The function derives the owner from `auth.getUser(token)`. It does not accept a 
 
 ## Upload issuance race
 
-The upload endpoint now stores `upload_token_expires_at` through a conditional owner/status-scoped update before returning the signed token. This update and the deletion transition serialize on the same row. If deletion wins, the upload endpoint does not return the token; if upload expiry persistence wins, deletion sees the expiry and waits.
+The upload endpoint now stores `upload_token_expires_at` through a service-role RPC before returning the signed token. The RPC serializes on the document row and uses `greatest(existing_expiry, new_expiry)`, so concurrent token issuances can never shorten the recorded validity window. If deletion wins, the upload endpoint does not return the token; if token-expiry persistence wins, deletion sees the latest expiry and waits.
 
 Supabase documents signed upload URLs as valid for two hours. Existing rows are backfilled conservatively from `created_at + 2 hours`; the completion RPC adds a five-minute margin.
 
