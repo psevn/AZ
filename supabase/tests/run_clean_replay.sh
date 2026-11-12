@@ -44,7 +44,7 @@ if [[ "$count" -ne 34 ]]; then
   exit 1
 fi
 
-psql_command "insert into public.app_config(key, value) values ('document_limits', '{\"free\":{\"max_documents\":1000,\"max_pending_uploads\":100,\"max_total_pages\":100000,\"max_total_text_chars\":100000000,\"max_pages_per_document\":1000,\"stale_uploaded_minutes\":60},\"pro\":{\"max_documents\":10000,\"max_pending_uploads\":1000,\"max_total_pages\":1000000,\"max_total_text_chars\":1000000000,\"max_pages_per_document\":1000,\"stale_uploaded_minutes\":60}}'::jsonb) on conflict (key) do update set value = excluded.value"
+psql_command "insert into public.app_config(key, value) values ('document_limits', '{\"free\":{\"max_documents\":1000,\"max_pending_uploads\":100,\"max_total_pages\":100000,\"max_total_text_chars\":100000000,\"max_pages_per_document\":1000,\"stale_uploaded_minutes\":180},\"pro\":{\"max_documents\":10000,\"max_pending_uploads\":1000,\"max_total_pages\":1000000,\"max_total_text_chars\":1000000000,\"max_pages_per_document\":1000,\"stale_uploaded_minutes\":180}}'::jsonb) on conflict (key) do update set value = excluded.value"
 psql_file "$ROOT/supabase/tests/verify_clean_replay.sql"
 psql_file "$ROOT/supabase/tests/verify_atomic_document_processing.sql"
 psql_file "$ROOT/supabase/tests/verify_rls_isolation.sql"
