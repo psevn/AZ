@@ -44,7 +44,7 @@ The Edge Function would:
 - If Storage succeeds but row deletion fails, retain `deleting`; retry verifies object absence then retries the row deletion.
 - Upload creation, signed download URL issuance, and processing start/resume must reject a `deleting` document.
 - The processing RPC already locks the document row. The deletion transition must take the same lock: a page save/complete action either commits before deletion or sees the new state and is rejected.
-- A previously issued signed upload token may remain usable after deletion starts. Verify its real expiry/revocation semantics before removing the DB tombstone. If it cannot be revoked, retain a tombstone/job until the token can no longer create an object, then run final prefix cleanup. Do not assume expiry.
+- Supabase documents that `createSignedUploadUrl` tokens are valid for 2 hours and can upload without further authentication. A token already issued may therefore still create the object after deletion starts. Retain a tombstone/job through the full 2-hour validity window (with clock-skew margin), then run a final prefix cleanup before declaring deletion complete. Confirm the actual token type used by the deployed SDK/version and test the behavior in disposable Staging.
 - Signed download URLs currently live for 300 seconds. Already-issued URLs may remain usable until expiry; disclose this limitation and do not promise instant revocation.
 - Add a bounded, service-role-only retry mechanism for rows stuck in `deleting`.
 
@@ -81,7 +81,8 @@ Before enabling account deletion, decide what happens if the user is a project l
 
 - Verify every FK/trigger in the final migration replay; relational cascades do not remove Storage objects.
 - Signed download URLs already issued may remain usable for up to their current 300-second lifetime.
-- Verify previously issued signed upload token expiry and in-flight upload behavior.
+- Signed upload URLs are documented as valid for 2 hours; keep a tombstone and perform a final Storage prefix sweep after that window plus clock-skew margin.
+- Deleting the Auth user invalidates refresh tokens but does not retroactively invalidate already-issued access JWTs; they remain valid until expiry unless sensitive operations check session existence or deletion state.
 - AI provider retention, backups, infrastructure logs, and legally required records may have separate retention rules. Do not promise immediate erasure from those systems without verifying provider terms.
 - Explain request accepted, cleanup pending, and completion states to the user.
 
@@ -111,7 +112,7 @@ Before enabling account deletion, decide what happens if the user is a project l
 ## 7. Rollout gates
 
 1. Approve project ownership and user-facing deletion policy.
-2. Verify current official Supabase behavior for Storage list/remove, signed-upload expiry, Auth session revocation, and Auth Admin deletion using disposable tests.
+2. Verify current official Supabase behavior for Storage list/remove, signed-upload expiry, Auth deletion/session revocation, and JWT expiry using disposable tests. The current docs state: signed upload URLs are valid for 2 hours; Storage objects must be removed through the Storage API (not SQL), with up to 1,000 objects per remove call; Auth deletion invalidates refresh tokens but already-issued access JWTs remain valid until expiry.
 3. Implement schema/RPC in a separate migration PR.
 4. Implement document deletion first with fault-injection tests.
 5. Implement account deletion only after active-account guards cover all write paths and direct-write RLS.
