@@ -80,6 +80,8 @@ Supported reason codes: `no_text`, `password_protected`, `invalid_pdf`, and `pro
 
 ## Current limitations
 
+- PDF text extraction runs in the signed-in browser with PDF.js. The server receives the extracted page text and page numbers, but it does not independently re-open the original PDF bytes, re-run extraction, or verify that each submitted text block/page number matches the original file. Database checks prove document ownership, page sequence, and configured usage limits only; they do **not** verify page-reference accuracy.
+- Any page reference produced from `document_pages.page_no` or generated quiz `source_page` is therefore **unverified against the original PDF**. The UI must label it as an unverified page reference and must not describe it as a verified citation or proof that the content appears on that original page.
 - This pipeline extracts selectable text; it does not OCR scanned/image-only pages.
 - AI summaries, flashcards, and question generation are separate work and are not part of this pipeline.
 - Repository contract tests and clean PostgreSQL migration replay do not replace an end-to-end test against the AZ-Staging Supabase Auth and Storage services.

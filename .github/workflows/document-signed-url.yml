@@ -7,6 +7,7 @@ on:
       - "src/components/DocumentUpload.tsx"
       - "src/components/DocumentLibrary.tsx"
       - "src/components/DocumentReader.tsx"
+      - "docs/DOCUMENT_PROCESSING.md"
       - "src/lib/extractPdfText.ts"
       - "src/lib/pdfTextPipeline.mjs"
       - "src/lib/recoverDocumentProcessing.ts"

@@ -42,3 +42,9 @@ test("practice action preselects the document the student clicked", () => {
   assert.match(quizPage, /initialDocumentId\?: string \| null/);
   assert.match(quizPage, /document\.id === initialDocumentId/);
 });
+
+test("reader explicitly warns that extracted page numbering is unverified against the original PDF", () => {
+  assert.match(reader, /Page numbering here comes from browser-side PDF extraction and has not been verified against the original PDF/);
+  assert.match(reader, /ترقيم الصفحات هنا ناتج عن استخراج النص داخل المتصفح ولم يتم التحقق منه مقابل ملف PDF الأصلي/);
+  assert.match(reader, /document-reader-page-reference-note/);
+});

@@ -82,8 +82,8 @@ const COPY = {
     incorrect: "Not quite",
     demoNote: "Demo feedback is illustrative only. Live grading is not connected yet.",
     explanation: "Explanation",
-    source: "Source",
-    page: "page",
+    source: "Unverified page reference",
+    pageReferenceNote: "Page numbers come from browser-side PDF extraction and have not been verified against the original PDF.",
     result: "Quiz complete",
     score: "Your score",
     missed: "Topics to revisit",
@@ -125,8 +125,8 @@ const COPY = {
     incorrect: "ليست الإجابة الصحيحة",
     demoNote: "التصحيح هنا توضيحي لوضع العرض فقط. لم يتم ربط التصحيح الفعلي بعد.",
     explanation: "التوضيح",
-    source: "المصدر",
-    page: "صفحة",
+    source: "مرجع صفحة غير متحقق",
+    pageReferenceNote: "أرقام الصفحات ناتجة عن استخراج النص داخل المتصفح ولم يتم التحقق منها مقابل ملف PDF الأصلي.",
     result: "اكتمل الاختبار",
     score: "نتيجتك",
     missed: "موضوعات للمراجعة",
@@ -628,7 +628,7 @@ export default function QuizPage({
         <div className="quiz-feedback-heading"><span aria-hidden="true">{feedback.correct ? "✓" : "○"}</span><strong>{feedback.correct ? t.correct : t.incorrect}</strong></div>
         <p><strong>{t.explanation}:</strong> {feedback.explanation}</p>
         {feedback.demo && <p className="quiz-demo-note">{t.demoNote}</p>}
-        <div className="quiz-question-footer"><span className="quiz-key-hint">{current.source_page ? t.source + ": " + current.source_page + " " + t.page : ""}</span><button type="button" className="az-btn az-btn--primary quiz-next" onClick={() => void continueQuiz()}>{t.next}</button></div>
+        <div className="quiz-question-footer"><span className="quiz-key-hint">{current.source_page ? <><span>{t.source}: {current.source_page}</span><small className="quiz-page-reference-note">{t.pageReferenceNote}</small></> : ""}</span><button type="button" className="az-btn az-btn--primary quiz-next" onClick={() => void continueQuiz()}>{t.next}</button></div>
       </section>}
     </section>}
 
