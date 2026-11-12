@@ -80,6 +80,8 @@ Supported reason codes: `no_text`, `password_protected`, `invalid_pdf`, and `pro
 
 ## Current limitations
 
+- PDF text extraction and page numbering run in the signed-in browser using PDF.js. The server stores the submitted page text and checks that a generated question refers to a page number present in those submitted rows, but it does **not** independently re-open the original PDF bytes or verify that the submitted text/page boundary matches the original file.
+- Therefore, page numbers and question source-page labels are **unverified extraction references**, not verified citations to the original PDF. They may be inaccurate if browser extraction, page ordering, or source parsing is wrong. The UI must label them as unverified and must not describe them as confirmed original-file page references.
 - This pipeline extracts selectable text; it does not OCR scanned/image-only pages.
 - AI summaries, flashcards, and question generation are separate work and are not part of this pipeline.
 - Repository contract tests and clean PostgreSQL migration replay do not replace an end-to-end test against the AZ-Staging Supabase Auth and Storage services.
