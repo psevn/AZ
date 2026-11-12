@@ -30,6 +30,22 @@ begin
     raise exception 'Quiz idempotency/replay columns are missing';
   end if;
 
+  if to_regprocedure('public.create_document_upload_record(uuid,uuid,text,text)') is null
+     or to_regprocedure('private.enforce_document_page_limits()') is null
+     or not exists (select 1 from pg_trigger
+       where tgname = 'document_pages_enforce_usage_limits' and not tgisinternal) then
+    raise exception 'Database-enforced document usage limit functions or trigger are missing';
+  end if;
+
+  if not has_function_privilege('service_role',
+      'public.create_document_upload_record(uuid,uuid,text,text)', 'EXECUTE')
+     or has_function_privilege('authenticated',
+      'public.create_document_upload_record(uuid,uuid,text,text)', 'EXECUTE')
+     or has_function_privilege('anon',
+      'public.create_document_upload_record(uuid,uuid,text,text)', 'EXECUTE') then
+    raise exception 'Document upload reservation RPC grants are not service-role-only';
+  end if;
+
   if not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'tasks' and column_name = 'completed_at'
