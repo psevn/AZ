@@ -4,6 +4,16 @@
 
 begin;
 
+insert into public.app_config (key, value)
+values (
+  'document_limits',
+  jsonb_build_object(
+    'free', jsonb_build_object('max_documents', 100, 'max_pages', 100, 'max_text_chars', 1000000, 'max_active_uploads', 10, 'stale_uploaded_minutes', 30),
+    'pro', jsonb_build_object('max_documents', 100, 'max_pages', 100, 'max_text_chars', 1000000, 'max_active_uploads', 10, 'stale_uploaded_minutes', 30)
+  )
+)
+on conflict (key) do update set value = excluded.value;
+
 insert into auth.users (id, email) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'rls-a@example.invalid'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'rls-b@example.invalid'),
