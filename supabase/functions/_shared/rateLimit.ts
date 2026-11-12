@@ -1,5 +1,5 @@
 export async function checkUserRateLimit(
-  adminClient: { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { code?: string } | null }> },
+  adminClient: { rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: { code?: string } | null }> },
   userId: string,
   endpoint: string,
 ): Promise<
