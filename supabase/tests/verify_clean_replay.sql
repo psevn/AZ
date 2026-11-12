@@ -17,6 +17,26 @@ begin
     raise exception 'Credit reservation sweep function is missing';
   end if;
 
+  if to_regprocedure('public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)') is null then
+    raise exception 'Dynamic quiz credit reservation RPC is missing';
+  end if;
+
+  if not has_function_privilege('service_role',
+      'public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)', 'EXECUTE')
+     or has_function_privilege('authenticated',
+      'public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)', 'EXECUTE')
+     or has_function_privilege('anon',
+      'public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)', 'EXECUTE') then
+    raise exception 'Quiz reservation RPC grants are not service-role-only';
+  end if;
+
+  if not exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'ai_usage_log' and column_name = 'request_payload_hash')
+     or not exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'quiz_questions' and column_name = 'position_no') then
+    raise exception 'Quiz idempotency/replay columns are missing';
+  end if;
+
   if not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'tasks' and column_name = 'completed_at'
