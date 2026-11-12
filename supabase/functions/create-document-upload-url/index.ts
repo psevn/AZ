@@ -128,8 +128,12 @@ Deno.serve(async (request: Request) => {
       DOCUMENT_LIMIT_PROFILE_MISSING: "Your account profile could not be found.",
       DOCUMENT_UPLOAD_INVALID_INPUT: "The document upload details are invalid.",
     };
-    const limitExceeded = code.startsWith("DOCUMENT_LIMIT_") &&
-      !code.includes("CONFIGURATION") && code !== "DOCUMENT_LIMIT_PROFILE_MISSING";
+    const limitExceeded = new Set([
+      "DOCUMENT_LIMIT_DOCUMENTS",
+      "DOCUMENT_LIMIT_PENDING_UPLOADS",
+      "DOCUMENT_LIMIT_TOTAL_PAGES",
+      "DOCUMENT_LIMIT_TOTAL_TEXT_CHARS",
+    ]).has(code);
     return json(limitExceeded ? 429 : code === "DOCUMENT_UPLOAD_INVALID_INPUT" ? 400 : 503, {
       error: messages[code] ?? "Could not reserve document storage.",
       code,
