@@ -276,5 +276,6 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Quiz storage or billing is not ready. No credits were charged." });
   }
 
+  // No correct indexes or explanations are sent to the browser.
   return json(200, completed.result_payload);
 });
