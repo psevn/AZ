@@ -250,15 +250,6 @@ Deno.serve(async (request: Request) => {
     return json(502, { error: "AI returned an invalid quiz. No quiz was saved; please try again." });
   }
 
-  const { data: saved, error: saveError } = await adminClient.rpc("create_generated_quiz", {
-    p_user_id: userId, p_document_id: documentId, p_questions: generated,
-  });
-  if (saveError || !Array.isArray(saved) || !saved[0]?.quiz_id || !Array.isArray(saved[0]?.questions)) {
-    await refund(adminClient, userId, requestKey, "quiz_persistence_failed");
-    console.error("generate-quiz save failed:", saveError?.code ?? "invalid-rpc-result");
-    return json(503, { error: "Quiz storage is not ready. No quiz was returned." });
-  }
-
   if (inputTokens <= 0 || outputTokens <= 0) {
     await refund(adminClient, userId, requestKey, "provider_usage_missing");
     return json(502, { error: "AI usage details were unavailable; the reservation was refunded." });
@@ -275,6 +266,15 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Could not record AI usage safely; the reservation was refunded." });
   }
 
+  const { data: saved, error: saveError } = await adminClient.rpc("create_generated_quiz", {
+    p_user_id: userId, p_document_id: documentId, p_questions: generated,
+  });
+  if (saveError || !Array.isArray(saved) || !saved[0]?.quiz_id || !Array.isArray(saved[0]?.questions)) {
+    await refund(adminClient, userId, requestKey, "quiz_persistence_failed");
+    console.error("generate-quiz save failed:", saveError?.code ?? "invalid-rpc-result");
+    return json(503, { error: "Quiz storage is not ready. No quiz was returned." });
+  }
+
   const { error: settleError } = await adminClient.rpc("settle_credits", {
     p_user_id: userId,
     p_feature: FEATURE,
@@ -286,8 +286,21 @@ Deno.serve(async (request: Request) => {
     p_result_ref: saved[0].quiz_id,
   });
   if (settleError) {
-    console.error("generate-quiz settlement failed:", settleError.code, responseId ?? "no-request-id");
-    return json(503, { error: "The quiz was saved but usage settlement is pending. Retry this request shortly." });
+    const { data: usageState } = await adminClient.from("ai_usage_log")
+      .select("status").eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey).maybeSingle();
+    if (usageState?.status === "succeeded") {
+      // The RPC may have committed even if its response was interrupted; replay is now safe.
+    } else {
+      const { error: cleanupError } = await adminClient.from("quizzes")
+        .delete().eq("id", saved[0].quiz_id).eq("user_id", userId);
+      if (cleanupError) {
+        console.error("generate-quiz cleanup after settlement failure failed:", cleanupError.code);
+      } else {
+        await refund(adminClient, userId, requestKey, "settlement_failed");
+      }
+      console.error("generate-quiz settlement failed:", settleError.code, responseId ?? "no-request-id");
+      return json(503, { error: "Usage settlement failed; the quiz was not made available. Retry with the same request key." });
+    }
   }
 
   return json(200, {
