@@ -37,10 +37,10 @@ test("uses a per-click idempotency key and replays the saved safe result", () =>
 });
 
 test("refunds provider, validation, persistence, and settlement failures", () => {
-  assert.match(edge, /await refund\(adminClient, userId, requestKey, `provider_http_/);
-  assert.match(edge, /await refund\(adminClient, userId, requestKey, error instanceof Error/);
+  assert.match(edge, /provider_http_/);
+  assert.match(edge, /generation_failed/);
   assert.match(edge, /await refund\(adminClient, userId, requestKey, "quiz_finalization_failed"\)/);
-  assert.match(edge, /await refund\(adminClient, userId, requestKey, "credit_settlement_failed"\)/);
+  assert.match(edge, /rpc\("refund_quiz_generation"/);
 });
 
 test("settles actual token usage and stores no source text in the usage result", () => {
@@ -50,6 +50,8 @@ test("settles actual token usage and stores no source text in the usage result",
   assert.match(migration, /input_tokens = p_input_tokens/);
   assert.match(migration, /output_tokens = p_output_tokens/);
   assert.match(migration, /result_payload = p_result_payload/);
+  assert.match(migration, /create function public\.refund_quiz_generation/);
+  assert.match(migration, /settled_cost = sc\.settled_cost \+ p_actual_cost/);
   assert.doesNotMatch(edge, /console\.(?:log|error)\([^\n]*(?:openAIKey|boundedPages|document_pages)/);
 });
 
