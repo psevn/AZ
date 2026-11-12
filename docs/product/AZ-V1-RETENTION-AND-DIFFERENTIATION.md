@@ -237,3 +237,35 @@ This is a desk review, not a full hands-on usability benchmark or controlled com
 5. Approve no ads in beta/V1 unless new measured evidence changes the decision.
 
 Until explicitly approved, this document is a review proposal only and must not be treated as authorization to expand V1, change database schema, merge stacked PRs, activate API keys, purchase services, deploy functions, or alter production.
+
+
+## 12. Founder direction — all four pillars belong in V1
+
+**Direction stated by PSEVN on 2026-11-12:** all four product promises should be represented in V1, even if each begins with a deliberately small, connected implementation. This supersedes any interpretation that one of the four pillars should be excluded from V1 entirely.
+
+The four V1 pillars are:
+
+1. **Academic organization:** AZ helps the student organize academic life, with course context and Planning as the connective structure.
+2. **Learning and mastery:** AZ helps the student understand course materials, practice, remember, and recover from mistakes.
+3. **AZI academic assistance:** AZI helps the student understand their current context and choose useful next steps, using transparent evidence and user-controlled actions.
+4. **One connected academic system:** Home, Planning, AZ Intelligence, Study Packs, Focus, and progress should feel like parts of one academic workflow rather than separate tools.
+
+### Minimum V1 expression of each pillar
+
+| Pillar | Required V1 presence | Explicitly not required for launch |
+|---|---|---|
+| Academic organization | Subjects/courses, essential academic dates or deadlines, usable Planning, and a basic weekly view | Full university information system, complex calendar integrations |
+| Learning and mastery | Reusable Study Pack, source-grounded explanations, practice attempts, mistake review, and a small due-review mechanism where supported by existing persistence | Advanced adaptive learning engine or claims of guaranteed mastery |
+| AZI academic assistance | Context-aware, on-demand guidance using available course, attempt, and planning evidence; explainable suggestions; user approval before schedule changes | Always-on agent, autonomous actions, voice calls, or unsupported psychological/ability inferences |
+| Connected academic system | A coherent path between Home → course/material → Study Pack → practice → mistakes/review → Planning/Focus → progress | Full knowledge graph, full AZ Projects collaboration, or every screen being deeply automated |
+
+### Delivery rule
+
+- All four pillars must be visible and useful in the V1 experience.
+- Each pillar may start with a thin vertical slice; do not build four separate large subsystems.
+- Prefer one end-to-end student journey that touches all four pillars over many disconnected feature screens.
+- Keep the existing safety, privacy, cost, evidence, Arabic/English, and source-provenance requirements.
+- Do not move a capability into V1 if doing so makes the core journey unreliable, unsafe, or impossible to test. If a specific advanced sub-capability must move to V1.1, preserve a useful V1 baseline for its pillar and document the reason.
+- This direction does not authorize merging existing PRs, changing production, activating paid APIs, or making schema changes without a separate implementation review.
+
+**Recommended V1 acceptance test:** a student can add a course, organize its materials and exam/deadline context, create and reuse a Study Pack, practice, review an error, receive an evidence-based AZI next-step suggestion, optionally place that step into Planning, complete it in Focus, and later see a truthful progress summary. The four pillars should be experienced as one continuous journey.
