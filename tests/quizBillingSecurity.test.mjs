@@ -71,3 +71,11 @@ test("extends the existing reservation and settlement RPCs rather than replacing
   assert.match(migration, /create function public\.settle_quiz_generation\(/);
   assert.match(edge, /rpc\("refund_credits"/); // refund stays on the established RPC
 });
+
+test("does not claim a refund when the refund RPC cannot be confirmed", () => {
+  assert.match(edge, /Promise<boolean>/);
+  assert.match(edge, /if \(!refunded\) return json\(503/);
+  assert.match(edge, /code: "REFUND_PENDING"/);
+  assert.match(edge, /const reportedInputTokens = Number\(payload\?\.usage\?\.input_tokens\)/);
+  assert.ok(edge.indexOf("inputTokens = reportedInputTokens") > edge.indexOf("Missing or invalid provider token usage."));
+});
