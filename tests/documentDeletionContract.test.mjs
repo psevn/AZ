@@ -85,6 +85,19 @@ test("upload creation persists token expiry conditionally before exposing the si
   );
 });
 
+test("expiry persistence transport failures only release reservations with no recorded token expiry", () => {
+  const failureBranch = uploadEndpoint.slice(
+    uploadEndpoint.indexOf("if (expiryError ||"),
+    uploadEndpoint.indexOf("return json(200, { documentId, path: signed.path, token: signed.token })"),
+  );
+  assert.match(failureBranch, /if \(expiryError\)/);
+  assert.match(failureBranch, /status: "failed"/);
+  assert.match(failureBranch, /\.eq\("status", "uploaded"\)/);
+  assert.match(failureBranch, /\.is\("upload_token_expires_at", null\)/);
+  assert.match(failureBranch, /if \(cleanupError\)/);
+  assert.match(failureBranch, /UPLOAD_EXPIRY_PERSIST_FAILED/);
+});
+
 test("processing and deletion serialize on the same document row lock", () => {
   assert.match(processingMigration, /where d\.id = p_document_id and d\.user_id = p_user_id[\s\S]*?for update/);
   assert.match(processingEndpoint, /rpc\("process_document_pages_atomic"/);
