@@ -45,6 +45,9 @@ if [[ "$count" -ne 34 ]]; then
 fi
 
 psql_file "$ROOT/supabase/tests/verify_clean_replay.sql"
+psql_file "$ROOT/supabase/proposals/create_generated_quiz_rpc.sql"
+psql_file "$ROOT/supabase/proposals/complete_generated_quiz_rpc.sql"
+psql_file "$ROOT/supabase/tests/verify_generated_quiz_finalize.sql"
 psql_file "$ROOT/supabase/tests/verify_atomic_document_processing.sql"
 psql_file "$ROOT/supabase/tests/verify_rls_isolation.sql"
 bash "$ROOT/supabase/tests/verify_quiz_credit_reservations.sh"
