@@ -2,6 +2,12 @@ import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { resolveCors } from "../_shared/cors.ts";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const MAX_BODY_BYTES = 400 * 1024;
+const MAX_PAGES_PER_BATCH = 20;
+const MAX_PAGE_CHARS = 18_000;
+const MAX_DOCUMENT_PAGES = 1_000;
+
 function readBearerToken(request: Request) {
   const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
