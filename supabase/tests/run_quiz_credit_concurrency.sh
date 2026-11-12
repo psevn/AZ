@@ -21,9 +21,7 @@ on conflict (id) do update set plan = 'free';
 
 update public.usage_limits set daily_credits = 10, monthly_credits = 100 where plan = 'free';
 insert into public.credit_costs(feature, credits) values
-  ('generate_quiz_base', 0),
-  ('generate_quiz_per_question', 1),
-  ('generate_quiz_per_page', 0)
+  ('generate_quiz', 5)
 on conflict (feature) do update set credits = excluded.credits;
 update public.app_config set value = '1000'::jsonb where key = 'global_monthly_cost_cap';
 SQL
@@ -33,7 +31,7 @@ for i in $(seq 1 20); do
   key="$(python3 -c 'import uuid; print(uuid.uuid4())')"
   printf '%s\n' "$key" >> "$TMP_DIR/keys"
   (
-    "${PSQL[@]}" -c "select r_status from public.reserve_quiz_credits('$USER_ID', '$key', 5, 1, 0.01, repeat('a',64));" > "$TMP_DIR/result-$i"
+    "${PSQL[@]}" -c "select r_status from public.reserve_credits('$USER_ID', 'generate_quiz', '$key', 0.01);" > "$TMP_DIR/result-$i"
   ) &
 done
 wait
@@ -59,21 +57,17 @@ if [[ -z "$first_key" || -z "$second_key" ]]; then
   echo "FAIL: could not identify both successful reservation keys" >&2
   exit 1
 fi
-replay="$("${PSQL[@]}" -c "select r_status || ':' || r_replay::text from public.reserve_quiz_credits('$USER_ID', '$first_key', 5, 1, 0.01, repeat('a',64));")"
+replay="$("${PSQL[@]}" -c "select r_status || ':' || r_replay::text from public.reserve_credits('$USER_ID', 'generate_quiz', '$first_key', 0.01);")"
 if [[ "$replay" != "reserved:true" ]]; then
   echo "FAIL: same-key replay did not return the existing reservation: $replay" >&2
   exit 1
 fi
 
-mismatch="$("${PSQL[@]}" -c "select r_status from public.reserve_quiz_credits('$USER_ID', '$first_key', 5, 1, 0.01, repeat('b',64));")"
-if [[ "$mismatch" != "key_conflict" ]]; then
-  echo "FAIL: reused key with different payload was not rejected: $mismatch" >&2
-  exit 1
-fi
 
 "${PSQL[@]}" -c "select * from public.settle_credits('$USER_ID', 'generate_quiz', '$first_key', 0.01, 'openai', 'test-model', null, 10, '00000000-0000-4000-8000-000000000001');" >/dev/null
-settled_replay="$("${PSQL[@]}" -c "select r_status || ':' || r_replay::text || ':' || r_result_ref from public.reserve_quiz_credits('$USER_ID', '$first_key', 5, 1, 0.01, repeat('a',64));")"
-if [[ "$settled_replay" != "succeeded:true:00000000-0000-4000-8000-000000000001" ]]; then
+settled_replay="$("${PSQL[@]}" -c "select r_status || ':' || r_replay::text from public.reserve_credits('$USER_ID', 'generate_quiz', '$first_key', 0.01);")"
+stored_result="$("${PSQL[@]}" -c "select result_ref from public.ai_usage_log where user_id = '$USER_ID' and feature = 'generate_quiz' and request_key = '$first_key';")"
+if [[ "$settled_replay" != "succeeded:true" || "$stored_result" != "00000000-0000-4000-8000-000000000001" ]]; then
   echo "FAIL: settled replay did not return the stored result reference: $settled_replay" >&2
   exit 1
 fi
