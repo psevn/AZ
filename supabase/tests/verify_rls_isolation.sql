@@ -4,6 +4,16 @@
 
 begin;
 
+insert into public.app_config (key, value)
+values (
+  'document_limits',
+  jsonb_build_object(
+    'free', jsonb_build_object('max_documents', 100, 'max_pages', 100, 'max_text_chars', 1000000, 'max_active_uploads', 10, 'stale_uploaded_minutes', 30),
+    'pro', jsonb_build_object('max_documents', 100, 'max_pages', 100, 'max_text_chars', 1000000, 'max_active_uploads', 10, 'stale_uploaded_minutes', 30)
+  )
+)
+on conflict (key) do update set value = excluded.value;
+
 insert into auth.users (id, email) values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'rls-a@example.invalid'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'rls-b@example.invalid'),
@@ -39,6 +49,18 @@ insert into public.quizzes (id, user_id, document_id, mode) values
   ('e1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'd1000000-0000-4000-8000-000000000001', 'standard'),
   ('e2000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'd2000000-0000-4000-8000-000000000001', 'standard');
 
+insert into public.document_pages (id, user_id, document_id, page_no, text) values
+  ('d3000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'd1000000-0000-4000-8000-000000000001', 1, 'A private extracted page'),
+  ('d4000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'd2000000-0000-4000-8000-000000000001', 1, 'B private extracted page');
+
+insert into public.summaries (id, user_id, document_id, content, source_pages) values
+  ('d5000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'd1000000-0000-4000-8000-000000000001', 'A private summary', array[1]),
+  ('d6000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'd2000000-0000-4000-8000-000000000001', 'B private summary', array[1]);
+
+insert into public.usage_counters (user_id, period_type, period_start, credits_used, credits_reserved) values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'day', current_date, 3, 0),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'day', current_date, 7, 0);
+
 insert into public.quiz_questions (id, user_id, quiz_id, prompt, choices) values
   ('f1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 1', '["correct","wrong"]'::jsonb),
   ('f1000000-0000-4000-8000-000000000002', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 2', '["correct","wrong"]'::jsonb),
@@ -46,6 +68,14 @@ insert into public.quiz_questions (id, user_id, quiz_id, prompt, choices) values
   ('f1000000-0000-4000-8000-000000000004', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 4', '["correct","wrong"]'::jsonb),
   ('f1000000-0000-4000-8000-000000000005', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 5', '["correct","wrong"]'::jsonb),
   ('f2000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'e2000000-0000-4000-8000-000000000001', 'B question', '["correct","wrong"]'::jsonb);
+
+insert into public.quiz_attempts (id, user_id, quiz_id) values
+  ('f3000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001'),
+  ('f4000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'e2000000-0000-4000-8000-000000000001');
+
+insert into public.attempt_answers (user_id, attempt_id, question_id, chosen_index, is_correct) values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'f3000000-0000-4000-8000-000000000001', 'f1000000-0000-4000-8000-000000000001', 0, true),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'f4000000-0000-4000-8000-000000000001', 'f2000000-0000-4000-8000-000000000001', 0, true);
 
 insert into private.question_keys (question_id, user_id, correct_index, explanation) values
   ('f1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 0, 'A explanation 1'),
@@ -79,6 +109,17 @@ begin
      or (select count(*) from public.projects) <> 1
      or (select count(*) from public.project_tasks) <> 2 then
     raise exception 'Student A can see another tenant or cannot see their own project rows';
+  end if;
+
+  if (select count(*) from public.documents) <> 1
+     or (select count(*) from public.document_pages) <> 1
+     or (select count(*) from public.summaries) <> 1
+     or (select count(*) from public.quizzes) <> 1
+     or (select count(*) from public.quiz_questions) <> 5
+     or (select count(*) from public.quiz_attempts) <> 1
+     or (select count(*) from public.attempt_answers) <> 1
+     or (select count(*) from public.usage_counters) <> 1 then
+    raise exception 'Student A can read another tenant''s private study data or cannot read their own';
   end if;
 
   if (select count(*) from public.planning_items where item_type = 'personal_task') <> 1
@@ -117,6 +158,10 @@ begin
      or has_table_privilege(current_user, 'public.quizzes', 'INSERT')
      or has_table_privilege(current_user, 'public.quiz_questions', 'INSERT')
      or has_table_privilege(current_user, 'public.quiz_attempts', 'INSERT')
+     or has_table_privilege(current_user, 'public.document_pages', 'INSERT')
+     or has_table_privilege(current_user, 'public.summaries', 'INSERT')
+     or has_table_privilege(current_user, 'public.attempt_answers', 'INSERT')
+     or has_table_privilege(current_user, 'public.usage_counters', 'INSERT')
      or has_table_privilege(current_user, 'private.question_keys', 'SELECT') then
     raise exception 'A server-managed table or private answer key has an unexpected client grant';
   end if;
@@ -246,6 +291,17 @@ begin
     raise exception 'Student B unexpectedly completed Student A Daily Challenge';
   exception when sqlstate 'P0002' then null;
   end;
+
+  if (select count(*) from public.documents) <> 1
+     or (select count(*) from public.document_pages) <> 1
+     or (select count(*) from public.summaries) <> 1
+     or (select count(*) from public.quizzes) <> 1
+     or (select count(*) from public.quiz_questions) <> 1
+     or (select count(*) from public.quiz_attempts) <> 1
+     or (select count(*) from public.attempt_answers) <> 1
+     or (select count(*) from public.usage_counters) <> 1 then
+    raise exception 'Student B can read another tenant''s private study data or cannot read their own';
+  end if;
 
   if (select count(*) from public.projects where id = 'a3000000-0000-4000-8000-000000000001') <> 0
      or (select count(*) from public.project_tasks where project_id = 'a3000000-0000-4000-8000-000000000001') <> 0 then

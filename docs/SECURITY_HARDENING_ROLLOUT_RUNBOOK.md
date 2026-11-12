@@ -105,3 +105,23 @@ These findings were observed in the source review of the current PR #80 head. Th
 3. **Current-head CI evidence:** the previously inspected PR #80 head had failed workflow conclusions, while the corresponding job logs could not be retrieved. Those checks remain unverified until rerun on the exact current head and inspectable job results are available.
 
 These are merge blockers for the quiz billing/security stack. Resolve them in a code PR, add regression tests for timeout/unknown-cost and non-refunded RPC outcomes, rerun the complete checks, and obtain the independent security review before considering activation.
+
+
+## Tenant-isolation and data-lifecycle review (2026-11-12)
+
+Source review of the current stacked branch found:
+
+- Core user-owned tables use owner predicates based on `auth.uid()`; the academic planning tables and document-page/summary read policies also scope rows by owner.
+- The document bucket is private. Earlier owner-folder Storage policies are explicitly dropped by the migration that locks client Storage access. The RLS isolation test confirms authenticated clients should have no direct Storage object visibility or write policy; signed access is mediated by trusted Edge Functions.
+- Document pages, summaries, quizzes, questions, and attempts use owner-aware foreign keys and/or owner RLS policies. The atomic document-processing RPC is executable only by `service_role`; the Edge Function derives the user ID from a verified Auth token before invoking it.
+- Existing `verify_rls_isolation.sql` exercised personal task/project isolation and locked Storage, but did not explicitly assert cross-user visibility for documents, extracted pages, summaries, quizzes, questions, attempts, and usage counters. PR #82 adds those explicit two-tenant assertions and fixtures. The SQL test has not yet been executed in a local PostgreSQL environment.
+
+### Data deletion is not implemented in the current web flow
+
+- The profile schema contains `deletion_requested_at`, but the reviewed application profile screen exposes sign-out and preference controls, not account deletion.
+- The current Edge Function inventory contains upload URL creation, signed URL creation, document page processing, and quiz generation; no account-deletion or document-deletion function was found.
+- Deleting a `documents` row cascades to relational children such as `document_pages`, `summaries`, and `quizzes`, but PostgreSQL foreign-key cascades do not delete the corresponding object from `storage.objects`. The checked-in Storage flows contain no object-removal operation.
+- Deleting an Auth user cascades through the user-owned relational tables, but does not by itself remove files from Supabase Storage. Therefore a future account-deletion workflow must explicitly enumerate and remove that user's private Storage objects, handle partial failure/retries, and only then complete Auth-user deletion (or retain a durable, retryable deletion state).
+- This is a V1 data-lifecycle requirement and a privacy/retention blocker, not a reason to add a destructive endpoint without a separately reviewed design. No deletion behavior was implemented in this PR.
+
+Before beta, design and test an idempotent owner-authenticated deletion workflow for both individual documents and whole accounts. Include retry-safe Storage cleanup, relational cascade verification, signed-URL expiry considerations, and a clear user-facing confirmation/result. Do not expose service-role credentials or allow a client-supplied user ID to select whose files are removed.
