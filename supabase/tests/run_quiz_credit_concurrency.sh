@@ -80,4 +80,4 @@ if [[ "$reserved_after_refund" != "0" || "$used_after_settle" != "5" ]]; then
   exit 1
 fi
 
-echo "PASS: 20 concurrent calls admitted exactly 2 reservations; replay, payload binding, settlement, and refund checks passed."
+echo "PASS: 20 concurrent calls admitted exactly 2 reservations; replay, settlement, and refund checks passed."
