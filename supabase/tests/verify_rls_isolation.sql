@@ -117,8 +117,9 @@ begin
      or (select count(*) from public.quizzes) <> 1
      or (select count(*) from public.quiz_questions) <> 5
      or (select count(*) from public.quiz_attempts) <> 1
+     or (select count(*) from public.attempt_answers) <> 1
      or (select count(*) from public.usage_counters) <> 1 then
-    raise exception 'Student A can read another tenant\'s private study data or cannot read their own';
+    raise exception 'Student A can read another tenant''s private study data or cannot read their own';
   end if;
 
   if (select count(*) from public.planning_items where item_type = 'personal_task') <> 1
@@ -294,7 +295,7 @@ begin
      or (select count(*) from public.quiz_questions) <> 1
      or (select count(*) from public.quiz_attempts) <> 1
      or (select count(*) from public.usage_counters) <> 1 then
-    raise exception 'Student B can read another tenant\'s private study data or cannot read their own';
+    raise exception 'Student B can read another tenant''s private study data or cannot read their own';
   end if;
 
   if (select count(*) from public.projects where id = 'a3000000-0000-4000-8000-000000000001') <> 0
