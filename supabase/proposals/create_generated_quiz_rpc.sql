@@ -132,10 +132,10 @@ begin
     end if;
 
     insert into public.quiz_questions(
-      user_id, quiz_id, prompt, choices, question_type, source_page, topic, difficulty
+      user_id, quiz_id, prompt, choices, question_type, source_page, topic, difficulty, position_no
     )
     values (
-      p_user_id, v_quiz_id, v_prompt, v_choices, 'mcq', v_source_page, v_topic, v_difficulty
+      p_user_id, v_quiz_id, v_prompt, v_choices, 'mcq', v_source_page, v_topic, v_difficulty, v_position
     )
     returning id into v_question_id;
 
