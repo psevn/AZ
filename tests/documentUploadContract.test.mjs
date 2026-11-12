@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const panel = readFileSync(new URL("../src/components/DocumentUpload.tsx", import.meta.url), "utf8");
 const endpoint = readFileSync(new URL("../supabase/functions/create-document-upload-url/index.ts", import.meta.url), "utf8");
+const corsHelper = readFileSync(new URL("../supabase/functions/_shared/cors.ts", import.meta.url), "utf8");
 
 test("Academic workspace renders the authenticated PDF upload panel", () => {
   assert.match(app, /<DocumentUpload lang=\{lang\} onUploaded=\{\(\) => \{/);
@@ -51,6 +52,6 @@ test("upload endpoint scopes failure updates to the authenticated owner", () => 
 test("upload URL endpoint rejects malformed JSON and keeps privileged credentials server-side", () => {
   assert.match(endpoint, /Array\.isArray\(parsed\)/);
   assert.match(endpoint, /SUPABASE_SERVICE_ROLE_KEY/);
-  assert.match(endpoint, /Cache-Control": "no-store"/);
+  assert.match(corsHelper, /"Cache-Control": "no-store"/);
   assert.doesNotMatch(panel, /SUPABASE_SERVICE_ROLE_KEY|service_role/i);
 });
