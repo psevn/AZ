@@ -1348,3 +1348,43 @@ button.primary-button:disabled,
   .document-reader-pagination label { order:-1; width:100%; justify-content:center; }
   .document-reader-source iframe { min-height:300px; }
 }
+
+
+/* Secure document deletion: inline confirmation and retry states. */
+.document-library-status.is-deleting { color:var(--muted); }
+.document-library-delete-confirm {
+  display:grid;
+  grid-column:1 / -1;
+  gap:10px;
+  width:100%;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--surface-2);
+}
+.document-library-delete-confirm p,
+.document-library-delete-message {
+  margin:0;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.7;
+}
+.document-library-delete-confirm > div {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.document-library-delete-confirm .az-btn,
+.document-library-delete { min-height:36px; font-size:11px; }
+.document-library-delete-message { margin-top:10px; }
+.az-btn--danger {
+  border:1px solid color-mix(in srgb,#e56b75 45%,var(--line));
+  color:#f0a0a5;
+  background:color-mix(in srgb,#e56b75 10%,var(--panel-solid));
+}
+.az-btn--danger:hover { background:color-mix(in srgb,#e56b75 18%,var(--panel-solid)); }
+@media(max-width:620px) {
+  .document-library-delete-confirm { margin-inline-start:0; }
+  .document-library-delete-confirm > div { width:100%; }
+  .document-library-delete-confirm .az-btn { flex:1 1 auto; }
+}
