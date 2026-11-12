@@ -147,7 +147,8 @@ begin
     into v_pages, v_text_chars
     from public.document_pages dp
    where dp.user_id = new.user_id
-     and dp.id <> new.id;
+     and dp.id <> new.id
+     and not (dp.document_id = new.document_id and dp.page_no = new.page_no);
 
   if v_pages + 1 > v_max_pages then
     raise exception 'DOCUMENT_PAGE_LIMIT_EXCEEDED' using errcode = 'P0001';
