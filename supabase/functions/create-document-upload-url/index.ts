@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,6 +69,13 @@ Deno.serve(async (request: Request) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const rateLimit = await checkUserRateLimit(adminClient, userId, "create_document_upload_url");
+  if (!rateLimit.allowed) return json(rateLimit.status, {
+    error: rateLimit.message,
+    code: rateLimit.code,
+    ...(rateLimit.retryAfterSeconds ? { retryAfterSeconds: rateLimit.retryAfterSeconds } : {}),
+  });
+
   const storagePath = `${userId}/${documentId}.pdf`;
 
   if (action === "mark_failed") {
