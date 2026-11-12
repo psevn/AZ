@@ -39,12 +39,13 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   count=$((count + 1))
 done
 
-if [[ "$count" -ne 32 ]]; then
-  echo "Expected 32 migrations, replayed $count" >&2
+if [[ "$count" -ne 33 ]]; then
+  echo "Expected 33 migrations, replayed $count" >&2
   exit 1
 fi
 
 psql_file "$ROOT/supabase/tests/verify_clean_replay.sql"
 psql_file "$ROOT/supabase/tests/verify_atomic_document_processing.sql"
 psql_file "$ROOT/supabase/tests/verify_rls_isolation.sql"
-echo "PASS: all 32 migrations replayed and representative authenticated RLS checks passed on a disposable PostgreSQL database."
+bash "$ROOT/supabase/tests/verify_quiz_credit_reservations.sh"
+echo "PASS: all 33 migrations replayed and representative security/credit checks passed on a disposable PostgreSQL database."
