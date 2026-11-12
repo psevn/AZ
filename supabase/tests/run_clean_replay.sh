@@ -39,8 +39,8 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   count=$((count + 1))
 done
 
-if [[ "$count" -ne 35 ]]; then
-  echo "Expected 35 migrations, replayed $count" >&2
+if [[ "$count" -ne 36 ]]; then
+  echo "Expected 36 migrations, replayed $count" >&2
   exit 1
 fi
 
@@ -53,4 +53,5 @@ psql_file "$ROOT/supabase/tests/verify_rls_isolation.sql"
 bash "$ROOT/supabase/tests/verify_quiz_credit_reservations.sh"
 bash "$ROOT/supabase/tests/verify_document_upload_limits.sh"
 bash "$ROOT/supabase/tests/verify_edge_rate_limits.sh"
-echo "PASS: all 35 migrations replayed and representative security, credit, document quota, and rate-limit checks passed on a disposable PostgreSQL database."
+bash "$ROOT/supabase/tests/verify_document_deletion.sh"
+echo "PASS: all 36 migrations replayed and representative security, credit, document quota, rate-limit, and deletion checks passed on a disposable PostgreSQL database."
