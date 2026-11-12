@@ -94,3 +94,14 @@ When a separately approved staging rollout eventually occurs, verify each item w
 ## Change log
 
 - 2026-11-12: Initial runbook added alongside the review-only security-hardening stack. No secrets, database settings, migrations, or deployments were changed.
+
+
+## Known review blockers (2026-11-12)
+
+These findings were observed in the source review of the current PR #80 head. They are recorded here so a future code change and independent review can close them explicitly; this documentation does not claim they are fixed.
+
+1. **Uncertain provider cost after transport failure:** the `generate-quiz` catch path can call the refund RPC with zero token usage and zero actual cost when the request may have reached the provider but no usable response/usage payload was received. Do not treat an unknown provider cost as a confirmed zero. The implementation needs an explicit unknown-cost/reconciliation state or another approved conservative accounting strategy.
+2. **Refund confirmation:** the Edge Function `refund()` helper currently treats an RPC response without a transport/database error as success without validating the returned `r_status`. It must only report a confirmed refund when the returned state is `refunded` (including a verified idempotent replay of that state); other states must remain unconfirmed and surface the pending/error path.
+3. **Current-head CI evidence:** the previously inspected PR #80 head had failed workflow conclusions, while the corresponding job logs could not be retrieved. Those checks remain unverified until rerun on the exact current head and inspectable job results are available.
+
+These are merge blockers for the quiz billing/security stack. Resolve them in a code PR, add regression tests for timeout/unknown-cost and non-refunded RPC outcomes, rerun the complete checks, and obtain the independent security review before considering activation.
