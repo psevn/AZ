@@ -34,34 +34,34 @@ async function refund(
   reason: string,
   usage?: { model: string; inputTokens: number; outputTokens: number; actualCost: number },
 ): Promise<boolean> {
-  try {
-    const { error } = usage
-      ? await adminClient.rpc("refund_quiz_generation", {
-        p_user_id: userId,
-        p_feature: FEATURE,
-        p_request_key: requestKey,
-        p_error: reason,
-        p_provider: "openai",
-        p_model: usage.model,
-        p_input_tokens: usage.inputTokens,
-        p_output_tokens: usage.outputTokens,
-        p_actual_cost: usage.actualCost,
-      })
-      : await adminClient.rpc("refund_credits", {
-        p_user_id: userId,
-        p_feature: FEATURE,
-        p_request_key: requestKey,
-        p_error: reason,
-      });
-    if (error) {
+  // Both refund RPCs are idempotent; retry once for a lost response after a committed refund.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const { error } = usage
+        ? await adminClient.rpc("refund_quiz_generation", {
+          p_user_id: userId,
+          p_feature: FEATURE,
+          p_request_key: requestKey,
+          p_error: reason,
+          p_provider: "openai",
+          p_model: usage.model,
+          p_input_tokens: usage.inputTokens,
+          p_output_tokens: usage.outputTokens,
+          p_actual_cost: usage.actualCost,
+        })
+        : await adminClient.rpc("refund_credits", {
+          p_user_id: userId,
+          p_feature: FEATURE,
+          p_request_key: requestKey,
+          p_error: reason,
+        });
+      if (!error) return true;
       console.error("generate-quiz reservation refund failed:", error.code);
-      return false;
+    } catch {
+      console.error("generate-quiz reservation refund request failed.");
     }
-    return true;
-  } catch {
-    console.error("generate-quiz reservation refund request failed.");
-    return false;
   }
+  return false;
 }
 
 Deno.serve(async (request: Request) => {
