@@ -27,6 +27,7 @@ test("all four protected Edge Functions use the shared DB-backed rate limiter", 
 test("rate-limit responses are explicit 429s with stable codes and retry information", () => {
   assert.match(source.helper, /status: 429/);
   assert.match(source.helper, /RATE_LIMIT_EXCEEDED/);
+  assert.match(source.helper, /catch[\s\S]*RATE_LIMIT_SERVICE_UNAVAILABLE/);
   assert.match(source.helper, /retryAfterSeconds/);
   for (const key of ["upload", "signed", "processing", "quiz"]) {
     assert.match(source[key], /rateLimit\.status/);
