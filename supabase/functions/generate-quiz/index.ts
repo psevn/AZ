@@ -325,29 +325,44 @@ Deno.serve(async (request: Request) => {
   }
 
   const actualCost = quizCostUsd(inputTokens, outputTokens, modelPricing);
-  const { data: finalized, error: finalizeError } = await adminClient.rpc("complete_generated_quiz", {
-    p_user_id: userId,
-    p_document_id: documentId,
-    p_document_title: document.title,
-    p_request_key: requestKey,
-    p_questions: generated,
-    p_actual_cost: actualCost,
-    p_provider: "openai",
-    p_model: model,
-    p_prompt_version: PROMPT_VERSION,
-    p_latency_ms: Date.now() - startedAt,
-    p_input_tokens: inputTokens,
-    p_output_tokens: outputTokens,
-  });
-  const completed = Array.isArray(finalized) ? finalized[0] : finalized;
+  let finalized: unknown = null;
+  let finalizeError: { code?: string } | null = null;
+  try {
+    const result = await adminClient.rpc("complete_generated_quiz", {
+      p_user_id: userId,
+      p_document_id: documentId,
+      p_document_title: document.title,
+      p_request_key: requestKey,
+      p_questions: generated,
+      p_actual_cost: actualCost,
+      p_provider: "openai",
+      p_model: model,
+      p_prompt_version: PROMPT_VERSION,
+      p_latency_ms: Date.now() - startedAt,
+      p_input_tokens: inputTokens,
+      p_output_tokens: outputTokens,
+    });
+    finalized = result.data;
+    finalizeError = result.error;
+  } catch {
+    finalizeError = { code: "rpc_transport_error" };
+  }
+  const completedRows = Array.isArray(finalized) ? finalized : [finalized];
+  const completed = completedRows[0] as Record<string, unknown> | null;
 
   if (finalizeError || !completed?.result_payload) {
     // The RPC is transactional; this lookup handles a response lost after a committed finalization.
-    const { data: reservationState } = await adminClient.from("ai_usage_log")
-      .select("status,result_payload").eq("user_id", userId).eq("feature", FEATURE)
-      .eq("request_key", requestKey).maybeSingle();
+    let reservationState: { status?: string; result_payload?: unknown } | null = null;
+    try {
+      const { data } = await adminClient.from("ai_usage_log")
+        .select("status,result_payload").eq("user_id", userId).eq("feature", FEATURE)
+        .eq("request_key", requestKey).maybeSingle();
+      reservationState = data;
+    } catch {
+      console.error("generate-quiz finalization state lookup failed.");
+    }
     if (reservationState?.status === "succeeded" && reservationState.result_payload) {
-      return json(200, reservationState.result_payload);
+      return json(200, reservationState.result_payload as Record<string, unknown>);
     }
     const refunded = await refund(adminClient, userId, requestKey, "quiz_finalization_failed", {
       model,
