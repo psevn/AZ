@@ -11,6 +11,10 @@ const endpointReadme = readFileSync(
   new URL("../supabase/functions/create-document-signed-url/README.md", import.meta.url),
   "utf8",
 );
+const corsHelper = readFileSync(
+  new URL("../supabase/functions/_shared/cors.ts", import.meta.url),
+  "utf8",
+);
 const platformVerification = readFileSync(
   new URL("../docs/testing/SUPABASE-PLATFORM-VERIFICATION.md", import.meta.url),
   "utf8",
@@ -62,7 +66,7 @@ test("the endpoint never accepts a client-supplied path or bucket and confines p
 
 test("privileged Storage signing is server-side and the link expires after five minutes", () => {
   assert.match(endpoint, /Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/);
-  assert.match(endpoint, /Cache-Control": "no-store"/);
+  assert.match(corsHelper, /"Cache-Control": "no-store"/);
   assert.match(endpoint, /createSignedUrl\(document\.storage_path, 300\)/);
   assert.match(endpoint, /expiresIn: 300/);
 });
