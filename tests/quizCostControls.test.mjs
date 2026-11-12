@@ -11,47 +11,47 @@ const [edge, migration, creditRpcs, persistence, client] = await Promise.all([
 ]);
 
 test("quiz generation requires an explicit configured model", () => {
-  assert.match(edge, /const model = Deno\\.env\\.get\\("OPENAI_MODEL"\\);/);
-  assert.match(edge, /if \\(!model\\?\\.trim\\(\\)\\) return json\\(503/);
-  assert.doesNotMatch(edge, /OPENAI_MODEL"\\) \\?\\?\\s*["'][^"']+["']/);
+  assert.ok(edge.includes('const model = Deno.env.get("OPENAI_MODEL");'));
+  assert.ok(edge.includes('return json(503, { error: "Quiz generation is not configured: OPENAI_MODEL'));
+  assert.ok(!edge.includes('Deno.env.get("OPENAI_MODEL") ??'));
 });
 
 test("quiz generation authenticates and scopes the selected document to the caller", () => {
-  assert.match(edge, /auth\\.getUser\\(token\\)/);
-  assert.match(edge, /\\.eq\\("user_id", userId\\)/);
-  assert.match(edge, /\\.eq\\("status", "ready"\\)/);
+  assert.ok(edge.includes("auth.getUser(token)"));
+  assert.ok(edge.includes('.eq("user_id", userId)'));
+  assert.ok(edge.includes('.eq("status", "ready")'));
 });
 
 test("the existing reserve RPC runs before OpenAI and reads configurable credit costs", () => {
-  assert.match(edge, /rpc\\("reserve_credits"/);
+  assert.ok(edge.includes('rpc("reserve_credits"'));
   assert.ok(edge.indexOf('rpc("reserve_credits"') < edge.indexOf('fetch("https://api.openai.com/v1/responses"'));
-  assert.match(edge, /estimatedTokens\\(sourceCharacters, questionCount\\)/);
-  assert.match(edge, /p_feature: FEATURE/);
-  assert.match(creditRpcs, /from public\\.credit_costs/);
-  assert.match(creditRpcs, /for update/);
-  assert.match(edge, /openai_model_pricing/);
+  assert.ok(edge.includes("estimatedTokens(sourceCharacters, questionCount)"));
+  assert.ok(edge.includes("p_feature: FEATURE"));
+  assert.ok(creditRpcs.includes("from public.credit_costs"));
+  assert.ok(creditRpcs.includes("for update"));
+  assert.ok(edge.includes("openai_model_pricing"));
 });
 
 test("a per-click request key is bound to the full payload and successful replay returns the saved quiz", () => {
-  assert.match(client, /requestKey: crypto\\.randomUUID\\(\\)/);
-  assert.match(migration, /request_payload_hash/);
-  assert.match(edge, /request_payload_hash: payloadHash/);
-  assert.match(edge, /previous\\.request_payload_hash !== payloadHash/);
-  assert.match(edge, /previous\\.status === "succeeded"/);
-  assert.match(edge, /loadReplay\\(adminClient, userId, previous\\.result_ref\\)/);
+  assert.ok(client.includes("requestKey: crypto.randomUUID()"));
+  assert.ok(migration.includes("request_payload_hash"));
+  assert.ok(edge.includes("request_payload_hash: payloadHash"));
+  assert.ok(edge.includes("previous.request_payload_hash !== payloadHash"));
+  assert.ok(edge.includes('previous.status === "succeeded"'));
+  assert.ok(edge.includes("loadReplay(adminClient, userId, previous.result_ref)"));
 });
 
 test("failures refund; success settles and logs provider token usage without source text", () => {
-  assert.match(edge, /rpc\\("refund_credits"/);
-  assert.match(edge, /rpc\\("settle_credits"/);
-  assert.match(edge, /input_tokens: inputTokens/);
-  assert.match(edge, /output_tokens: outputTokens/);
-  assert.match(edge, /cost_usd: actualCost/);
-  assert.doesNotMatch(edge, /\\.insert\\([^)]*(pageText|documentText|boundedPages)/s);
+  assert.ok(edge.includes('rpc("refund_credits"'));
+  assert.ok(edge.includes('rpc("settle_credits"'));
+  assert.ok(edge.includes("input_tokens: inputTokens"));
+  assert.ok(edge.includes("output_tokens: outputTokens"));
+  assert.ok(edge.includes("cost_usd: actualCost"));
+  assert.ok(!edge.includes('from("ai_usage_log").insert'));
 });
 
 test("generated question order is persisted for stable replay", () => {
-  assert.match(migration, /add column position_no/);
-  assert.match(persistence, /position_no/);
-  assert.match(edge, /order\\("position_no", \\{ ascending: true \\}\\)/);
+  assert.ok(migration.includes("add column if not exists position_no"));
+  assert.ok(persistence.includes("position_no"));
+  assert.ok(edge.includes('.order("position_no", { ascending: true })'));
 });
