@@ -123,3 +123,10 @@ test("rejects unexpected question fields and text beyond database-safe limits", 
     /no explanation/,
   );
 });
+
+test("allows the output token budget to scale with requested quiz size", () => {
+  const small = makeOpenAIRequest({ model: "test-model", language: "en", questionCount: 5, topic: "", pages, maxOutputTokens: 3000 });
+  const large = makeOpenAIRequest({ model: "test-model", language: "en", questionCount: 20, topic: "", pages, maxOutputTokens: 6000 });
+  assert.equal(small.max_output_tokens, 3000);
+  assert.equal(large.max_output_tokens, 6000);
+});
