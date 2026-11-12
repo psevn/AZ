@@ -49,7 +49,9 @@ test("settles actual token usage and stores no source text in the usage result",
   assert.match(edge, /p_actual_cost: actualCost/);
   assert.match(migration, /input_tokens = p_input_tokens/);
   assert.match(migration, /output_tokens = p_output_tokens/);
-  assert.match(migration, /result_payload = p_result_payload/);\n  assert.match(migration, /input_tokens = p_input_tokens/);\n  assert.match(migration, /create function public\\.refund_quiz_generation/);\n  assert.match(migration, /settled_cost = sc\\.settled_cost \\+ p_actual_cost/);
+  assert.match(migration, /result_payload = p_result_payload/);
+  assert.match(migration, /create function public\.refund_quiz_generation/);
+  assert.match(migration, /settled_cost = sc\.settled_cost \+ p_actual_cost/);
   assert.doesNotMatch(edge, /console\.(?:log|error)\([^\n]*(?:openAIKey|boundedPages|document_pages)/);
 });
 
