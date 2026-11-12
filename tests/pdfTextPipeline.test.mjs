@@ -87,3 +87,17 @@ test("recovery downloads the private source PDF and uses the processing attempt 
   assert.match(recovery, /action: "save_pages"/);
   assert.match(recovery, /action: "complete"/);
 });
+
+test("page batches never exceed the processing endpoint's 20-page contract", () => {
+  const endpoint = readFileSync(new URL("../supabase/functions/process-document-pages/index.ts", import.meta.url), "utf8");
+  const pages = Array.from({ length: 45 }, (_, index) => ({
+    pageNo: index + 1,
+    text: "Page " + (index + 1),
+  }));
+  const batches = makePageBatches("doc-1", pages);
+
+  assert.match(endpoint, /MAX_PAGES_PER_BATCH = 20/);
+  assert.deepEqual(batches.map((batch) => batch.length), [20, 20, 5]);
+  assert.ok(batches.every((batch) => batch.length <= 20));
+  assert.deepEqual(batches.flat().map((page) => page.pageNo), pages.map((page) => page.pageNo));
+});
