@@ -379,5 +379,5 @@ Deno.serve(async (request: Request) => {
   }
 
   // No correct indexes or explanations are sent to the browser.
-  return json(200, completed.result_payload);
+  return json(200, completed.result_payload as Record<string, unknown>);
 });
