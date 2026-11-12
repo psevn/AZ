@@ -187,7 +187,7 @@ Deno.serve(async (request: Request) => {
   }
 
   const inputCharacters = boundedPages.reduce((sum, page) => sum + page.text.length, 0) + topic.length + 2500;
-  // Reserve against a conservative character-based input bound and the full output-token ceiling.
+  // Reserve against a conservative character-based input bound and a question-count-scaled output-token ceiling.
   const estimatedInputTokens = inputCharacters * 4;
   const outputTokenBudget = Math.min(MAX_OUTPUT_TOKENS, questionCount * 600);
   const estimatedCost = quizCostUsd(estimatedInputTokens, outputTokenBudget, modelPricing);
