@@ -39,7 +39,7 @@ test("uses a per-click idempotency key and replays the saved safe result", () =>
 test("refunds provider, validation, persistence, and settlement failures", () => {
   assert.match(edge, /await refund\(adminClient, userId, requestKey, `provider_http_/);
   assert.match(edge, /await refund\(adminClient, userId, requestKey, error instanceof Error/);
-  assert.match(edge, /await refund\(adminClient, userId, requestKey, "quiz_persistence_failed"\)/);
+  assert.match(edge, /await refund\(adminClient, userId, requestKey, "quiz_finalization_failed"\)/);
   assert.match(edge, /await refund\(adminClient, userId, requestKey, "credit_settlement_failed"\)/);
 });
 
