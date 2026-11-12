@@ -5,11 +5,13 @@ on:
     paths:
       - "supabase/functions/_shared/quizGeneration.*"
       - "supabase/functions/_shared/rateLimit.ts"
+      - "supabase/functions/_shared/cors.ts"
       - "supabase/migrations/20261112100000_edge_function_rate_limits.sql"
       - "supabase/functions/generate-quiz/**"
       - "tests/quizGeneration.test.mjs"
       - "tests/quizBillingSecurity.test.mjs"
       - "tests/edgeRateLimitsContract.test.mjs"
+      - "tests/edgeCorsAllowlist.test.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/quiz-generation-tests.yml"
@@ -46,3 +48,5 @@ jobs:
         run: npm run test:quiz-billing
       - name: Test Edge Function rate limit contracts
         run: npm run test:edge-rate-limits
+      - name: Test fail-closed CORS allowlist
+        run: npm run test:edge-cors
