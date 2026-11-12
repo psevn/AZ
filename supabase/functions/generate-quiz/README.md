@@ -53,11 +53,9 @@ The pure contract tests do not call OpenAI, Supabase, or the network. The Edge F
 
 Before enabling the function, configure the following rows; the function intentionally has no embedded prices or credit amounts:
 
-- `credit_costs.generate_quiz_base`: base credits per generated quiz.
-- `credit_costs.generate_quiz_per_question`: additional credits per requested question.
-- `credit_costs.generate_quiz_per_page`: additional credits per source page included.
+- `credit_costs.generate_quiz`: credits charged for this feature, using the existing `reserve_credits` RPC. This value is owner-configurable in the database.
 - `app_config.openai_model_pricing`: JSON object keyed by the exact configured model name. Each model entry must contain numeric `input_per_million_usd` and `output_per_million_usd` values.
 
-The function reserves credits and the estimated global spend before calling OpenAI, then settles using provider-reported token counts and actual configured model rates. Failures refund the reservation. The client supplies a UUID request key for each click. A completed replay returns the stored quiz; a concurrent replay receives HTTP 409 and must retry with the same request key. A new user click must use a new key.
+The function reserves credits through the existing `reserve_credits` RPC and reserves estimated global spend before calling OpenAI. The estimated USD cost scales with the bounded source text and requested question count. On success it settles through the existing `settle_credits` RPC using provider-reported token counts and configured model rates; failures call the existing `refund_credits` RPC. Failures refund the reservation. The client supplies a UUID request key for each click. A completed replay returns the stored quiz; a concurrent replay receives HTTP 409 and must retry with the same request key. A new user click must use a new key.
 
 The new reservation migration is source code only. It must be reviewed and replayed on a disposable local database before any deployment consideration. No migration or Edge Function is applied by this PR.
