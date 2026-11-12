@@ -180,7 +180,8 @@ Deno.serve(async (request: Request) => {
   const inputCharacters = boundedPages.reduce((sum, page) => sum + page.text.length, 0) + topic.length + 2500;
   // Reserve against a conservative character-based input bound and the full output-token ceiling.
   const estimatedInputTokens = inputCharacters * 4;
-  const estimatedCost = quizCostUsd(estimatedInputTokens, MAX_OUTPUT_TOKENS, modelPricing);
+  const outputTokenBudget = Math.min(MAX_OUTPUT_TOKENS, questionCount * 600);
+  const estimatedCost = quizCostUsd(estimatedInputTokens, outputTokenBudget, modelPricing);
   const creditMultiplier = questionCount / 8 + boundedPages.length / 40;
 
   const { data: reservationRows, error: reservationError } = await adminClient.rpc("reserve_credits", {
@@ -251,6 +252,7 @@ Deno.serve(async (request: Request) => {
         questionCount,
         topic,
         pages: boundedPages,
+        maxOutputTokens: outputTokenBudget,
       })),
       signal: AbortSignal.timeout(45000),
     });
