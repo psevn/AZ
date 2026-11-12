@@ -185,7 +185,7 @@ Deno.serve(async (request: Request) => {
   }
 
   const payloadHash = await hashPayload({
-    userId, documentId, language, questionCount, topic, pageNumbers: boundedPages.map((page) => page.page_no),
+    userId, documentId, language, questionCount, topic, pages: boundedPages,
   });
   const { data: reservationRows, error: reservationError } = await adminClient.rpc("reserve_credits", {
     p_user_id: userId,
