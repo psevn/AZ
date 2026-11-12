@@ -22,9 +22,9 @@ test("quiz generation authenticates and scopes the selected document to the call
 });
 
 test("reservation precedes the OpenAI request and uses configurable credit and model pricing", () => {
-  assert.match(edge, /rpc\\("reserve_credits"/);
-  assert.ok(edge.indexOf('rpc("reserve_quiz_credits"') < edge.indexOf('fetch("https://api.openai.com/v1/responses"'));
-  assert.match(edge, /estimatedTokens\\(sourceCharacters: number, questionCount: number\\)/);
+  assert.match(edge, /rpc\("reserve_credits"/);
+  assert.ok(edge.indexOf('rpc("reserve_credits"') < edge.indexOf('fetch("https://api.openai.com/v1/responses"'));
+  assert.match(edge, /estimatedTokens\(sourceCharacters, questionCount\)/);
   assert.match(edge, /credit_costs|p_feature: FEATURE/);
   assert.match(edge, /openai_model_pricing/);
 });
@@ -33,7 +33,7 @@ test("reservation uses a unique request key bound to the exact quiz payload", ()
   assert.match(client, /requestKey: crypto\.randomUUID\(\)/);
   assert.match(edge, /request_payload_hash|p_payload_hash/);
   assert.match(migration, /on conflict \(user_id, feature, request_key\) do nothing/);
-  assert.match(migration, /request_key_payload_mismatch/);
+  assert.match(edge, /previous.request_payload_hash !== payloadHash/);
   assert.match(edge, /r_status === "succeeded"/);
   assert.match(edge, /loadReplay\(adminClient, userId, reservation\.r_result_ref\)/);
 });
