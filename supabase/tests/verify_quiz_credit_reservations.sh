@@ -57,7 +57,7 @@ fi
 psql_run "select r_status from public.reserve_credits('$USER_ID','$FEATURE','replay-key',0.001,1);" | grep -qx 'reserved'
 psql_run "select r_status from public.settle_quiz_generation(
   '$USER_ID','$FEATURE','replay-key',0.001,'openai','test-model','quiz-v1',12,
-  'test-quiz',10,20,'{"quizId":"test-quiz","questions":[]}'::jsonb
+  'test-quiz',10,20,jsonb_build_object('quizId','test-quiz','questions','[]'::jsonb)
 );" | grep -qx 'succeeded'
 REPLAY="$(psql_run "select r_status || '|' || r_replay from public.reserve_credits('$USER_ID','$FEATURE','replay-key',0.001,1);")"
 PAYLOAD="$(psql_run "select result_payload->>'quizId' from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
