@@ -41,6 +41,6 @@ Document limits are enforced in PostgreSQL, not trusted to browser checks. The o
 - `max_pages_per_document`
 - `stale_uploaded_minutes`
 
-The upload function calls the service-role-only `create_document_upload_record` RPC. In one transaction it locks the user's profile, expires stale `uploaded` rows, checks document and pending-upload counts, checks existing page/text usage, and inserts the document row. It returns a stable `DOCUMENT_LIMIT_*` error code when a configured limit is reached. Stale Storage objects are removed by the Edge Function after the database transaction returns their server-owned paths.
+Set `stale_uploaded_minutes` to **more than 120 minutes**, because Storage upload tokens remain valid for two hours. The upload function calls the service-role-only `create_document_upload_record` RPC. In one transaction it locks the user's profile, expires stale `uploaded` rows, checks document and pending-upload counts, checks existing page/text usage, and inserts the document row. It returns a stable `DOCUMENT_LIMIT_*` error code when a configured limit is reached. Stale Storage objects are removed by the Edge Function after the database transaction returns their server-owned paths.
 
 A database trigger on `document_pages` serializes writes by user and enforces aggregate page, aggregate extracted-text, and per-document page limits inside the same transaction as each page batch. If any page exceeds a limit, the entire batch is rolled back. Missing or invalid limit configuration fails closed; it does not fall back to hardcoded limits.
