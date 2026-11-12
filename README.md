@@ -49,6 +49,12 @@ AZ is a web-first academic workspace. This repository starts with the Stage B fo
 
 The primary current visual/product reference is [AZ Promo V5 — Web Design Reference](docs/design/AZ-PROMO-V5-WEB-DESIGN-REFERENCE.md). It documents the dark futuristic unified workspace, navigation, Today dashboard, Library, PDF/AI study workspace, motion principles, and V1 scope guardrails.
 
+## AI quiz generation configuration
+
+The server-side `generate-quiz` function requires an explicit `OPENAI_MODEL` value. The AZ repository does not provide a default or assume that a model is enabled for the project owner.
+
+Before any future activation, the owner must set `OPENAI_MODEL` to a model ID that exists and is enabled on their own OpenAI account, and configure model-specific input/output pricing in the server-side `app_config.openai_model_pricing` setting. Keep `OPENAI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` server-side only; never place either in a `VITE_*` variable or browser code.
+
 ## Not complete yet
 
 - Invite-code gating.
