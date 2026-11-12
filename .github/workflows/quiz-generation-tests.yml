@@ -4,9 +4,12 @@ on:
   pull_request:
     paths:
       - "supabase/functions/_shared/quizGeneration.*"
+      - "supabase/functions/_shared/rateLimit.ts"
+      - "supabase/migrations/20261112100000_edge_function_rate_limits.sql"
       - "supabase/functions/generate-quiz/**"
       - "tests/quizGeneration.test.mjs"
       - "tests/quizBillingSecurity.test.mjs"
+      - "tests/edgeRateLimitsContract.test.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/quiz-generation-tests.yml"
@@ -41,3 +44,5 @@ jobs:
         run: npm run test:quiz-generation
       - name: Test quiz billing and ownership security contracts
         run: npm run test:quiz-billing
+      - name: Test Edge Function rate limit contracts
+        run: npm run test:edge-rate-limits
