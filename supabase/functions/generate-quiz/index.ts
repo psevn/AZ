@@ -169,7 +169,7 @@ Deno.serve(async (request: Request) => {
 
   const inputCharacters = boundedPages.reduce((sum, page) => sum + page.text.length, 0) + topic.length + 2500;
   // Reserve against a conservative character-based input bound and the full output-token ceiling.
-  const estimatedInputTokens = inputCharacters;
+  const estimatedInputTokens = inputCharacters * 4;
   const estimatedCost = quizCostUsd(estimatedInputTokens, MAX_OUTPUT_TOKENS, modelPricing);
   const creditMultiplier = questionCount / 8 + boundedPages.length / 40;
 
@@ -299,5 +299,6 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Quiz billing could not be completed. No credits were charged." });
   }
 
+  // Correct indexes and explanations are never sent to the browser.
   return json(200, result);
 });
