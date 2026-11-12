@@ -39,8 +39,8 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   count=$((count + 1))
 done
 
-if [[ "$count" -ne 32 ]]; then
-  echo "Expected 32 migrations, replayed $count" >&2
+if [[ "$count" -ne 33 ]]; then
+  echo "Expected 33 migrations, replayed $count" >&2
   exit 1
 fi
 
