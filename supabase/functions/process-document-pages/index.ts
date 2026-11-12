@@ -153,6 +153,16 @@ Deno.serve(async (request: Request) => {
   });
 
   if (error) {
+    const message = typeof error.message === "string" ? error.message : "";
+    const quotaFailures: Record<string, { status: number; error: string }> = {
+      DOCUMENT_PAGE_LIMIT_EXCEEDED: { status: 413, error: "The total page limit for your plan has been reached." },
+      DOCUMENT_TEXT_LIMIT_EXCEEDED: { status: 413, error: "The extracted-text limit for your plan has been reached." },
+      DOCUMENT_LIMITS_NOT_CONFIGURED: { status: 503, error: "Document limits are not configured yet." },
+    };
+    const matchedCode = Object.keys(quotaFailures).find((code) => message.includes(code));
+    if (matchedCode) {
+      return json(quotaFailures[matchedCode].status, { error: quotaFailures[matchedCode].error, code: matchedCode });
+    }
     console.error("process-document-pages atomic RPC failed:", error.code);
     return json(500, { error: "Could not update document processing state." });
   }
