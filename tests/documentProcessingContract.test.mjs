@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const endpoint = readFileSync(new URL("../supabase/functions/process-document-pages/index.ts", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../supabase/migrations/20261111080000_atomic_document_processing.sql", import.meta.url), "utf8");
+const processingDocs = readFileSync(new URL("../docs/DOCUMENT_PROCESSING.md", import.meta.url), "utf8");
 
 test("document processing authenticates the user and resolves only their own document", () => {
   assert.match(endpoint, /readBearerToken\(request\)/);
@@ -66,4 +67,10 @@ test("page processing maps database-enforced plan limits to stable 429 codes", (
   assert.match(endpoint, /DOCUMENT_LIMIT_TOTAL_TEXT_CHARS/);
   assert.match(endpoint, /DOCUMENT_LIMIT_PER_DOCUMENT_PAGES/);
   assert.match(endpoint, /limitExceeded \? 429/);
+});
+
+test("documentation states browser-extracted page references are not server-verified", () => {
+  assert.match(processingDocs, /does not independently re-open the original PDF bytes/);
+  assert.match(processingDocs, /unverified against the original PDF/);
+  assert.match(processingDocs, /must not describe it as a verified citation/);
 });
