@@ -24,6 +24,7 @@ test("authenticates and checks document ownership before reserving or calling Op
   assert.ok(reserveIndex > ownerIndex);
   assert.ok(providerIndex > reserveIndex);
   assert.match(edge, /if \(!token\) return json\(401/);
+  assert.match(edge, /Bearer\\s\+/);
   assert.match(edge, /if \(authError \|\| !authData\.user\) return json\(401/);
   assert.match(edge, /if \(!document\) return json\(404/);
 });
