@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import {
   extractResponsesOutput,
   makeOpenAIRequest,
@@ -211,6 +212,17 @@ Deno.serve(async (request: Request) => {
     });
   }
   if (reservation.r_status !== "reserved") return json(503, { error: "Could not reserve quiz-generation credits." });
+
+  // Successful replays returned above; only new provider work consumes this rate-limit slot.
+  const rateLimit = await checkUserRateLimit(adminClient, userId, "generate_quiz");
+  if (!rateLimit.allowed) {
+    await refund(adminClient, userId, requestKey, "rate_limit_exceeded");
+    return json(rateLimit.status, {
+      error: rateLimit.message,
+      code: rateLimit.code,
+      ...(rateLimit.retryAfterSeconds ? { retryAfterSeconds: rateLimit.retryAfterSeconds } : {}),
+    });
+  }
 
   const startedAt = Date.now();
   let payload: any;
