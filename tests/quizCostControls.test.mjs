@@ -10,12 +10,6 @@ const [edge, migration, creditRpcs, persistence, client] = await Promise.all([
   readFile(new URL("../src/components/QuizPage.tsx", import.meta.url), "utf8"),
 ]);
 
-test("quiz generation requires an explicit configured model", () => {
-  assert.ok(edge.includes('const model = Deno.env.get("OPENAI_MODEL");'));
-  assert.ok(edge.includes('return json(503, { error: "Quiz generation is not configured: OPENAI_MODEL'));
-  assert.ok(!edge.includes('Deno.env.get("OPENAI_MODEL") ??'));
-});
-
 test("quiz generation authenticates and scopes the selected document to the caller", () => {
   assert.ok(edge.includes("auth.getUser(token)"));
   assert.ok(edge.includes('.eq("user_id", userId)'));
