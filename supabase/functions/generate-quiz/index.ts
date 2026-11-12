@@ -233,11 +233,21 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Could not record the request safely; reserved credits were refunded." });
   }
 
+  const { error: initialLogError } = await adminClient.from("ai_usage_log").update({
+    provider: "openai", model, input_tokens: 0, output_tokens: 0, cost_usd: 0,
+  }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+  if (initialLogError) {
+    await refund(adminClient, userId, requestKey, "usage_log_initialization_failed");
+    console.error("generate-quiz usage log initialization failed:", initialLogError.code);
+    return json(503, { error: "Could not initialize the usage record; reserved credits were refunded." });
+  }
+
   let generated: ReturnType<typeof validateGeneratedQuestions>;
   let responseId: string | undefined;
   let inputTokens = 0;
   let outputTokens = 0;
   let latencyMs = 0;
+  let actualCost = 0;
   const startedAt = Date.now();
   try {
     const openAIResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -250,6 +260,8 @@ Deno.serve(async (request: Request) => {
     latencyMs = Date.now() - startedAt;
     if (isRecord(payload) && typeof payload.id === "string") responseId = payload.id;
     if (!openAIResponse.ok) {
+      await adminClient.from("ai_usage_log").update({ latency_ms: latencyMs })
+        .eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
       await refund(adminClient, userId, requestKey, `openai_http_${openAIResponse.status}`);
       console.error("OpenAI Responses API failed:", openAIResponse.status, responseId ?? "no-request-id");
       return json(openAIResponse.status === 429 ? 429 : 502, { error: "AI could not prepare this quiz. Please try again." });
@@ -257,8 +269,19 @@ Deno.serve(async (request: Request) => {
     const usage = isRecord(payload) && isRecord(payload.usage) ? payload.usage : {};
     inputTokens = safeTokenCount(usage.input_tokens);
     outputTokens = safeTokenCount(usage.output_tokens);
+    if (inputTokens > 0 && outputTokens > 0) {
+      actualCost = calculateCost({ input: inputTokens, output: outputTokens }, modelPricing);
+    }
+    const { error: usageLogError } = await adminClient.from("ai_usage_log").update({
+      input_tokens: inputTokens, output_tokens: outputTokens, cost_usd: actualCost, latency_ms: latencyMs,
+    }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+    if (usageLogError) throw new Error("usage_logging_failed");
     generated = validateGeneratedQuestions(extractResponsesOutput(payload), boundedPages.map((page) => page.page_no), questionCount);
   } catch (error) {
+    latencyMs = latencyMs || Date.now() - startedAt;
+    await adminClient.from("ai_usage_log").update({
+      input_tokens: inputTokens, output_tokens: outputTokens, cost_usd: actualCost, latency_ms: latencyMs,
+    }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
     await refund(adminClient, userId, requestKey, error instanceof Error ? error.message : "generation_or_validation_failed");
     console.error("generate-quiz model/validation failure:", error instanceof Error ? error.message : "unknown");
     return json(502, { error: "AI returned an invalid quiz. No quiz was saved; please try again." });
@@ -268,18 +291,6 @@ Deno.serve(async (request: Request) => {
     await refund(adminClient, userId, requestKey, "provider_usage_missing");
     return json(502, { error: "AI usage details were unavailable; the reservation was refunded." });
   }
-  const actualCost = calculateCost({ input: inputTokens, output: outputTokens }, modelPricing);
-  const { error: usageLogError } = await adminClient.from("ai_usage_log").update({
-    input_tokens: inputTokens,
-    output_tokens: outputTokens,
-    cost_usd: actualCost,
-  }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
-  if (usageLogError) {
-    await refund(adminClient, userId, requestKey, "usage_logging_failed");
-    console.error("generate-quiz token usage logging failed:", usageLogError.code);
-    return json(503, { error: "Could not record AI usage safely; the reservation was refunded." });
-  }
-
   const { data: saved, error: saveError } = await adminClient.rpc("create_generated_quiz", {
     p_user_id: userId, p_document_id: documentId, p_questions: generated,
   });
