@@ -7,7 +7,7 @@ const MAX_BODY_BYTES = 2048;
 const UPLOAD_CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 function readBearerToken(request: Request) {
-  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\\s+(.+)$/i);
+  const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
 }
 
