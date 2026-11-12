@@ -158,6 +158,10 @@ begin
      or has_table_privilege(current_user, 'public.quizzes', 'INSERT')
      or has_table_privilege(current_user, 'public.quiz_questions', 'INSERT')
      or has_table_privilege(current_user, 'public.quiz_attempts', 'INSERT')
+     or has_table_privilege(current_user, 'public.document_pages', 'INSERT')
+     or has_table_privilege(current_user, 'public.summaries', 'INSERT')
+     or has_table_privilege(current_user, 'public.attempt_answers', 'INSERT')
+     or has_table_privilege(current_user, 'public.usage_counters', 'INSERT')
      or has_table_privilege(current_user, 'private.question_keys', 'SELECT') then
     raise exception 'A server-managed table or private answer key has an unexpected client grant';
   end if;
@@ -294,6 +298,7 @@ begin
      or (select count(*) from public.quizzes) <> 1
      or (select count(*) from public.quiz_questions) <> 1
      or (select count(*) from public.quiz_attempts) <> 1
+     or (select count(*) from public.attempt_answers) <> 1
      or (select count(*) from public.usage_counters) <> 1 then
     raise exception 'Student B can read another tenant''s private study data or cannot read their own';
   end if;
