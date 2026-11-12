@@ -6,7 +6,11 @@ const proposal = readFileSync(
   new URL("../supabase/proposals/create_generated_quiz_rpc.sql", import.meta.url),
   "utf8",
 );
-const finalizeProposal = readFileSync(\n  new URL("../supabase/proposals/complete_generated_quiz_rpc.sql", import.meta.url),\n  "utf8",\n);\nconst edgeFunction = readFileSync(
+const finalizeProposal = readFileSync(
+  new URL("../supabase/proposals/complete_generated_quiz_rpc.sql", import.meta.url),
+  "utf8",
+);
+const edgeFunction = readFileSync(
   new URL("../supabase/functions/generate-quiz/index.ts", import.meta.url),
   "utf8",
 );
