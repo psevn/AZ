@@ -1,3 +1,4 @@
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -14,8 +15,8 @@ const MAX_PAGES_PER_BATCH = 20;
 const MAX_PAGE_CHARS = 18_000;
 const MAX_DOCUMENT_PAGES = 1_000;
 
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+function json(status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, ...extraHeaders } });
 }
 
 function readBearerToken(request: Request) {
@@ -98,6 +99,19 @@ Deno.serve(async (request: Request) => {
   if (authError || !authData.user) return json(401, { error: "Your session is invalid or expired." });
 
   const userId = authData.user.id;
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const rateLimitEndpoint = action === "save_pages"
+    ? "process_document_pages_save_pages"
+    : "process_document_pages";
+  const rateLimit = await checkUserRateLimit(adminClient, userId, rateLimitEndpoint);
+  if (!rateLimit.allowed) {
+    return json(rateLimit.status, {
+      error: rateLimit.message, code: rateLimit.code, retryAfterSeconds: rateLimit.retryAfterSeconds,
+    }, rateLimit.status === 429 ? { "Retry-After": String(rateLimit.retryAfterSeconds) } : {});
+  }
+
   const { data: document, error: documentError } = await userClient
     .from("documents")
     .select("id")
@@ -136,9 +150,6 @@ Deno.serve(async (request: Request) => {
     return json(400, { error: "A valid page count is required." });
   }
 
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
   const processingToken = typeof body.processingToken === "string" && Number.isFinite(Date.parse(body.processingToken))
     ? body.processingToken
     : null;

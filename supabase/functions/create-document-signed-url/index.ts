@@ -1,3 +1,4 @@
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -8,8 +9,8 @@ const corsHeaders = {
   "Cache-Control": "no-store",
 };
 
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+function json(status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, ...extraHeaders } });
 }
 
 function readBearerToken(request: Request) {
@@ -62,6 +63,16 @@ Deno.serve(async (request: Request) => {
   if (authError || !authData.user) return json(401, { error: "Your session is invalid or expired." });
 
   const userId = authData.user.id;
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const rateLimit = await checkUserRateLimit(adminClient, userId, "create_document_signed_url");
+  if (!rateLimit.allowed) {
+    return json(rateLimit.status, {
+      error: rateLimit.message, code: rateLimit.code, retryAfterSeconds: rateLimit.retryAfterSeconds,
+    }, rateLimit.status === 429 ? { "Retry-After": String(rateLimit.retryAfterSeconds) } : {});
+  }
+
   const { data: document, error: documentError } = await userClient
     .from("documents")
     .select("id,user_id,storage_path,status")
@@ -83,9 +94,6 @@ Deno.serve(async (request: Request) => {
     return json(404, { error: "Document not found." });
   }
 
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
   const { data: signed, error: signError } = await adminClient.storage
     .from("documents")
     .createSignedUrl(document.storage_path, 300);

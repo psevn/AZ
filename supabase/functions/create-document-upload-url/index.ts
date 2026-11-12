@@ -1,3 +1,4 @@
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -8,8 +9,8 @@ const corsHeaders = {
   "Cache-Control": "no-store",
 };
 
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+function json(status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, ...extraHeaders } });
 }
 
 function readBearerToken(request: Request) {
@@ -72,6 +73,13 @@ Deno.serve(async (request: Request) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const rateLimit = await checkUserRateLimit(adminClient, userId, "create_document_upload_url");
+  if (!rateLimit.allowed) {
+    return json(rateLimit.status, {
+      error: rateLimit.message, code: rateLimit.code, retryAfterSeconds: rateLimit.retryAfterSeconds,
+    }, rateLimit.status === 429 ? { "Retry-After": String(rateLimit.retryAfterSeconds) } : {});
+  }
+
   const storagePath = `${userId}/${documentId}.pdf`;
 
   if (action === "mark_failed") {

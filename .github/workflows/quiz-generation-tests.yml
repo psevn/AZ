@@ -7,6 +7,8 @@ on:
       - "supabase/functions/generate-quiz/**"
       - "tests/quizGeneration.test.mjs"
       - "tests/quizCostControls.test.mjs"
+      - "tests/rateLimitContract.test.mjs"
+      - "supabase/functions/_shared/rateLimit.ts"
       - "supabase/migrations/**"
       - "supabase/proposals/create_generated_quiz_rpc.sql"
       - "src/components/QuizPage.tsx"
@@ -44,3 +46,5 @@ jobs:
         run: npm run test:quiz-generation
       - name: Test quiz cost and idempotency contracts
         run: npm run test:quiz-cost-controls
+      - name: Test endpoint rate limit contract
+        run: npm run test:rate-limits
