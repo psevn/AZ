@@ -24,6 +24,7 @@ test("authenticates and checks document ownership before reserving or calling Op
   assert.ok(reserveIndex > ownerIndex);
   assert.ok(providerIndex > reserveIndex);
   assert.match(edge, /if \(!token\) return json\(401/);
+  assert.match(edge, /Bearer\\s\+/);
   assert.match(edge, /if \(authError \|\| !authData\.user\) return json\(401/);
   assert.match(edge, /if \(!document\) return json\(404/);
 });
@@ -39,7 +40,7 @@ test("uses a per-click idempotency key and replays the saved safe result", () =>
 test("refunds provider, validation, persistence, and settlement failures", () => {
   assert.match(edge, /provider_http_/);
   assert.match(edge, /generation_failed/);
-  assert.match(edge, /await refund\(adminClient, userId, requestKey, "quiz_finalization_failed"\)/);
+  assert.match(edge, /await refund\(adminClient, userId, requestKey, "quiz_finalization_failed",/);
   assert.match(edge, /rpc\("refund_quiz_generation"/);
 });
 
@@ -59,6 +60,7 @@ test("uses configurable credit and model prices with per-question/page scaling",
   assert.match(edge, /from\("app_config"\).*openai_model_pricing/s);
   assert.match(edge, /p_credit_multiplier: creditMultiplier/);
   assert.match(edge, /const creditMultiplier = questionCount \/ 8 \+ boundedPages\.length \/ 40/);
+  assert.match(edge, /const outputTokenBudget = Math\.min\(MAX_OUTPUT_TOKENS, questionCount \* 600\)/);
   assert.match(migration, /cc\.credits \* p_credit_multiplier/);
   assert.match(migration, /global_monthly_cost_cap/);
 });
@@ -68,4 +70,12 @@ test("extends the existing reservation and settlement RPCs rather than replacing
   assert.match(migration, /create function public\.reserve_credits\(/);
   assert.match(migration, /create function public\.settle_quiz_generation\(/);
   assert.match(edge, /rpc\("refund_credits"/); // refund stays on the established RPC
+});
+
+test("does not claim a refund when the refund RPC cannot be confirmed", () => {
+  assert.match(edge, /Promise<boolean>/);
+  assert.match(edge, /if \(!refunded\) return json\(503/);
+  assert.match(edge, /code: "REFUND_PENDING"/);
+  assert.match(edge, /const reportedInputTokens = Number\(payload\?\.usage\?\.input_tokens\)/);
+  assert.ok(edge.indexOf("inputTokens = reportedInputTokens") > edge.indexOf("Missing or invalid provider token usage."));
 });
