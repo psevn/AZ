@@ -169,6 +169,67 @@ begin
 end;
 $function$;
 
+create function public.refund_quiz_generation(
+  p_user_id uuid,
+  p_feature text,
+  p_request_key text,
+  p_error text,
+  p_provider text,
+  p_model text,
+  p_input_tokens integer,
+  p_output_tokens integer,
+  p_actual_cost numeric
+)
+returns table(r_status text, r_replay boolean)
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_refund record;
+  v_created_at timestamptz;
+begin
+  if p_input_tokens is null or p_input_tokens < 0
+     or p_output_tokens is null or p_output_tokens < 0
+     or p_actual_cost is null or p_actual_cost < 0
+     or nullif(btrim(p_provider), '') is null
+     or nullif(btrim(p_model), '') is null then
+    raise exception 'Invalid failed quiz usage result' using errcode = '22023';
+  end if;
+
+  select * into v_refund
+    from private.refund_credits(p_user_id, p_feature, p_request_key, p_error);
+
+  -- Record provider spend once, even when output validation or persistence failed.
+  update public.ai_usage_log as l
+     set provider = p_provider,
+         model = p_model,
+         input_tokens = p_input_tokens,
+         output_tokens = p_output_tokens,
+         cost_actual = p_actual_cost,
+         updated_at = now()
+   where l.user_id = p_user_id
+     and l.feature = p_feature
+     and l.request_key = p_request_key
+     and l.status = 'refunded'
+     and l.provider is null
+   returning l.created_at into v_created_at;
+
+  if found and p_actual_cost > 0 then
+    update public.spend_counters as sc
+       set settled_cost = sc.settled_cost + p_actual_cost
+     where sc.month = date_trunc('month', v_created_at at time zone 'utc')::date;
+  end if;
+
+  return query select v_refund.r_status, v_refund.r_replay;
+end;
+$function$;
+
+revoke execute on function public.refund_quiz_generation(uuid, text, text, text, text, text, integer, integer, numeric)
+  from public, anon, authenticated;
+grant execute on function public.refund_quiz_generation(uuid, text, text, text, text, text, integer, integer, numeric)
+  to service_role;
+
 revoke execute on function private.reserve_credits(uuid, text, text, numeric, numeric) from public, anon, authenticated;
 revoke execute on function public.reserve_credits(uuid, text, text, numeric, numeric) from public, anon, authenticated;
 revoke execute on function public.settle_quiz_generation(uuid, text, text, numeric, text, text, text, integer, text, integer, integer, jsonb) from public, anon, authenticated;
