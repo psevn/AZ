@@ -101,7 +101,7 @@ export function validateGeneratedQuestions(value, allowedPageNumbers, expectedCo
   });
 }
 
-export function makeOpenAIRequest({ model, language, questionCount, topic, pages }) {
+export function makeOpenAIRequest({ model, language, questionCount, topic, pages, maxOutputTokens = 6000 }) {
   return {
     model,
     input: buildQuizInput({ language, questionCount, topic, pages }),
@@ -136,7 +136,7 @@ export function makeOpenAIRequest({ model, language, questionCount, topic, pages
         },
       },
     },
-    max_output_tokens: 6000,
+    max_output_tokens: maxOutputTokens,
   };
 }
 
