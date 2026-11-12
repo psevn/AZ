@@ -55,8 +55,6 @@ test("settles actual token usage and stores no source text in the usage result",
 
 test("uses configurable credit and model prices with per-question/page scaling", () => {
   assert.match(edge, /from\("app_config"\).*openai_model_pricing/s);
-  assert.match(edge, /from\("app_config"\).*openai_model_pricing/s);
-  assert.match(edge, /from\("app_config"\).*openai_model_pricing/s);
   assert.match(edge, /p_credit_multiplier: creditMultiplier/);
   assert.match(edge, /const creditMultiplier = questionCount \/ 8 \+ boundedPages\.length \/ 40/);
   assert.match(migration, /cc\.credits \* p_credit_multiplier/);
@@ -67,5 +65,5 @@ test("extends the existing reservation and settlement RPCs rather than replacing
   assert.match(migration, /private\.settle_credits\(/);
   assert.match(migration, /create function public\.reserve_credits\(/);
   assert.match(migration, /create function public\.settle_quiz_generation\(/);
-  assert.match(migration, /private\.refund_credits/); // refund stays on the established RPC
+  assert.match(edge, /rpc\("refund_credits"/); // refund stays on the established RPC
 });
