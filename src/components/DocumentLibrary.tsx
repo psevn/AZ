@@ -5,7 +5,7 @@ import { recoverDocumentProcessing } from "../lib/recoverDocumentProcessing";
 type DocumentRow = {
   id: string;
   title: string;
-  status: "uploaded" | "processing" | "ready" | "failed";
+  status: "uploaded" | "processing" | "ready" | "failed" | "deleting";
   created_at: string;
   page_count: number | null;
   failed_reason: string | null;
@@ -42,6 +42,16 @@ const COPY = {
     resume: "استئناف المعالجة",
     resuming: "جارٍ استعادة المعالجة…",
     resumeError: "تعذّر استئناف معالجة المستند.",
+    deleting: "بانتظار اكتمال الحذف",
+    delete: "حذف المستند",
+    retryDelete: "متابعة الحذف",
+    deletePrompt: "سيُحذف ملف PDF والنص والملخصات والأسئلة المرتبطة به. لا يمكن التراجع عن هذه الخطوة.",
+    confirmDelete: "تأكيد الحذف",
+    cancel: "إلغاء",
+    deletingNow: "جارٍ تنفيذ الحذف الآمن…",
+    deletePending: "بدأ الحذف بأمان. قد نحتاج إلى الانتظار حتى تنتهي صلاحية رابط رفع سابق؛ يمكنك متابعة الحذف من هنا.",
+    deleteSuccess: "تم حذف المستند وبياناته المرتبطة.",
+    deleteError: "تعذّر إكمال الحذف. بقيت بيانات المستند محمية؛ حاول مرة أخرى.",
   },
   en: {
     title: "Your documents",
@@ -64,6 +74,16 @@ const COPY = {
     resume: "Resume processing",
     resuming: "Recovering processing…",
     resumeError: "Could not resume document processing.",
+    deleting: "Deletion pending",
+    delete: "Delete document",
+    retryDelete: "Continue deletion",
+    deletePrompt: "This permanently removes the PDF, extracted text, summaries, and related questions. This cannot be undone.",
+    confirmDelete: "Confirm deletion",
+    cancel: "Cancel",
+    deletingNow: "Completing secure deletion…",
+    deletePending: "Deletion has started safely. We may need to wait for an earlier upload link to expire; you can continue the deletion here.",
+    deleteSuccess: "The document and its related data were deleted.",
+    deleteError: "Deletion could not be completed. Your document data remains protected; please try again.",
   },
 };
 
@@ -76,6 +96,10 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
   const [recoveringId, setRecoveringId] = useState<string | null>(null);
   const [recoveryProgress, setRecoveryProgress] = useState("");
   const [recoveryError, setRecoveryError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletionMessage, setDeletionMessage] = useState("");
+  const [deletionError, setDeletionError] = useState("");
 
   const load = useCallback(async () => {
     if (!supabase) {
@@ -175,19 +199,35 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
                 <small>{new Date(document.created_at).toLocaleDateString(ar ? "ar-QA" : "en-QA", { day: "numeric", month: "short", year: "numeric" })}{document.status === "ready" && document.page_count ? ` · ${document.page_count} ${ar ? "صفحة" : "pages"}` : ""}</small>
               </span>
               <span className={"document-library-status is-" + document.status}>{statusLabel(document)}</span>
-              {document.status !== "failed" ? (
-                <div className="document-library-actions">
+              <div className="document-library-actions">
+                {document.status !== "failed" && document.status !== "deleting" && (
                   <button type="button" className="az-btn az-btn--ghost document-library-open" onClick={() => onOpenDocument(document.id)}>{document.status === "ready" ? t.open : t.preview} ↗</button>
-                  {document.status === "ready" && <button type="button" className="az-btn az-btn--primary document-library-practice" onClick={() => onStartQuiz(document.id)}>{t.practice}</button>}
-                  {canResume(document) && <button type="button" className="az-btn az-btn--ghost document-library-resume" disabled={recoveringId !== null} onClick={() => void resume(document)}>{recoveringId === document.id ? t.resuming : t.resume}</button>}
+                )}
+                {document.status === "ready" && <button type="button" className="az-btn az-btn--primary document-library-practice" onClick={() => onStartQuiz(document.id)}>{t.practice}</button>}
+                {canResume(document) && <button type="button" className="az-btn az-btn--ghost document-library-resume" disabled={recoveringId !== null || deletingId !== null} onClick={() => void resume(document)}>{recoveringId === document.id ? t.resuming : t.resume}</button>}
+                {document.status === "deleting" ? (
+                  <button type="button" className="az-btn az-btn--ghost document-library-delete" disabled={deletingId !== null} onClick={() => void deleteDocument(document)}>{deletingId === document.id ? t.deletingNow : t.retryDelete}</button>
+                ) : (
+                  <button type="button" className="az-btn az-btn--ghost document-library-delete" disabled={deletingId !== null} onClick={() => { setDeletionError(""); setConfirmDeleteId(current => current === document.id ? null : document.id); }}>{t.delete}</button>
+                )}
+              </div>
+              {confirmDeleteId === document.id && (
+                <div className="document-library-delete-confirm" role="group" aria-label={t.confirmDelete}>
+                  <p>{t.deletePrompt}</p>
+                  <div>
+                    <button type="button" className="az-btn az-btn--ghost" disabled={deletingId !== null} onClick={() => setConfirmDeleteId(null)}>{t.cancel}</button>
+                    <button type="button" className="az-btn az-btn--danger" disabled={deletingId !== null} onClick={() => void deleteDocument(document)}>{deletingId === document.id ? t.deletingNow : t.confirmDelete}</button>
+                  </div>
                 </div>
-              ) : null}
+              )}
             </li>
           ))}
         </ul>
       )}
       {recoveryProgress && <p className="document-library-state" role="status" aria-live="polite">{recoveryProgress}</p>}
       {recoveryError && <p className="document-upload-error" role="alert">{recoveryError}</p>}
+      {deletionMessage && <p className="document-library-delete-message" role="status" aria-live="polite">{deletionMessage}</p>}
+      {deletionError && <p className="document-upload-error" role="alert">{deletionError}</p>}
     </section>
   );
 }
