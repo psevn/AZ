@@ -39,6 +39,8 @@ test("upload URL endpoint authenticates and creates an owner-scoped record serve
   assert.doesNotMatch(endpoint, /\.from\("documents"\)\.insert/);
   assert.match(endpoint, /DOCUMENT_LIMIT_PENDING_UPLOADS/);
   assert.match(endpoint, /storage\.from\("documents"\)\.remove/);
+  assert.match(endpoint, /failed_reason", "Upload expired before completion\."/);
+  assert.match(endpoint, /DOCUMENT_LIMIT_DOCUMENTS/);
   assert.match(endpoint, /createSignedUploadUrl\(storagePath/);
   assert.doesNotMatch(endpoint, /body\.storagePath|body\.path|body\.bucket/);
 });
@@ -52,6 +54,7 @@ test("database enforces document, pending upload, page, and text limits transact
   assert.match(limitsMigration, /DOCUMENT_LIMIT_TOTAL_TEXT_CHARS/);
   assert.match(limitsMigration, /DOCUMENT_LIMIT_PER_DOCUMENT_PAGES/);
   assert.match(limitsMigration, /stale_uploaded_minutes/);
+  assert.match(limitsMigration, /v_stale_uploaded_minutes <= 120/);
   assert.match(limitsMigration, /before insert or update of text/);
 });
 
