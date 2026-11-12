@@ -39,6 +39,7 @@ test("creates a strict structured-output request without embedding an API key", 
   assert.equal(request.model, "gpt-6-astra");
   assert.equal(request.text.format.type, "json_schema");
   assert.equal(request.text.format.strict, true);
+  assert.equal(request.max_output_tokens, 2500);
   assert.deepEqual(request.text.format.schema.required, ["questions"]);
   assert.equal(JSON.stringify(request).includes("OPENAI_API_KEY"), false);
 });
