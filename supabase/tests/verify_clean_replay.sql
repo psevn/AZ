@@ -46,6 +46,20 @@ begin
     raise exception 'Document upload reservation RPC grants are not service-role-only';
   end if;
 
+  if to_regclass('public.user_rate_limit_counters') is null
+     or to_regprocedure('public.consume_user_rate_limit(uuid,text)') is null then
+    raise exception 'Database-backed user rate limit table or RPC is missing';
+  end if;
+
+  if not has_function_privilege('service_role',
+      'public.consume_user_rate_limit(uuid,text)', 'EXECUTE')
+     or has_function_privilege('authenticated',
+      'public.consume_user_rate_limit(uuid,text)', 'EXECUTE')
+     or has_function_privilege('anon',
+      'public.consume_user_rate_limit(uuid,text)', 'EXECUTE') then
+    raise exception 'User rate limit RPC grants are not service-role-only';
+  end if;
+
   if not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'tasks' and column_name = 'completed_at'
