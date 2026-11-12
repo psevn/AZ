@@ -1,17 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsForRequest } from "../_shared/cors.ts";
 import { checkUserRateLimit } from "../_shared/rateLimit.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-  "Cache-Control": "no-store",
-};
-
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
-}
 
 function readBearerToken(request: Request) {
   const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i);
@@ -24,7 +13,17 @@ function isUuid(value: unknown): value is string {
 }
 
 Deno.serve(async (request: Request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = corsForRequest(request);
+  const json = (status: number, body: Record<string, unknown>) =>
+    new Response(JSON.stringify(body), { status, headers: cors.headers });
+  if (!cors.allowed) return json(cors.status, {
+    error: cors.code === "CORS_NOT_CONFIGURED"
+      ? "This Edge Function has no configured browser origin allowlist."
+      : "This request origin is not allowed.",
+    code: cors.code ?? "CORS_REJECTED",
+  });
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors.headers });
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors.headers });
   if (request.method !== "POST") return json(405, { error: "Method not allowed." });
 
   const token = readBearerToken(request);
