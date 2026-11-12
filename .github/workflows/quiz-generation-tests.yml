@@ -6,6 +6,10 @@ on:
       - "supabase/functions/_shared/quizGeneration.*"
       - "supabase/functions/generate-quiz/**"
       - "tests/quizGeneration.test.mjs"
+      - "tests/quizCostControls.test.mjs"
+      - "supabase/migrations/**"
+      - "supabase/proposals/create_generated_quiz_rpc.sql"
+      - "src/components/QuizPage.tsx"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/quiz-generation-tests.yml"
@@ -38,3 +42,5 @@ jobs:
         run: npm ci
       - name: Test quiz generation contract
         run: npm run test:quiz-generation
+      - name: Test quiz cost and idempotency contracts
+        run: npm run test:quiz-cost-controls

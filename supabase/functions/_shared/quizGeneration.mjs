@@ -136,7 +136,7 @@ export function makeOpenAIRequest({ model, language, questionCount, topic, pages
         },
       },
     },
-    max_output_tokens: 6000,
+    max_output_tokens: questionCount * 500,
   };
 }
 

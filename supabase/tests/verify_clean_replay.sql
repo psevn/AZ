@@ -17,6 +17,19 @@ begin
     raise exception 'Credit reservation sweep function is missing';
   end if;
 
+  if to_regprocedure('public.reserve_credits(uuid,text,text,numeric)') is null
+     or to_regprocedure('public.settle_credits(uuid,text,text,numeric,text,text,text,integer,text)') is null
+     or to_regprocedure('public.refund_credits(uuid,text,text,text)') is null then
+    raise exception 'Existing credit reservation lifecycle RPCs are missing';
+  end if;
+
+  if not exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'ai_usage_log' and column_name = 'request_payload_hash')
+     or not exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'quiz_questions' and column_name = 'position_no') then
+    raise exception 'Quiz idempotency/replay columns are missing';
+  end if;
+
   if not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'tasks' and column_name = 'completed_at'

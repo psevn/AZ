@@ -12,6 +12,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 };
+const FEATURE = "generate_quiz";
+const MODEL_PRICING_CONFIG = "openai_model_pricing";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -21,6 +23,64 @@ function readBearerToken(request: Request) {
   const value = request.headers.get("Authorization") ?? "";
   const match = value.match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function hashPayload(value: Record<string, unknown>): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value)));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function safeTokenCount(value: unknown): number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : 0;
+}
+
+function calculateCost(tokens: { input: number; output: number }, pricing: Record<string, unknown>) {
+  const inputRate = Number(pricing.input_per_million_usd);
+  const outputRate = Number(pricing.output_per_million_usd);
+  if (!Number.isFinite(inputRate) || inputRate < 0 || !Number.isFinite(outputRate) || outputRate < 0) {
+    throw new Error("invalid_model_pricing");
+  }
+  return (tokens.input * inputRate + tokens.output * outputRate) / 1_000_000;
+}
+
+function estimatedTokens(sourceCharacters: number, questionCount: number) {
+  // Conservative reservation estimate; provider-reported usage replaces it at settlement.
+  return { input: Math.ceil(sourceCharacters * 1.5) + 2_000, output: questionCount * 500 };
+}
+
+async function refund(adminClient: ReturnType<typeof createClient>, userId: string, requestKey: string, reason: string) {
+  const { error } = await adminClient.rpc("refund_credits", {
+    p_user_id: userId,
+    p_feature: FEATURE,
+    p_request_key: requestKey,
+    p_error: reason.slice(0, 240),
+  });
+  if (error) console.error("generate-quiz refund failed:", error.code);
+}
+
+async function loadReplay(adminClient: ReturnType<typeof createClient>, userId: string, quizId: string) {
+  const { data: quiz, error: quizError } = await adminClient
+    .from("quizzes").select("id,document_id").eq("id", quizId).eq("user_id", userId).maybeSingle();
+  if (quizError || !quiz) return null;
+
+  const [{ data: document }, { data: rows, error: questionsError }] = await Promise.all([
+    adminClient.from("documents").select("id,title").eq("id", quiz.document_id).eq("user_id", userId).maybeSingle(),
+    adminClient.from("quiz_questions")
+      .select("id,prompt,choices,source_page,topic,difficulty")
+      .eq("quiz_id", quizId).eq("user_id", userId).order("position_no", { ascending: true }),
+  ]);
+  if (questionsError || !document || !Array.isArray(rows) || rows.length < QUIZ_LIMITS.minQuestions) return null;
+  return {
+    quizId,
+    document: { id: document.id, title: document.title },
+    questions: rows,
+    questionCount: rows.length,
+    provider: "openai",
+  };
 }
 
 Deno.serve(async (request: Request) => {
@@ -42,13 +102,15 @@ Deno.serve(async (request: Request) => {
   }
   if (!openAIKey) return json(503, { error: "AI quiz generation is not configured yet." });
 
-  let body: { documentId?: unknown; language?: unknown; questionCount?: unknown; topic?: unknown };
+  let body: { documentId?: unknown; language?: unknown; questionCount?: unknown; topic?: unknown; requestKey?: unknown };
   try {
     const rawBody = await request.text();
     if (new TextEncoder().encode(rawBody).byteLength > 8192) {
       return json(413, { error: "Quiz request is too large." });
     }
-    body = JSON.parse(rawBody);
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!isRecord(parsed)) return json(400, { error: "Invalid JSON request body." });
+    body = parsed;
   } catch {
     return json(400, { error: "Invalid JSON request body." });
   }
@@ -57,9 +119,10 @@ Deno.serve(async (request: Request) => {
   const language = body.language === "ar" || body.language === "en" ? body.language : null;
   const questionCount = Number.isInteger(body.questionCount) ? Number(body.questionCount) : 8;
   const topic = typeof body.topic === "string" ? body.topic.trim() : "";
-
-  if (!documentId || !language || questionCount < QUIZ_LIMITS.minQuestions || questionCount > QUIZ_LIMITS.maxQuestions || topic.length > 120) {
-    return json(400, { error: "Invalid quiz settings." });
+  const requestKey = typeof body.requestKey === "string" ? body.requestKey.trim() : "";
+  if (!documentId || !language || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestKey) ||
+      questionCount < QUIZ_LIMITS.minQuestions || questionCount > QUIZ_LIMITS.maxQuestions || topic.length > 120) {
+    return json(400, { error: "Invalid quiz settings or request key." });
   }
 
   const userClient = createClient(supabaseUrl, publishableKey, {
@@ -71,13 +134,8 @@ Deno.serve(async (request: Request) => {
   const userId = authData.user.id;
 
   const { data: document, error: documentError } = await userClient
-    .from("documents")
-    .select("id,title,subject_id,status")
-    .eq("id", documentId)
-    .eq("user_id", userId)
-    .eq("status", "ready")
-    .maybeSingle();
-
+    .from("documents").select("id,title,subject_id,status")
+    .eq("id", documentId).eq("user_id", userId).eq("status", "ready").maybeSingle();
   if (documentError) {
     console.error("generate-quiz document lookup failed:", documentError.code);
     return json(500, { error: "Could not read the selected document." });
@@ -85,13 +143,9 @@ Deno.serve(async (request: Request) => {
   if (!document) return json(404, { error: "Ready document not found." });
 
   const { data: pageRows, error: pagesError } = await userClient
-    .from("document_pages")
-    .select("page_no,text")
-    .eq("document_id", documentId)
-    .eq("user_id", userId)
-    .order("page_no", { ascending: true })
-    .limit(QUIZ_LIMITS.maxPages);
-
+    .from("document_pages").select("page_no,text")
+    .eq("document_id", documentId).eq("user_id", userId)
+    .order("page_no", { ascending: true }).limit(QUIZ_LIMITS.maxPages);
   if (pagesError) {
     console.error("generate-quiz page lookup failed:", pagesError.code);
     return json(500, { error: "Could not read document pages." });
@@ -100,7 +154,6 @@ Deno.serve(async (request: Request) => {
   const pages = (pageRows ?? [])
     .filter((page) => Number.isInteger(page.page_no) && typeof page.text === "string" && page.text.trim())
     .map((page) => ({ page_no: page.page_no, text: page.text.trim() }));
-
   if (!pages.length) return json(422, { error: "This document has no extracted text pages yet." });
 
   let remaining = QUIZ_LIMITS.maxCharacters;
@@ -109,59 +162,173 @@ Deno.serve(async (request: Request) => {
     remaining -= text.length;
     return { page_no: page.page_no, text };
   }).filter((page) => page.text.length > 0);
-
   if (!boundedPages.length) return json(422, { error: "The selected document contains no usable text." });
-
-  let generated;
-  let responseId: string | undefined;
-  try {
-    const openAIResponse = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openAIKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(makeOpenAIRequest({
-        model,
-        language,
-        questionCount,
-        topic,
-        pages: boundedPages,
-      })),
-      signal: AbortSignal.timeout(45000),
-    });
-
-    const payload = await openAIResponse.json();
-    responseId = typeof payload.id === "string" ? payload.id : undefined;
-    if (!openAIResponse.ok) {
-      console.error("OpenAI Responses API failed:", openAIResponse.status, responseId ?? "no-request-id");
-      return json(openAIResponse.status === 429 ? 429 : 502, { error: "AI could not prepare this quiz. Please try again." });
-    }
-    generated = validateGeneratedQuestions(
-      extractResponsesOutput(payload),
-      boundedPages.map((page) => page.page_no),
-      questionCount,
-    );
-  } catch (error) {
-    console.error("generate-quiz model/validation failure:", error instanceof Error ? error.message : "unknown");
-    return json(502, { error: "AI returned an invalid quiz. No quiz was saved; please try again." });
-  }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: saved, error: saveError } = await adminClient.rpc("create_generated_quiz", {
-    p_user_id: userId,
-    p_document_id: documentId,
-    p_questions: generated,
-  });
+  const { data: pricingRow, error: pricingError } = await adminClient
+    .from("app_config").select("value").eq("key", MODEL_PRICING_CONFIG).maybeSingle();
+  const allPricing = isRecord(pricingRow?.value) ? pricingRow.value : null;
+  const modelPricing = allPricing && isRecord(allPricing[model]) ? allPricing[model] : null;
+  if (pricingError || !modelPricing) {
+    console.error("generate-quiz model pricing is not configured:", pricingError?.code ?? "missing-model-price");
+    return json(503, { error: "Quiz generation pricing is not configured for this model." });
+  }
 
+  let estimatedCost: number;
+  try {
+    estimatedCost = calculateCost(estimatedTokens(boundedPages.reduce((sum, page) => sum + page.text.length, 0), questionCount), modelPricing) * 1.25;
+  } catch {
+    return json(503, { error: "Quiz generation pricing configuration is invalid." });
+  }
+
+  const payloadHash = await hashPayload({
+    userId, documentId, language, questionCount, topic, pages: boundedPages,
+  });
+  const { data: reservationRows, error: reservationError } = await adminClient.rpc("reserve_credits", {
+    p_user_id: userId,
+    p_feature: FEATURE,
+    p_request_key: requestKey,
+    p_est_cost: estimatedCost,
+  });
+  const reservation = Array.isArray(reservationRows) ? reservationRows[0] : null;
+  if (reservationError || !reservation) {
+    console.error("generate-quiz reservation failed:", reservationError?.code ?? "invalid-reservation-result");
+    return json(503, { error: "Could not reserve quiz usage. Please try again." });
+  }
+
+  if (reservation.r_replay) {
+    const { data: previous, error: previousError } = await adminClient.from("ai_usage_log")
+      .select("status,error,result_ref,request_payload_hash")
+      .eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey).maybeSingle();
+    if (previousError || !previous) return json(503, { error: "Could not recover the previous quiz request safely." });
+    if (previous.request_payload_hash !== payloadHash) {
+      return json(409, { error: "This request key was already used for different quiz settings." });
+    }
+    if (previous.status === "succeeded" && typeof previous.result_ref === "string") {
+      const replay = await loadReplay(adminClient, userId, previous.result_ref);
+      return replay ? json(200, replay) : json(503, { error: "The saved quiz result could not be recovered safely." });
+    }
+    if (previous.status === "reserved") {
+      return json(409, { error: "This quiz request is already being processed. Retry with the same request key shortly." });
+    }
+    if (previous.status === "failed" && String(previous.error ?? "").startsWith("denied:")) {
+      return json(429, { error: "Your daily, monthly, or service-wide AI usage limit has been reached." });
+    }
+    return json(409, { error: "This request key has already been used. Start a new quiz request." });
+  }
+
+  if (reservation.r_status === "denied") {
+    return json(429, { error: "Your daily, monthly, or service-wide AI usage limit has been reached." });
+  }
+  if (reservation.r_status !== "reserved") return json(503, { error: "Could not reserve quiz usage." });
+
+  const { error: hashError } = await adminClient.from("ai_usage_log").update({
+    request_payload_hash: payloadHash,
+  }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+  if (hashError) {
+    await refund(adminClient, userId, requestKey, "request_hash_storage_failed");
+    console.error("generate-quiz request hash storage failed:", hashError.code);
+    return json(503, { error: "Could not record the request safely; reserved credits were refunded." });
+  }
+
+  const { error: initialLogError } = await adminClient.from("ai_usage_log").update({
+    provider: "openai", model, input_tokens: 0, output_tokens: 0, cost_usd: 0,
+  }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+  if (initialLogError) {
+    await refund(adminClient, userId, requestKey, "usage_log_initialization_failed");
+    console.error("generate-quiz usage log initialization failed:", initialLogError.code);
+    return json(503, { error: "Could not initialize the usage record; reserved credits were refunded." });
+  }
+
+  let generated: ReturnType<typeof validateGeneratedQuestions>;
+  let responseId: string | undefined;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let latencyMs = 0;
+  let actualCost = 0;
+  const startedAt = Date.now();
+  try {
+    const openAIResponse = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${openAIKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(makeOpenAIRequest({ model, language, questionCount, topic, pages: boundedPages })),
+      signal: AbortSignal.timeout(45000),
+    });
+    const payload: unknown = await openAIResponse.json();
+    latencyMs = Date.now() - startedAt;
+    if (isRecord(payload) && typeof payload.id === "string") responseId = payload.id;
+    if (!openAIResponse.ok) {
+      await adminClient.from("ai_usage_log").update({ latency_ms: latencyMs })
+        .eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+      await refund(adminClient, userId, requestKey, `openai_http_${openAIResponse.status}`);
+      console.error("OpenAI Responses API failed:", openAIResponse.status, responseId ?? "no-request-id");
+      return json(openAIResponse.status === 429 ? 429 : 502, { error: "AI could not prepare this quiz. Please try again." });
+    }
+    const usage = isRecord(payload) && isRecord(payload.usage) ? payload.usage : {};
+    inputTokens = safeTokenCount(usage.input_tokens);
+    outputTokens = safeTokenCount(usage.output_tokens);
+    if (inputTokens > 0 && outputTokens > 0) {
+      actualCost = calculateCost({ input: inputTokens, output: outputTokens }, modelPricing);
+    }
+    const { error: usageLogError } = await adminClient.from("ai_usage_log").update({
+      input_tokens: inputTokens, output_tokens: outputTokens, cost_usd: actualCost, latency_ms: latencyMs,
+    }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+    if (usageLogError) throw new Error("usage_logging_failed");
+    generated = validateGeneratedQuestions(extractResponsesOutput(payload), boundedPages.map((page) => page.page_no), questionCount);
+  } catch (error) {
+    latencyMs = latencyMs || Date.now() - startedAt;
+    await adminClient.from("ai_usage_log").update({
+      input_tokens: inputTokens, output_tokens: outputTokens, cost_usd: actualCost, latency_ms: latencyMs,
+    }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+    await refund(adminClient, userId, requestKey, error instanceof Error ? error.message : "generation_or_validation_failed");
+    console.error("generate-quiz model/validation failure:", error instanceof Error ? error.message : "unknown");
+    return json(502, { error: "AI returned an invalid quiz. No quiz was saved; please try again." });
+  }
+
+  if (inputTokens <= 0 || outputTokens <= 0) {
+    await refund(adminClient, userId, requestKey, "provider_usage_missing");
+    return json(502, { error: "AI usage details were unavailable; the reservation was refunded." });
+  }
+  const { data: saved, error: saveError } = await adminClient.rpc("create_generated_quiz", {
+    p_user_id: userId, p_document_id: documentId, p_questions: generated,
+  });
   if (saveError || !Array.isArray(saved) || !saved[0]?.quiz_id || !Array.isArray(saved[0]?.questions)) {
+    await refund(adminClient, userId, requestKey, "quiz_persistence_failed");
     console.error("generate-quiz save failed:", saveError?.code ?? "invalid-rpc-result");
     return json(503, { error: "Quiz storage is not ready. No quiz was returned." });
   }
 
-  // The RPC response is deliberately safe: no correct indexes or explanations are sent to the browser.
+  const { error: settleError } = await adminClient.rpc("settle_credits", {
+    p_user_id: userId,
+    p_feature: FEATURE,
+    p_request_key: requestKey,
+    p_actual_cost: actualCost,
+    p_provider: "openai",
+    p_model: model,
+    p_latency_ms: latencyMs,
+    p_result_ref: saved[0].quiz_id,
+  });
+  if (settleError) {
+    const { data: usageState } = await adminClient.from("ai_usage_log")
+      .select("status").eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey).maybeSingle();
+    if (usageState?.status === "succeeded") {
+      // The RPC may have committed even if its response was interrupted; replay is now safe.
+    } else {
+      const { error: cleanupError } = await adminClient.from("quizzes")
+        .delete().eq("id", saved[0].quiz_id).eq("user_id", userId);
+      if (cleanupError) {
+        console.error("generate-quiz cleanup after settlement failure failed:", cleanupError.code);
+      } else {
+        await refund(adminClient, userId, requestKey, "settlement_failed");
+      }
+      console.error("generate-quiz settlement failed:", settleError.code, responseId ?? "no-request-id");
+      return json(503, { error: "Usage settlement failed; the quiz was not made available. Retry with the same request key." });
+    }
+  }
+
+  // The persistence RPC returns a safe projection; no correct indexes or explanations are sent to the browser.
   return json(200, {
     quizId: saved[0].quiz_id,
     document: { id: document.id, title: document.title },

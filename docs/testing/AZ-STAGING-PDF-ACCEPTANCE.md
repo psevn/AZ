@@ -39,7 +39,7 @@ Expected result: User A sees the document as ready, with the correct page count,
 Keep the document uploaded by User A. Sign out and sign in as User B.
 
 - [ ] User B's document library does not list User A's document.
-- [ ] Requesting a signed URL for User A's document ID as User B returns **404**.
+- [ ] Requesting a signed URL for User A's document ID as User B receives **404**.
 - [ ] User B cannot open User A's PDF or read User A's extracted page text.
 - [ ] Repeat in the opposite direction with a harmless PDF uploaded by User B; User A must not see or open it.
 
