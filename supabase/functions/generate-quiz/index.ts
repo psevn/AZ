@@ -33,26 +33,35 @@ async function refund(
   requestKey: string,
   reason: string,
   usage?: { model: string; inputTokens: number; outputTokens: number; actualCost: number },
-) {
-  const { error } = usage
-    ? await adminClient.rpc("refund_quiz_generation", {
-      p_user_id: userId,
-      p_feature: FEATURE,
-      p_request_key: requestKey,
-      p_error: reason,
-      p_provider: "openai",
-      p_model: usage.model,
-      p_input_tokens: usage.inputTokens,
-      p_output_tokens: usage.outputTokens,
-      p_actual_cost: usage.actualCost,
-    })
-    : await adminClient.rpc("refund_credits", {
-      p_user_id: userId,
-      p_feature: FEATURE,
-      p_request_key: requestKey,
-      p_error: reason,
-    });
-  if (error) console.error("generate-quiz reservation refund failed:", error.code);
+): Promise<boolean> {
+  try {
+    const { error } = usage
+      ? await adminClient.rpc("refund_quiz_generation", {
+        p_user_id: userId,
+        p_feature: FEATURE,
+        p_request_key: requestKey,
+        p_error: reason,
+        p_provider: "openai",
+        p_model: usage.model,
+        p_input_tokens: usage.inputTokens,
+        p_output_tokens: usage.outputTokens,
+        p_actual_cost: usage.actualCost,
+      })
+      : await adminClient.rpc("refund_credits", {
+        p_user_id: userId,
+        p_feature: FEATURE,
+        p_request_key: requestKey,
+        p_error: reason,
+      });
+    if (error) {
+      console.error("generate-quiz reservation refund failed:", error.code);
+      return false;
+    }
+    return true;
+  } catch {
+    console.error("generate-quiz reservation refund request failed.");
+    return false;
+  }
 }
 
 Deno.serve(async (request: Request) => {
@@ -226,7 +235,11 @@ Deno.serve(async (request: Request) => {
   // Idempotent replays are resolved above; only a new generation consumes a rate-limit slot.
   const rateLimit = await checkUserRateLimit(adminClient, userId, "generate_quiz");
   if (!rateLimit.allowed) {
-    await refund(adminClient, userId, requestKey, `rate_limit_${rateLimit.code}`);
+    const refunded = await refund(adminClient, userId, requestKey, `rate_limit_${rateLimit.code}`);
+    if (!refunded) return json(503, {
+      error: "The usage reservation could not be released yet. Please retry shortly.",
+      code: "REFUND_PENDING",
+    });
     return json(rateLimit.status, {
       error: rateLimit.message,
       code: rateLimit.code,
@@ -263,7 +276,7 @@ Deno.serve(async (request: Request) => {
       const failedOutputTokens = Number(payload?.usage?.output_tokens);
       const hasFailedUsage = Number.isInteger(failedInputTokens) && failedInputTokens >= 0 &&
         Number.isInteger(failedOutputTokens) && failedOutputTokens >= 0;
-      await refund(
+      const refunded = await refund(
         adminClient,
         userId,
         requestKey,
@@ -275,28 +288,38 @@ Deno.serve(async (request: Request) => {
           actualCost: hasFailedUsage ? quizCostUsd(failedInputTokens, failedOutputTokens, modelPricing) : 0,
         },
       );
+      if (!refunded) return json(503, {
+        error: "The provider request failed and credit release could not be confirmed.",
+        code: "REFUND_PENDING",
+      });
       console.error("OpenAI Responses API failed:", openAIResponse.status);
       return json(openAIResponse.status === 429 ? 429 : 502, { error: "AI could not prepare this quiz. No credits were charged." });
     }
-    inputTokens = Number(payload?.usage?.input_tokens);
-    outputTokens = Number(payload?.usage?.output_tokens);
-    if (!Number.isInteger(inputTokens) || inputTokens < 0 ||
-        !Number.isInteger(outputTokens) || outputTokens < 0) {
+    const reportedInputTokens = Number(payload?.usage?.input_tokens);
+    const reportedOutputTokens = Number(payload?.usage?.output_tokens);
+    if (!Number.isInteger(reportedInputTokens) || reportedInputTokens < 0 ||
+        !Number.isInteger(reportedOutputTokens) || reportedOutputTokens < 0) {
       throw new Error("Missing or invalid provider token usage.");
     }
+    inputTokens = reportedInputTokens;
+    outputTokens = reportedOutputTokens;
     generated = validateGeneratedQuestions(
       extractResponsesOutput(payload),
       boundedPages.map((page) => page.page_no),
       questionCount,
     );
   } catch (error) {
-    await refund(
+    const refunded = await refund(
       adminClient,
       userId,
       requestKey,
       error instanceof Error ? error.message.slice(0, 160) : "generation_failed",
       { model, inputTokens, outputTokens, actualCost: quizCostUsd(inputTokens, outputTokens, modelPricing) },
     );
+    if (!refunded) return json(503, {
+      error: "Quiz generation failed and credit release could not be confirmed.",
+      code: "REFUND_PENDING",
+    });
     console.error("generate-quiz generation/validation failed:", error instanceof Error ? error.message : "unknown");
     return json(502, { error: "AI returned an invalid or incomplete quiz. No credits were charged." });
   }
@@ -326,11 +349,15 @@ Deno.serve(async (request: Request) => {
     if (reservationState?.status === "succeeded" && reservationState.result_payload) {
       return json(200, reservationState.result_payload);
     }
-    await refund(adminClient, userId, requestKey, "quiz_finalization_failed", {
+    const refunded = await refund(adminClient, userId, requestKey, "quiz_finalization_failed", {
       model,
       inputTokens,
       outputTokens,
       actualCost,
+    });
+    if (!refunded) return json(503, {
+      error: "Quiz finalization failed and credit release could not be confirmed.",
+      code: "REFUND_PENDING",
     });
     console.error("generate-quiz finalization failed:", finalizeError?.code ?? "invalid-rpc-result");
     return json(503, { error: "Quiz storage or billing is not ready. No credits were charged." });
