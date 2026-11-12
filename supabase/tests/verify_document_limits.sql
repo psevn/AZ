@@ -56,7 +56,7 @@ begin
   v_result := public.create_document_upload_record(v_doc3, v_user, 'Third', v_user::text || '/' || v_doc3::text || '.pdf');
   if v_result->>'ok' <> 'true'
      or not (coalesce(v_result->'expired_paths', '[]'::jsonb) @> jsonb_build_array(v_user::text || '/' || v_doc2::text || '.pdf'))
-     or exists (select 1 from public.documents where id = v_doc2) then
+     or not exists (select 1 from public.documents where id = v_doc2 and status = 'failed' and failed_reason = 'Upload expired before completion.') then
     raise exception 'Expected stale uploaded row and its storage path to expire: %', v_result;
   end if;
 
