@@ -12,6 +12,8 @@ export function normalizePdfTextItems(items) {
     .trim();
 }
 
+const MAX_PAGES_PER_BATCH = 20;
+
 export function makePageBatches(documentId, pages, maxBytes = 300 * 1024) {
   const encoder = new TextEncoder();
   const batches = [];
@@ -26,8 +28,9 @@ export function makePageBatches(documentId, pages, maxBytes = 300 * 1024) {
     }
 
     const candidate = [...current, page];
+    const exceedsPageLimit = candidate.length > MAX_PAGES_PER_BATCH;
     const payload = JSON.stringify({ action: "save_pages", documentId, pages: candidate });
-    if (encoder.encode(payload).byteLength > maxBytes) {
+    if (exceedsPageLimit || encoder.encode(payload).byteLength > maxBytes) {
       if (current.length === 0) {
         throw new RangeError("Page " + page.pageNo + " is too large to save safely.");
       }
