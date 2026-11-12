@@ -187,37 +187,52 @@ Deno.serve(async (request: Request) => {
   const payloadHash = await hashPayload({
     userId, documentId, language, questionCount, topic, pageNumbers: boundedPages.map((page) => page.page_no),
   });
-  const { data: reservationRows, error: reservationError } = await adminClient.rpc("reserve_quiz_credits", {
+  const { data: reservationRows, error: reservationError } = await adminClient.rpc("reserve_credits", {
     p_user_id: userId,
+    p_feature: FEATURE,
     p_request_key: requestKey,
-    p_question_count: questionCount,
-    p_page_count: boundedPages.length,
     p_est_cost: estimatedCost,
-    p_payload_hash: payloadHash,
   });
   const reservation = Array.isArray(reservationRows) ? reservationRows[0] : null;
   if (reservationError || !reservation) {
     console.error("generate-quiz reservation failed:", reservationError?.code ?? "invalid-reservation-result");
     return json(503, { error: "Could not reserve quiz usage. Please try again." });
   }
+
   if (reservation.r_replay) {
-    if (reservation.r_status === "succeeded" && typeof reservation.r_result_ref === "string") {
-      const replay = await loadReplay(adminClient, userId, reservation.r_result_ref);
-      return replay ? json(200, replay) : json(503, { error: "The saved quiz result could not be recovered safely." });
-    }
-    if (reservation.r_status === "reserved") return json(409, { error: "This quiz request is already being processed. Retry with the same request key shortly." });
-    if (reservation.r_status === "key_conflict") {
+    const { data: previous, error: previousError } = await adminClient.from("ai_usage_log")
+      .select("status,error,result_ref,request_payload_hash")
+      .eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey).maybeSingle();
+    if (previousError || !previous) return json(503, { error: "Could not recover the previous quiz request safely." });
+    if (previous.request_payload_hash !== payloadHash) {
       return json(409, { error: "This request key was already used for different quiz settings." });
     }
-    if (reservation.r_status === "denied" || String(reservation.r_reason ?? "").startsWith("denied:")) {
+    if (previous.status === "succeeded" && typeof previous.result_ref === "string") {
+      const replay = await loadReplay(adminClient, userId, previous.result_ref);
+      return replay ? json(200, replay) : json(503, { error: "The saved quiz result could not be recovered safely." });
+    }
+    if (previous.status === "reserved") {
+      return json(409, { error: "This quiz request is already being processed. Retry with the same request key shortly." });
+    }
+    if (previous.status === "failed" && String(previous.error ?? "").startsWith("denied:")) {
       return json(429, { error: "Your daily, monthly, or service-wide AI usage limit has been reached." });
     }
     return json(409, { error: "This request key has already been used. Start a new quiz request." });
   }
+
   if (reservation.r_status === "denied") {
     return json(429, { error: "Your daily, monthly, or service-wide AI usage limit has been reached." });
   }
   if (reservation.r_status !== "reserved") return json(503, { error: "Could not reserve quiz usage." });
+
+  const { error: hashError } = await adminClient.from("ai_usage_log").update({
+    request_payload_hash: payloadHash,
+  }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+  if (hashError) {
+    await refund(adminClient, userId, requestKey, "request_hash_storage_failed");
+    console.error("generate-quiz request hash storage failed:", hashError.code);
+    return json(503, { error: "Could not record the request safely; reserved credits were refunded." });
+  }
 
   let generated: ReturnType<typeof validateGeneratedQuestions>;
   let responseId: string | undefined;
