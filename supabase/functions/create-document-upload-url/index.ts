@@ -145,6 +145,22 @@ Deno.serve(async (request: Request) => {
 
   if (expiryError || !expiryResult || expiryResult.ok !== true) {
     console.error("create-document-upload-url expiry persistence failed:", expiryError?.code ?? "document_state_changed");
+
+    // A transport error can happen after the RPC committed. Only release the
+    // reservation when no expiry was recorded, so a concurrent successful
+    // token issuance is never marked failed.
+    if (expiryError) {
+      const { error: cleanupError } = await adminClient.from("documents")
+        .update({ status: "failed", failed_reason: "Could not prepare the upload." })
+        .eq("id", documentId)
+        .eq("user_id", userId)
+        .eq("status", "uploaded")
+        .is("upload_token_expires_at", null);
+      if (cleanupError) {
+        console.error("create-document-upload-url reservation cleanup failed:", cleanupError.code);
+      }
+    }
+
     return json(expiryError ? 503 : 409, {
       error: "The upload could not be started safely. Please retry.",
       code: expiryError ? "UPLOAD_EXPIRY_PERSIST_FAILED" : "DOCUMENT_STATE_CHANGED",
