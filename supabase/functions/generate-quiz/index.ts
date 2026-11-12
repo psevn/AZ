@@ -1,5 +1,4 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import {
   extractResponsesOutput,
   makeOpenAIRequest,
@@ -37,24 +36,31 @@ function quizCostUsd(inputTokens: number, outputTokens: number, pricing: { input
   return (inputTokens * pricing.input_usd_per_1m + outputTokens * pricing.output_usd_per_1m) / 1_000_000;
 }
 
-function responsePayload(saved: any, document: { id: string; title: string }, model: string) {
-  return {
-    quizId: saved.quiz_id,
-    document,
-    questions: saved.questions,
-    questionCount: saved.questions.length,
-    provider: "openai",
-    model,
-  };
-}
-
-async function refund(adminClient: any, userId: string, requestKey: string, reason: string) {
-  const { error } = await adminClient.rpc("refund_credits", {
-    p_user_id: userId,
-    p_feature: FEATURE,
-    p_request_key: requestKey,
-    p_error: reason,
-  });
+async function refund(
+  adminClient: any,
+  userId: string,
+  requestKey: string,
+  reason: string,
+  usage?: { model: string; inputTokens: number; outputTokens: number; actualCost: number },
+) {
+  const { error } = usage
+    ? await adminClient.rpc("refund_quiz_generation", {
+      p_user_id: userId,
+      p_feature: FEATURE,
+      p_request_key: requestKey,
+      p_error: reason,
+      p_provider: "openai",
+      p_model: usage.model,
+      p_input_tokens: usage.inputTokens,
+      p_output_tokens: usage.outputTokens,
+      p_actual_cost: usage.actualCost,
+    })
+    : await adminClient.rpc("refund_credits", {
+      p_user_id: userId,
+      p_feature: FEATURE,
+      p_request_key: requestKey,
+      p_error: reason,
+    });
   if (error) console.error("generate-quiz reservation refund failed:", error.code);
 }
 
@@ -213,17 +219,6 @@ Deno.serve(async (request: Request) => {
   }
   if (reservation.r_status !== "reserved") return json(503, { error: "Could not reserve quiz-generation credits." });
 
-  // Successful replays returned above; only new provider work consumes this rate-limit slot.
-  const rateLimit = await checkUserRateLimit(adminClient, userId, "generate_quiz");
-  if (!rateLimit.allowed) {
-    await refund(adminClient, userId, requestKey, "rate_limit_exceeded");
-    return json(rateLimit.status, {
-      error: rateLimit.message,
-      code: rateLimit.code,
-      ...(rateLimit.retryAfterSeconds ? { retryAfterSeconds: rateLimit.retryAfterSeconds } : {}),
-    });
-  }
-
   const startedAt = Date.now();
   let payload: any;
   let generated: ReturnType<typeof validateGeneratedQuestions>;
@@ -248,7 +243,22 @@ Deno.serve(async (request: Request) => {
 
     payload = await openAIResponse.json();
     if (!openAIResponse.ok) {
-      await refund(adminClient, userId, requestKey, `provider_http_${openAIResponse.status}`);
+      const failedInputTokens = Number(payload?.usage?.input_tokens);
+      const failedOutputTokens = Number(payload?.usage?.output_tokens);
+      const hasFailedUsage = Number.isInteger(failedInputTokens) && failedInputTokens >= 0 &&
+        Number.isInteger(failedOutputTokens) && failedOutputTokens >= 0;
+      await refund(
+        adminClient,
+        userId,
+        requestKey,
+        `provider_http_${openAIResponse.status}`,
+        {
+          model,
+          inputTokens: hasFailedUsage ? failedInputTokens : 0,
+          outputTokens: hasFailedUsage ? failedOutputTokens : 0,
+          actualCost: hasFailedUsage ? quizCostUsd(failedInputTokens, failedOutputTokens, modelPricing) : 0,
+        },
+      );
       console.error("OpenAI Responses API failed:", openAIResponse.status);
       return json(openAIResponse.status === 429 ? 429 : 502, { error: "AI could not prepare this quiz. No credits were charged." });
     }
@@ -264,7 +274,13 @@ Deno.serve(async (request: Request) => {
       questionCount,
     );
   } catch (error) {
-    await refund(adminClient, userId, requestKey, error instanceof Error ? error.message.slice(0, 160) : "generation_failed");
+    await refund(
+      adminClient,
+      userId,
+      requestKey,
+      error instanceof Error ? error.message.slice(0, 160) : "generation_failed",
+      { model, inputTokens, outputTokens, actualCost: quizCostUsd(inputTokens, outputTokens, modelPricing) },
+    );
     console.error("generate-quiz generation/validation failed:", error instanceof Error ? error.message : "unknown");
     return json(502, { error: "AI returned an invalid or incomplete quiz. No credits were charged." });
   }
@@ -294,7 +310,12 @@ Deno.serve(async (request: Request) => {
     if (reservationState?.status === "succeeded" && reservationState.result_payload) {
       return json(200, reservationState.result_payload);
     }
-    await refund(adminClient, userId, requestKey, "quiz_finalization_failed");
+    await refund(adminClient, userId, requestKey, "quiz_finalization_failed", {
+      model,
+      inputTokens,
+      outputTokens,
+      actualCost,
+    });
     console.error("generate-quiz finalization failed:", finalizeError?.code ?? "invalid-rpc-result");
     return json(503, { error: "Quiz storage or billing is not ready. No credits were charged." });
   }
