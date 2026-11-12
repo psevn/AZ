@@ -311,6 +311,6 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Quiz billing could not be completed. No credits were charged." });
   }
 
-  // Correct indexes and explanations are never sent to the browser.
+  // No correct indexes or explanations are sent to the browser.
   return json(200, result);
 });
