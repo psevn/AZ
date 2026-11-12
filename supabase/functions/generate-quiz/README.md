@@ -8,7 +8,7 @@ This branch adds the first server-side generation slice. It is intentionally not
 - Request: `{ documentId, language: "ar" | "en", questionCount?: 5..20, topic?: string }`.
 - The function verifies the bearer token with Supabase Auth, then reads only a ready document and its extracted pages under that user's JWT/RLS context.
 - Input to OpenAI is bounded to at most 40 pages and 36,000 source characters. Page references are retained explicitly.
-- OpenAI Responses API uses strict Structured Outputs. The model is configured by `OPENAI_MODEL` (default: `gpt-6-astra`).
+- OpenAI Responses API uses strict Structured Outputs. `OPENAI_MODEL` is mandatory; the function returns HTTP 503 with `OPENAI_MODEL_NOT_CONFIGURED` when it is unset or blank. The owner must set it explicitly to a model ID that exists and is enabled on their own OpenAI account. The repository does not guess or supply a default model.
 - The generated output is validated again in application code. Invalid count, duplicate prompts/choices, invalid answer indexes, unsupported difficulty, or page references outside the selected document are rejected before storage.
 - The browser response contains question prompts, choices, topics, source pages, and difficulty only. Correct indexes and explanations are written to `private.question_keys` and are never included in the response.
 

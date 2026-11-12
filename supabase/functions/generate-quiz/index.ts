@@ -93,11 +93,17 @@ Deno.serve(async (request: Request) => {
   const publishableKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const openAIKey = Deno.env.get("OPENAI_API_KEY");
-  const model = Deno.env.get("OPENAI_MODEL") ?? "gpt-6-astra";
+  const model = Deno.env.get("OPENAI_MODEL")?.trim();
 
   if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
     console.error("generate-quiz is missing Supabase server configuration.");
     return json(503, { error: "The study service is not configured." });
+  }
+  if (!model) {
+    return json(503, {
+      error: "Quiz generation is not configured. Set OPENAI_MODEL to a model ID that exists and is enabled on this OpenAI account.",
+      code: "OPENAI_MODEL_NOT_CONFIGURED",
+    });
   }
   if (!openAIKey) return json(503, { error: "AI quiz generation is not configured yet." });
 

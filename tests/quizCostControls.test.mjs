@@ -2,13 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [edge, migration, creditRpcs, persistence, client] = await Promise.all([
+const [edge, migration, creditRpcs, persistence, client, modelReadme] = await Promise.all([
   readFile(new URL("../supabase/functions/generate-quiz/index.ts", import.meta.url), "utf8"),
   readFile(new URL("../supabase/migrations/20261112070000_dynamic_quiz_credit_reservations.sql", import.meta.url), "utf8"),
   readFile(new URL("../supabase/migrations/20261105123204_credit_reservation_rpcs.sql", import.meta.url), "utf8"),
   readFile(new URL("../supabase/proposals/create_generated_quiz_rpc.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/components/QuizPage.tsx", import.meta.url), "utf8"),
+  readFile(new URL("../supabase/functions/generate-quiz/README.md", import.meta.url), "utf8"),
 ]);
+
+test("quiz generation requires an explicit model configured by the owner", () => {
+  assert.ok(edge.includes('Deno.env.get("OPENAI_MODEL")?.trim()'));
+  assert.ok(edge.includes("OPENAI_MODEL_NOT_CONFIGURED"));
+  assert.ok(edge.includes("if (!model)"));
+  assert.ok(!edge.includes('Deno.env.get("OPENAI_MODEL") ??'));
+  assert.ok(modelReadme.includes("exists and is enabled on their own OpenAI account"));
+});
 
 test("quiz generation authenticates and scopes the selected document to the caller", () => {
   assert.ok(edge.includes("auth.getUser(token)"));
