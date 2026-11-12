@@ -57,10 +57,27 @@ if [[ "$STARTED" != "deleting" || "$LOCK_CLEARED" != "true" ]]; then
   exit 1
 fi
 
+PROCESSING_TOKEN="$(psql_run "select locked_at::text from public.documents where id='$DOC_PROCESSING';")"
 PROCESSING_STARTED="$(psql_run "select public.begin_document_deletion('$DOC_PROCESSING','$USER_ID')->>'status';")"
 PROCESSING_LOCK_CLEARED="$(psql_run "select (locked_at is null)::text from public.documents where id='$DOC_PROCESSING';")"
 if [[ "$PROCESSING_STARTED" != "deleting" || "$PROCESSING_LOCK_CLEARED" != "true" ]]; then
   echo "Processing document did not serialize into deleting state." >&2
+  exit 1
+fi
+
+# A worker holding the old processing token must not save pages after deletion wins.
+LATE_SAVE_STATUS="$(psql_run "select public.process_document_pages_atomic(
+  'save_pages',
+  '$DOC_PROCESSING',
+  '$USER_ID',
+  '$PROCESSING_TOKEN'::timestamptz,
+  '[{\"pageNo\":1,\"text\":\"late page\"}]'::jsonb,
+  null,
+  null
+)->>'statusCode';")"
+LATE_PAGE_COUNT="$(psql_run "select count(*) from public.document_pages where document_id='$DOC_PROCESSING';")"
+if [[ "$LATE_SAVE_STATUS" != "409" || "$LATE_PAGE_COUNT" != "0" ]]; then
+  echo "A stale processing worker wrote pages after document deletion began." >&2
   exit 1
 fi
 
