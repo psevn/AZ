@@ -8,6 +8,9 @@ import {
   validateGeneratedQuestions,
 } from "../_shared/quizGeneration.mjs";
 
+const FEATURE = "generate_quiz";
+const MODEL_PRICING_CONFIG = "openai_model_pricing";
+
 function readBearerToken(request: Request) {
   const value = request.headers.get("Authorization") ?? "";
   const match = value.match(/^Bearer\s+(.+)$/i);
