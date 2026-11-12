@@ -32,10 +32,11 @@ test("browser delegates document creation and failure status to the trusted endp
 test("upload URL endpoint authenticates and creates an owner-scoped record server-side", () => {
   assert.match(endpoint, /auth\.getUser\(token\)/);
   assert.match(endpoint, /Bearer\\s\+/);
-  assert.match(endpoint, /user_id: userId/);
-  assert.match(endpoint, /storage_path: storagePath/);
-  assert.match(endpoint, /\.insert\(\{/);
-  assert.match(endpoint, /status: "uploaded"/);
+  assert.match(endpoint, /rpc\("create_document_upload_record"/);
+  assert.match(endpoint, /p_user_id: userId/);
+  assert.match(endpoint, /p_storage_path: storagePath/);
+  assert.doesNotMatch(endpoint, /adminClient\.from\("documents"\)\.insert/);
+  assert.match(endpoint, /ACTIVE_DOCUMENT_LIMIT_EXCEEDED/);
   assert.match(endpoint, /createSignedUploadUrl\(storagePath/);
   assert.doesNotMatch(endpoint, /body\.storagePath|body\.path|body\.bucket/);
 });
