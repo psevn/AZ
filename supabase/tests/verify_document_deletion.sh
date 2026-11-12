@@ -81,7 +81,7 @@ if [[ "$LATE_SAVE_STATUS" != "409" || "$LATE_PAGE_COUNT" != "0" ]]; then
   exit 1
 fi
 
-# Concurrent signed-token issuance must retain the maximum expiry.
+# Out-of-order signed-token expiry writes must retain the maximum expiry.
 psql_run "select public.record_document_upload_token_expiry('$DOC_PENDING','$USER_ID',now()+interval '2 hours');"
 psql_run "select public.record_document_upload_token_expiry('$DOC_PENDING','$USER_ID',now()+interval '1 hour');"
 LATEST_EXPIRY="$(psql_run "select (upload_token_expires_at > now()+interval '110 minutes')::text from public.documents where id='$DOC_PENDING';")"
@@ -117,4 +117,4 @@ if [[ "$RETRIED" != "true" || "$REPLAY" != "true" ]]; then
   exit 1
 fi
 
-echo "PASS: owner isolation, deleting tombstones, processing-lock clearing, upload-token wait, FK cascade, and retry-safe finalization."
+echo "PASS: owner isolation, deleting tombstones, stale processing-token rejection, upload-token wait, FK cascade, and retry-safe finalization."
