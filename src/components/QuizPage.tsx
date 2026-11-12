@@ -393,7 +393,7 @@ export default function QuizPage({
     setScreen("loading");
     setLoadError("");
     const { data, error } = await supabase.functions.invoke("generate-quiz", {
-      body: { documentId: selectedDocument, language: lang, questionCount: 8, topic: topic.trim() },
+      body: { documentId: selectedDocument, language: lang, questionCount: 8, topic: topic.trim(), requestKey: crypto.randomUUID() },
     });
     if (error || !data?.quizId || !Array.isArray(data.questions) || data.questions.length < 5) {
       setLoadError(data?.error || error?.message || t.generationUnavailable);
