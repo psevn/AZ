@@ -16,6 +16,7 @@ const COPY = {
     close: "إغلاق",
     source: "الملف الأصلي",
     extracted: "النص المستخرج",
+    pageReferenceNotice: "أرقام الصفحات مأخوذة من استخراج المتصفح، ولم يتم التحقق منها مقابل ترقيم ملف PDF الأصلي.",
     previewPending: "معاينة فقط",
     pending: "يظهر النص المستخرج هنا بعد اكتمال معالجة المستند.",
     loading: "جارٍ تحميل نص الصفحة…",
@@ -34,6 +35,7 @@ const COPY = {
     close: "Close",
     source: "Original PDF",
     extracted: "Extracted text",
+    pageReferenceNotice: "Page numbers come from browser-side extraction and have not been verified against the original PDF pagination.",
     previewPending: "Preview only",
     pending: "Extracted text will appear here when document processing is complete.",
     loading: "Loading page text…",
@@ -160,6 +162,7 @@ export default function DocumentReader({
             <strong>{t.extracted}</strong>
             {status === "ready" && totalPages > 0 && <span>{totalPages} {ar ? "صفحة" : "pages"}</span>}
           </div>
+          {status === "ready" && <p className="document-reader-pending" role="note">{t.pageReferenceNotice}</p>}
 
           {status !== "ready" ? (
             <p className="document-reader-pending">{t.pending}</p>
