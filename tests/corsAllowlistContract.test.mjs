@@ -18,6 +18,8 @@ test("all four Edge Functions use the same CORS allowlist helper", () => {
     assert.ok(source.includes("headers: cors.headers"));
     assert.ok(!source.includes('Access-Control-Allow-Origin": "*"'));
   }
+  assert.ok(processPages.includes("const MAX_BODY_BYTES = 400 * 1024"));
+  assert.ok(quiz.includes('const FEATURE = "generate_quiz"'));
 });
 
 test("CORS configuration is read from ALLOWED_ORIGINS and fails closed when absent or invalid", () => {
