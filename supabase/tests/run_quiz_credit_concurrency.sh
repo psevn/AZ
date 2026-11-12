@@ -46,8 +46,19 @@ if [[ "$reserved" -ne 2 || "$denied" -ne 18 ]]; then
   exit 1
 fi
 
-first_key="$(head -n 1 "$TMP_DIR/keys")"
-second_key="$(tail -n 1 "$TMP_DIR/keys")"
+first_key=""
+second_key=""
+index=0
+while IFS= read -r key; do
+  index=$((index + 1))
+  if [[ "$(cat "$TMP_DIR/result-$index")" == "reserved" ]]; then
+    if [[ -z "$first_key" ]]; then first_key="$key"; else second_key="$key"; fi
+  fi
+done < "$TMP_DIR/keys"
+if [[ -z "$first_key" || -z "$second_key" ]]; then
+  echo "FAIL: could not identify both successful reservation keys" >&2
+  exit 1
+fi
 replay="$("${PSQL[@]}" -c "select r_status || ':' || r_replay::text from public.reserve_quiz_credits('$USER_ID', '$first_key', 5, 1, 0.01, repeat('a',64));")"
 if [[ "$replay" != "reserved:true" ]]; then
   echo "FAIL: same-key replay did not return the existing reservation: $replay" >&2
