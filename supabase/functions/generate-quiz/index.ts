@@ -29,6 +29,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+async function hashPayload(value: Record<string, unknown>): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value)));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function safeTokenCount(value: unknown): number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : 0;
 }
@@ -179,12 +184,16 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Quiz generation pricing configuration is invalid." });
   }
 
+  const payloadHash = await hashPayload({
+    userId, documentId, language, questionCount, topic, pageNumbers: boundedPages.map((page) => page.page_no),
+  });
   const { data: reservationRows, error: reservationError } = await adminClient.rpc("reserve_quiz_credits", {
     p_user_id: userId,
     p_request_key: requestKey,
     p_question_count: questionCount,
     p_page_count: boundedPages.length,
     p_est_cost: estimatedCost,
+    p_payload_hash: payloadHash,
   });
   const reservation = Array.isArray(reservationRows) ? reservationRows[0] : null;
   if (reservationError || !reservation) {
@@ -197,8 +206,10 @@ Deno.serve(async (request: Request) => {
       return replay ? json(200, replay) : json(503, { error: "The saved quiz result could not be recovered safely." });
     }
     if (reservation.r_status === "reserved") return json(409, { error: "This quiz request is already being processed. Retry with the same request key shortly." });
-    if (reservation.r_status === "denied" || String(reservation.r_reason ?? "").startsWith("daily_limit") ||
-        String(reservation.r_reason ?? "").startsWith("monthly_limit") || String(reservation.r_reason ?? "").startsWith("global_cap")) {
+    if (reservation.r_status === "key_conflict") {
+      return json(409, { error: "This request key was already used for different quiz settings." });
+    }
+    if (reservation.r_status === "denied" || String(reservation.r_reason ?? "").startsWith("denied:")) {
       return json(429, { error: "Your daily, monthly, or service-wide AI usage limit has been reached." });
     }
     return json(409, { error: "This request key has already been used. Start a new quiz request." });
