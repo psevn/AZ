@@ -60,6 +60,7 @@ test("uses configurable credit and model prices with per-question/page scaling",
   assert.match(edge, /from\("app_config"\).*openai_model_pricing/s);
   assert.match(edge, /p_credit_multiplier: creditMultiplier/);
   assert.match(edge, /const creditMultiplier = questionCount \/ 8 \+ boundedPages\.length \/ 40/);
+  assert.match(edge, /const outputTokenBudget = Math\.min\(MAX_OUTPUT_TOKENS, questionCount \* 600\)/);
   assert.match(migration, /cc\.credits \* p_credit_multiplier/);
   assert.match(migration, /global_monthly_cost_cap/);
 });
