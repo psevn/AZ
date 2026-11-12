@@ -133,5 +133,25 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Could not prepare the upload. Please try again." });
   }
 
+  // Signed upload tokens remain usable for two hours. Persist the expiry before
+  // returning the token; the conditional UPDATE serializes with deletion's row lock.
+  const uploadTokenExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  const { data: expiryRecord, error: expiryError } = await adminClient
+    .from("documents")
+    .update({ upload_token_expires_at: uploadTokenExpiresAt })
+    .eq("id", documentId)
+    .eq("user_id", userId)
+    .eq("status", "uploaded")
+    .select("id")
+    .maybeSingle();
+
+  if (expiryError || !expiryRecord) {
+    console.error("create-document-upload-url expiry persistence failed:", expiryError?.code ?? "document_state_changed");
+    return json(expiryError ? 503 : 409, {
+      error: "The upload could not be started safely. Please retry.",
+      code: expiryError ? "UPLOAD_EXPIRY_PERSIST_FAILED" : "DOCUMENT_STATE_CHANGED",
+    });
+  }
+
   return json(200, { documentId, path: signed.path, token: signed.token });
 });
