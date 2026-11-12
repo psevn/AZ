@@ -26,8 +26,15 @@ psql_file "$ROOT/supabase/tests/clean_replay_stubs.sql"
 psql_command "create publication supabase_realtime"
 
 count=0
+previous_version=""
 for f in "$ROOT"/supabase/migrations/*.sql; do
   name="$(basename "$f")"
+  version="${name%%_*}"
+  if [[ "$version" == "$previous_version" ]]; then
+    echo "Duplicate migration version $version detected at $name" >&2
+    exit 1
+  fi
+  previous_version="$version"
   echo "Replaying $name"
   if [[ "$name" == "20261105161922_schedule_sweep_stuck_reservations.sql" ]]; then
     # pg_cron is not installed in this disposable CI database. The migration's
