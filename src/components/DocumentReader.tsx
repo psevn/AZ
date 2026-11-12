@@ -22,6 +22,7 @@ const COPY = {
     loadError: "تعذّر تحميل نص هذه الصفحة.",
     retry: "إعادة المحاولة",
     page: "صفحة",
+    pageReferenceNote: "ترقيم الصفحات هنا ناتج عن استخراج النص داخل المتصفح ولم يتم التحقق منه مقابل ملف PDF الأصلي.",
     of: "من",
     previous: "السابقة",
     next: "التالية",
@@ -40,6 +41,7 @@ const COPY = {
     loadError: "Could not load this page’s text.",
     retry: "Try again",
     page: "Page",
+    pageReferenceNote: "Page numbering here comes from browser-side PDF extraction and has not been verified against the original PDF.",
     of: "of",
     previous: "Previous",
     next: "Next",
@@ -166,6 +168,7 @@ export default function DocumentReader({
           ) : (
             <>
               <div className="document-reader-controls">
+                <small className="document-reader-page-reference-note">{t.pageReferenceNote}</small>
                 <div className="document-reader-pagination">
                   <button type="button" className="az-btn az-btn--ghost" disabled={pageNo <= 1} onClick={() => changePage(pageNo - 1)}>{t.previous}</button>
                   <label>
