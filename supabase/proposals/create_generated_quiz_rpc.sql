@@ -63,7 +63,7 @@ begin
       raise exception 'Question % must be a JSON object', v_position using errcode = '22023';
     end if;
 
-    if jsonb_object_length(v_question) <> 7
+    if (select count(*) from jsonb_object_keys(v_question)) <> 7
        or (v_question - array[
          'prompt', 'choices', 'correct_index', 'source_page',
          'topic', 'explanation', 'difficulty'
