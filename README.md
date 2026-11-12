@@ -59,9 +59,3 @@ The primary current visual/product reference is [AZ Promo V5 — Web Design Refe
 - Complete V1 schema and Edge Functions.
 
 After installing dependencies, commit the generated `package-lock.json` so installs remain reproducible.
-
-## Server-side AI configuration
-
-The `generate-quiz` Edge Function is not deployed by this repository workflow. Before enabling it, the owner must set `OPENAI_MODEL` explicitly to a model ID that exists and is enabled on their own OpenAI account; there is deliberately no default model. The function also requires server-only `OPENAI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` secrets. Never expose these in browser variables or commit them.
-
-Quiz usage pricing is configured in the database, not hardcoded: set the `credit_costs` rows documented in `supabase/functions/generate-quiz/README.md` and the model rates in `app_config.openai_model_pricing`. The reservation migration must be tested on a disposable local database and reviewed before deployment.
