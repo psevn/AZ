@@ -137,10 +137,13 @@ begin
   end if;
 
   with expired as (
-    delete from public.documents d
+    update public.documents d
+       set status = 'failed', failed_reason = 'Upload expired before completion.'
      where d.user_id = p_user_id
-       and d.status = 'uploaded'
-       and d.created_at < now() - make_interval(mins => v_stale_uploaded_minutes)
+       and (
+         (d.status = 'uploaded' and d.created_at < now() - make_interval(mins => v_stale_uploaded_minutes))
+         or (d.status = 'failed' and d.failed_reason = 'Upload expired before completion.')
+       )
     returning d.storage_path
   )
   select coalesce(array_agg(expired.storage_path), array[]::text[])
@@ -148,7 +151,9 @@ begin
     from expired;
 
   select count(*)::integer into v_document_count
-    from public.documents d where d.user_id = p_user_id;
+    from public.documents d
+   where d.user_id = p_user_id
+     and not (d.status = 'failed' and d.failed_reason = 'Upload expired before completion.');
   if v_document_count >= v_max_documents then
     return jsonb_build_object('ok', false, 'error_code', 'DOCUMENT_LIMIT_DOCUMENTS', 'expired_paths', to_jsonb(v_expired_paths));
   end if;
