@@ -1,3 +1,10 @@
+alter table public.quiz_questions
+  add column position_no integer check (position_no is null or position_no >= 1);
+
+create unique index quiz_questions_quiz_position_key
+  on public.quiz_questions (quiz_id, position_no)
+  where position_no is not null;
+
 -- Proposal migration: dynamic, idempotent quiz credit reservation.
 -- This extends the existing reservation lifecycle; settle_credits/refund_credits remain authoritative.
 -- Requires explicit credit_costs rows: generate_quiz_base, generate_quiz_per_question,
