@@ -118,3 +118,14 @@ Assumptions: gateway 2.75% (top of the published Tap range, fixed fees ignored),
 
 Reading: at $6.99 about **1,700-2,100 paying students**. The $4.99 promo needs ~50% more, so keep it limited to the first 500. The 20,000-student ambition reaches $10k only if conversion is about 8-10%; at 5% it yields roughly $5.5k.
 Worst case warning: if every free student used the full $0.30 and every paying student the full $1.50, the unit margin would be negative. The global monthly spend cap is what protects the business; it must be enforced in the database before any public beta.
+
+## 13. Targets (PSEVN, 2026-11-12)
+- **Milestone 1: $5,500/month net profit.** At $6.99 and the section 12 assumptions: ~1,010 paying students at 5% conversion (~930 at 10%, ~1,150 at 3%), roughly 20,000 students in total at 5%.
+- **Milestone 2: $10,000/month net profit** (~1,700-2,100 paying students at $6.99).
+- Neither milestone gets a calendar date yet. Dates are set **after the beta measures real free -> paid conversion, real AI cost per student and real retention**. Until then these are arithmetic, not forecasts.
+- OpenAI prices confirmed by PSEVN from OpenAI's pricing page on 2026-11-12: GPT-6 Luna $0.10 in / $0.50 out / $0.01 cached; GPT-6.1 Terra $1.00 / $5.00 / $0.05; GPT-4.1 mini $0.40 / $1.60 / $0.10; GPT-4.1 nano not confirmed. Model choice is decided by the quality test (section 9), price as tie-breaker.
+
+## 14. Ads and sponsorship (decision: not in V1 or the beta)
+Reasons: no measured ad revenue for Qatar students; ads inside a study tool reduce focus and may lower conversion to the paid plan, which is the real income; many users are 16-21 (some under 18), so personalised ads on student data are a legal and trust risk; build time is limited.
+Possible later use: cover the cost of the free tier only (est. ~$0.05 per free student per month, unmeasured).
+Activation rule (all must hold): measured sponsor/ad revenue per free student > measured AI cost per free student + margin; **one** non-personalised sponsor card at the bottom of Home; never inside quiz, focus, exam mode or Study Pack; never for users under 18; clearly labelled "Sponsored"; direct sponsorships (banks, telecom, education services) preferred over ad networks; removable by upgrading.
