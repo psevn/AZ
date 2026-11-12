@@ -25,7 +25,7 @@ begin
       'max_total_pages', 2,
       'max_total_text_chars', 10,
       'max_pages_per_document', 2,
-      'stale_uploaded_minutes', 1
+      'stale_uploaded_minutes', 121
     ),
     'pro', jsonb_build_object(
       'max_documents', 100,
@@ -52,7 +52,7 @@ begin
   v_result := public.create_document_upload_record(v_doc2, v_user, 'Second', v_user::text || '/' || v_doc2::text || '.pdf');
   if v_result->>'ok' <> 'true' then raise exception 'Expected second upload after pending slot release: %', v_result; end if;
 
-  update public.documents set created_at = now() - interval '2 minutes' where id = v_doc2 and user_id = v_user;
+  update public.documents set created_at = now() - interval '122 minutes' where id = v_doc2 and user_id = v_user;
   v_result := public.create_document_upload_record(v_doc3, v_user, 'Third', v_user::text || '/' || v_doc3::text || '.pdf');
   if v_result->>'ok' <> 'true'
      or not (coalesce(v_result->'expired_paths', '[]'::jsonb) @> jsonb_build_array(v_user::text || '/' || v_doc2::text || '.pdf'))
