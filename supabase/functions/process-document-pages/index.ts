@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -139,6 +140,16 @@ Deno.serve(async (request: Request) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+  const rateLimitEndpoint = action === "save_pages"
+    ? "process_document_pages_save_pages"
+    : "process_document_pages";
+  const rateLimit = await checkUserRateLimit(adminClient, userId, rateLimitEndpoint);
+  if (!rateLimit.allowed) return json(rateLimit.status, {
+    error: rateLimit.message,
+    code: rateLimit.code,
+    ...(rateLimit.retryAfterSeconds ? { retryAfterSeconds: rateLimit.retryAfterSeconds } : {}),
+  });
+
   const processingToken = typeof body.processingToken === "string" && Number.isFinite(Date.parse(body.processingToken))
     ? body.processingToken
     : null;
