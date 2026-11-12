@@ -5,6 +5,7 @@ on:
     paths:
       - "src/App.tsx"
       - "src/components/DocumentUpload.tsx"
+      - "src/components/DocumentReader.tsx"
       - "src/components/DocumentLibrary.tsx"
       - "src/components/DocumentReader.tsx"
       - "src/lib/extractPdfText.ts"
@@ -25,6 +26,7 @@ on:
       - "tests/documentLimitsContract.test.mjs"
       - "tests/edgeRateLimitsContract.test.mjs"
       - "tests/edgeCorsAllowlist.test.mjs"
+      - "tests/pageReferenceTrustContract.test.mjs"
       - "tests/documentLibraryContract.test.mjs"
       - "tests/documentProcessingContract.test.mjs"
       - "tests/documentProcessingAtomic.test.mjs"
@@ -74,6 +76,8 @@ jobs:
         run: npm run test:edge-rate-limits
       - name: Test fail-closed CORS allowlist
         run: npm run test:edge-cors
+      - name: Test unverified PDF page-reference labeling
+        run: npm run test:page-reference-trust
       - name: Test document library contract
         run: npm run test:document-library
       - name: Test document processing contract
