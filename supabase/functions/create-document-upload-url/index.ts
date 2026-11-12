@@ -93,25 +93,50 @@ Deno.serve(async (request: Request) => {
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 255) : "";
   if (!title) return json(400, { error: "A document title is required." });
 
-  const { error: insertError } = await adminClient.from("documents").insert({
-    id: documentId,
-    user_id: userId,
-    title,
-    storage_path: storagePath,
-    status: "uploaded",
-    kind: "other",
+  const { data: reservation, error: reservationError } = await adminClient.rpc("create_document_upload_record", {
+    p_document_id: documentId,
+    p_user_id: userId,
+    p_title: title,
+    p_storage_path: storagePath,
   });
-  if (insertError) {
-    console.error("create-document-upload-url document insert failed:", insertError.code);
-    return json(409, { error: "Could not create this document upload." });
+  if (reservationError || typeof reservation !== "object" || reservation === null || Array.isArray(reservation)) {
+    console.error("create-document-upload-url reservation failed:", reservationError?.code ?? "invalid-rpc-result");
+    return json(503, { error: "Could not reserve document storage. Please try again." });
+  }
+
+  const expiredPaths = Array.isArray(reservation.expired_paths)
+    ? reservation.expired_paths.filter((value: unknown): value is string => typeof value === "string" && value.length > 0)
+    : [];
+  if (expiredPaths.length) {
+    const { error: cleanupError } = await adminClient.storage.from("documents").remove(expiredPaths);
+    if (cleanupError) console.error("Expired document upload cleanup failed:", cleanupError.name);
+  }
+
+  if (reservation.ok !== true) {
+    const code = typeof reservation.error_code === "string" ? reservation.error_code : "DOCUMENT_LIMIT_UNKNOWN";
+    const messages: Record<string, string> = {
+      DOCUMENT_LIMIT_DOCUMENTS: "You have reached the document limit for your plan.",
+      DOCUMENT_LIMIT_PENDING_UPLOADS: "Too many document uploads are still pending. Finish or retry an existing upload first.",
+      DOCUMENT_LIMIT_TOTAL_PAGES: "You have reached the total page limit for your plan.",
+      DOCUMENT_LIMIT_TOTAL_TEXT_CHARS: "You have reached the extracted-text limit for your plan.",
+      DOCUMENT_LIMIT_CONFIGURATION_MISSING: "Document limits are not configured for this plan yet.",
+      DOCUMENT_LIMIT_CONFIGURATION_INVALID: "Document limits are configured incorrectly.",
+      DOCUMENT_LIMIT_PROFILE_MISSING: "Your account profile could not be found.",
+      DOCUMENT_UPLOAD_INVALID_INPUT: "The document upload details are invalid.",
+    };
+    const limitExceeded = code.startsWith("DOCUMENT_LIMIT_") &&
+      !code.includes("CONFIGURATION") && code !== "DOCUMENT_LIMIT_PROFILE_MISSING";
+    return json(limitExceeded ? 429 : code === "DOCUMENT_UPLOAD_INVALID_INPUT" ? 400 : 503, {
+      error: messages[code] ?? "Could not reserve document storage.",
+      code,
+    });
   }
 
   const { data: signed, error: signError } = await adminClient.storage
     .from("documents").createSignedUploadUrl(storagePath, { upsert: false });
   if (signError || !signed?.token || !signed?.path) {
     await adminClient.from("documents")
-      .update({ status: "failed", failed_reason: "Could not prepare the upload." })
-      .eq("id", documentId).eq("user_id", userId).eq("status", "uploaded");
+      .delete().eq("id", documentId).eq("user_id", userId).eq("status", "uploaded");
     console.error("create-document-upload-url signing failed:", signError?.name ?? "unknown");
     return json(503, { error: "Could not prepare the upload. Please try again." });
   }
