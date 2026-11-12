@@ -136,16 +136,14 @@ Deno.serve(async (request: Request) => {
   // Signed upload tokens remain usable for two hours. Persist the expiry before
   // returning the token; the conditional UPDATE serializes with deletion's row lock.
   const uploadTokenExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
-  const { data: expiryRecord, error: expiryError } = await adminClient
-    .from("documents")
-    .update({ upload_token_expires_at: uploadTokenExpiresAt })
-    .eq("id", documentId)
-    .eq("user_id", userId)
-    .eq("status", "uploaded")
-    .select("id")
-    .maybeSingle();
+  const { data: expiryRecord, error: expiryError } = await adminClient.rpc("record_document_upload_token_expiry", {
+    p_document_id: documentId,
+    p_user_id: userId,
+    p_expires_at: uploadTokenExpiresAt,
+  });
+  const expiryResult = Array.isArray(expiryRecord) ? expiryRecord[0] : expiryRecord;
 
-  if (expiryError || !expiryRecord) {
+  if (expiryError || !expiryResult || expiryResult.ok !== true) {
     console.error("create-document-upload-url expiry persistence failed:", expiryError?.code ?? "document_state_changed");
     return json(expiryError ? 503 : 409, {
       error: "The upload could not be started safely. Please retry.",
