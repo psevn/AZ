@@ -64,7 +64,7 @@ psql_run "select r_status from public.settle_quiz_generation(
 REPLAY="$(psql_run "select r_status || '|' || r_replay from public.reserve_credits('$USER_ID','$FEATURE','replay-key',0.001,1);")"
 PAYLOAD="$(psql_run "select result_payload->>'quizId' from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
 TOKENS="$(psql_run "select input_tokens || '|' || output_tokens from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='replay-key';")"
-if [[ "$REPLAY" != "succeeded|t" || "$PAYLOAD" != "test-quiz" || "$TOKENS" != "10|20" ]]; then
+if [[ "$REPLAY" != "succeeded|true" || "$PAYLOAD" != "test-quiz" || "$TOKENS" != "10|20" ]]; then
   echo "Idempotent replay or usage logging failed: replay=$REPLAY payload=$PAYLOAD tokens=$TOKENS" >&2
   exit 1
 fi
@@ -81,6 +81,32 @@ psql_run "select r_status from public.refund_quiz_generation(
 SPEND="$(psql_run "select settled_cost from public.spend_counters where month=date_trunc('month',now() at time zone 'utc')::date;")"
 if [[ "$FAILED_USAGE" != "refunded|openai|test-model|7|11|0.002" || "$SPEND" != "0.003" ]]; then
   echo "Failed-call usage was not logged exactly once: usage=$FAILED_USAGE settled_spend=$SPEND" >&2
+  exit 1
+fi
+
+# Configured base credits scale by the requested question/page multiplier.
+psql_run "update public.usage_limits set daily_credits=100, monthly_credits=100 where plan='free';"
+SCALED_CREDITS="$(psql_run "select r_credits from public.reserve_credits('$USER_ID','$FEATURE','scaled-credit-key',0.001,2.5);")"
+if [[ "$SCALED_CREDITS" != "2.5" ]]; then
+  echo "Configured quiz credits did not scale with the request: got $SCALED_CREDITS" >&2
+  exit 1
+fi
+psql_run "select r_status from public.refund_credits('$USER_ID','$FEATURE','scaled-credit-key','scaled_credit_test');" | grep -qx 'refunded'
+
+# The monthly user cap is independent of the daily cap.
+psql_run "update public.usage_limits set daily_credits=100, monthly_credits=0 where plan='free';"
+MONTHLY_REASON="$(psql_run "select r_reason from public.reserve_credits('$USER_ID','$FEATURE','monthly-cap-key',0.001,1);")"
+if [[ "$MONTHLY_REASON" != "monthly_limit" ]]; then
+  echo "Expected monthly_limit denial, got $MONTHLY_REASON" >&2
+  exit 1
+fi
+
+# The global monthly spend cap is also enforced before any provider request.
+psql_run "update public.usage_limits set daily_credits=100, monthly_credits=100 where plan='free';
+  update public.app_config set value='0.0001'::jsonb where key='global_monthly_cost_cap';"
+GLOBAL_REASON="$(psql_run "select r_reason from public.reserve_credits('$USER_ID','$FEATURE','global-cap-key',0.001,1);")"
+if [[ "$GLOBAL_REASON" != "global_cap" ]]; then
+  echo "Expected global_cap denial, got $GLOBAL_REASON" >&2
   exit 1
 fi
 
