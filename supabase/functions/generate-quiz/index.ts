@@ -15,7 +15,7 @@ const MAX_OUTPUT_TOKENS = 6000;
 
 function readBearerToken(request: Request) {
   const value = request.headers.get("Authorization") ?? "";
-  const match = value.match(/^Bearer\\s+(.+)$/i);
+  const match = value.match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
 }
 
