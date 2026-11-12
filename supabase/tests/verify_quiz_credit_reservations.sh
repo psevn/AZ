@@ -67,4 +67,19 @@ if [[ "$REPLAY" != "succeeded|t" || "$PAYLOAD" != "test-quiz" || "$TOKENS" != "1
   exit 1
 fi
 
-echo "PASS: concurrent cap (1 allowed/7 denied), refund, settled replay, safe result persistence, and token usage logging."
+# Failed provider generations still log model/token/cost data, and refund replay cannot double-count spend.
+psql_run "select r_status from public.reserve_credits('$USER_ID','$FEATURE','failed-provider-key',0.01,1);" | grep -qx 'reserved'
+psql_run "select r_status from public.refund_quiz_generation(
+  '$USER_ID','$FEATURE','failed-provider-key','invalid_output','openai','test-model',7,11,0.002
+);" | grep -qx 'refunded'
+FAILED_USAGE="$(psql_run "select status || '|' || provider || '|' || model || '|' || input_tokens || '|' || output_tokens || '|' || cost_actual from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='failed-provider-key';")"
+psql_run "select r_status from public.refund_quiz_generation(
+  '$USER_ID','$FEATURE','failed-provider-key','retry_refund','openai','test-model',7,11,0.002
+);" | grep -qx 'refunded'
+SPEND="$(psql_run "select settled_cost from public.spend_counters where month=date_trunc('month',now() at time zone 'utc')::date;")"
+if [[ "$FAILED_USAGE" != "refunded|openai|test-model|7|11|0.002" || "$SPEND" != "0.003" ]]; then
+  echo "Failed-call usage was not logged exactly once: usage=$FAILED_USAGE settled_spend=$SPEND" >&2
+  exit 1
+fi
+
+echo "PASS: concurrent cap (1 allowed/7 denied), refunds, successful replay, safe result persistence, and failed-call token/cost logging."
