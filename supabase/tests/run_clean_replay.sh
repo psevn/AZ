@@ -47,4 +47,5 @@ fi
 psql_file "$ROOT/supabase/tests/verify_clean_replay.sql"
 psql_file "$ROOT/supabase/tests/verify_atomic_document_processing.sql"
 psql_file "$ROOT/supabase/tests/verify_rls_isolation.sql"
-echo "PASS: all 32 migrations replayed and representative authenticated RLS checks passed on a disposable PostgreSQL database."
+bash "$ROOT/supabase/tests/run_quiz_credit_concurrency.sh"
+echo "PASS: all migrations replayed; authenticated RLS and concurrent quiz-credit checks passed on a disposable PostgreSQL database."
