@@ -129,7 +129,7 @@ begin
   v_max_documents := (v_limits->>'max_documents')::integer;
   v_max_pending_uploads := (v_limits->>'max_pending_uploads')::integer;
   v_stale_uploaded_minutes := (v_limits->>'stale_uploaded_minutes')::integer;
-  if v_max_documents < 1 or v_max_pending_uploads < 1 or v_stale_uploaded_minutes < 1
+  if v_max_documents < 1 or v_max_pending_uploads < 1 or v_stale_uploaded_minutes <= 120
      or (v_limits->>'max_total_pages')::integer < 1
      or (v_limits->>'max_total_text_chars')::bigint < 1
      or (v_limits->>'max_pages_per_document')::integer < 1 then
