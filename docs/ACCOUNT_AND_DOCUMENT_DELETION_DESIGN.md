@@ -30,13 +30,16 @@ Document processing uses a row lock and processing token in `process_document_pa
 
 A migration would extend the document status constraint with `deleting`. A service-role-only RPC would lock the row `FOR UPDATE`, match both document ID and owner ID, set `deleting`, clear processing lock fields, and return the canonical stored path to the trusted caller.
 
+The migration should add `upload_token_expires_at` (nullable timestamptz) to `documents`. After successfully creating a signed upload URL, the upload Edge Function must persist its expiry (`now() + 2 hours`) before returning the token to the browser. If persisting the expiry fails, do not return the token; attempt cleanup and return an error.
+
 The Edge Function would:
 
 1. Verify JWT, rate-limit, and call the transition RPC using the Auth-derived user ID.
-2. Remove the exact canonical object from the private `documents` bucket.
-3. Treat an already-absent object as success only after confirming the Storage API's exact missing-object behavior; do not swallow arbitrary errors.
-4. Delete the relational document row with both `id` and `user_id` predicates only after Storage cleanup is confirmed. FK cascades then remove pages, summaries, notes, quizzes, questions, attempts, and other relational children.
-5. Return success only after both Storage and database deletion are confirmed.
+2. Mark the row `deleting` immediately, blocking signed downloads and new processing/upload actions.
+3. Keep the relational tombstone until `upload_token_expires_at` plus a clock-skew margin has passed. Do not assume deleting the current object revokes an already-issued upload token.
+4. After the expiry window, remove the exact canonical object from the private `documents` bucket. Treat an already-absent object as success only after confirming the Storage API's exact missing-object behavior; do not swallow arbitrary errors.
+5. Delete the relational document row with both `id` and `user_id` predicates only after final Storage cleanup is confirmed. FK cascades then remove pages, summaries, notes, quizzes, questions, attempts, and other relational children.
+6. Return a pending state while waiting for token expiry; return completed only after both Storage and database deletion are confirmed.
 
 ### Concurrency and retry requirements
 
@@ -81,7 +84,7 @@ Before enabling account deletion, decide what happens if the user is a project l
 
 - Verify every FK/trigger in the final migration replay; relational cascades do not remove Storage objects.
 - Signed download URLs already issued may remain usable for up to their current 300-second lifetime.
-- Signed upload URLs are documented as valid for 2 hours; keep a tombstone and perform a final Storage prefix sweep after that window plus clock-skew margin.
+- Signed upload URLs are documented as valid for 2 hours; persist each issued token's expiry, keep tombstones through that window plus clock-skew margin, and perform a final Storage sweep before removing relational records or deleting Auth users.
 - Deleting the Auth user invalidates refresh tokens but does not retroactively invalidate already-issued access JWTs; they remain valid until expiry unless sensitive operations check session existence or deletion state.
 - AI provider retention, backups, infrastructure logs, and legally required records may have separate retention rules. Do not promise immediate erasure from those systems without verifying provider terms.
 - Explain request accepted, cleanup pending, and completion states to the user.
