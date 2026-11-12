@@ -76,7 +76,8 @@ test("deletion waits through signed-upload expiry and uses Storage API plus inde
 
 test("upload creation persists token expiry conditionally before exposing the signed token", () => {
   assert.match(uploadEndpoint, /createSignedUploadUrl\(storagePath/);
-  assert.match(uploadEndpoint, /upload_token_expires_at: uploadTokenExpiresAt/);
+  assert.match(uploadEndpoint, /rpc\("record_document_upload_token_expiry"/);
+  assert.match(migration, /greatest\([\s\S]*p_expires_at/);
   assert.match(uploadEndpoint, /\.eq\("status", "uploaded"\)/);
   assert.match(uploadEndpoint, /\.select\("id"\)/);
   assert.ok(
