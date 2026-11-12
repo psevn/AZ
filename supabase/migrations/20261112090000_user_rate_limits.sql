@@ -81,11 +81,11 @@ begin
   delete from public.user_rate_limit_counters c
    where c.user_id = p_user_id and c.window_start < v_now - interval '1 day';
 
-  insert into public.user_rate_limit_counters(user_id, endpoint, window_start, request_count)
+  insert into public.user_rate_limit_counters as existing_counter(user_id, endpoint, window_start, request_count)
   values (p_user_id, p_endpoint, v_window_start, 1)
   on conflict (user_id, endpoint, window_start) do update
-    set request_count = public.user_rate_limit_counters.request_count + 1
-    where public.user_rate_limit_counters.request_count < v_max_requests
+    set request_count = existing_counter.request_count + 1
+    where existing_counter.request_count < v_max_requests
   returning request_count into v_request_count;
 
   v_retry_after := greatest(1, ceil(extract(epoch from (
