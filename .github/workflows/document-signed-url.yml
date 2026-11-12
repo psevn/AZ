@@ -16,13 +16,18 @@ on:
       - "supabase/functions/create-document-signed-url/**"
       - "supabase/functions/create-document-upload-url/**"
       - "supabase/functions/process-document-pages/**"
+      - "supabase/functions/delete-document/**"
       - "supabase/functions/_shared/rateLimit.ts"
       - "supabase/functions/_shared/cors.ts"
       - "supabase/migrations/20261112100000_edge_function_rate_limits.sql"
+      - "supabase/migrations/20261112110000_document_deletion_lifecycle.sql"
       - "supabase/tests/verify_edge_rate_limits.sh"
+      - "supabase/tests/verify_document_deletion.sh"
+      - "supabase/tests/run_clean_replay.sh"
       - "supabase/migrations/*atomic_document_processing.sql"
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
+      - "tests/documentDeletionContract.test.mjs"
       - "tests/documentLimitsContract.test.mjs"
       - "tests/edgeRateLimitsContract.test.mjs"
       - "tests/edgeCorsAllowlist.test.mjs"
@@ -34,6 +39,7 @@ on:
       - "tests/pdfTextPipeline.test.mjs"
       - "tests/documentReaderContract.test.mjs"
       - "package.json"
+      - "supabase/functions/create-document-upload-url/**"
       - "package-lock.json"
       - ".github/workflows/document-signed-url.yml"
   push:
@@ -44,6 +50,9 @@ on:
       - "src/components/DocumentUpload.tsx"
       - "supabase/functions/create-document-signed-url/**"
       - "supabase/functions/create-document-upload-url/**"
+      - "supabase/functions/delete-document/**"
+      - "supabase/migrations/20261112110000_document_deletion_lifecycle.sql"
+      - "tests/documentDeletionContract.test.mjs"
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
       - "package.json"
@@ -70,6 +79,8 @@ jobs:
         run: npm run test:document-signed-url
       - name: Test PDF upload security contract
         run: npm run test:document-upload
+      - name: Test retry-safe document deletion contract
+        run: npm run test:document-deletion
       - name: Test document and extracted-text quotas
         run: npm run test:document-limits
       - name: Test per-user Edge Function rate limits
