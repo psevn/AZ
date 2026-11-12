@@ -18,6 +18,9 @@ on:
       - "supabase/migrations/*atomic_document_processing.sql"
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
+      - "tests/rateLimitContract.test.mjs"
+      - "supabase/functions/_shared/rateLimit.ts"
+      - "supabase/migrations/*user_rate_limits.sql"
       - "tests/documentLibraryContract.test.mjs"
       - "tests/documentProcessingContract.test.mjs"
       - "tests/documentProcessingAtomic.test.mjs"
@@ -61,6 +64,8 @@ jobs:
         run: npm run test:document-signed-url
       - name: Test PDF upload security contract
         run: npm run test:document-upload
+      - name: Test endpoint rate limit contract
+        run: npm run test:rate-limits
       - name: Test document library contract
         run: npm run test:document-library
       - name: Test document processing contract
