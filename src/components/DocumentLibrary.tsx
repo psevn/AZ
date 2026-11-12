@@ -134,7 +134,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
   }
 
   async function resume(document: DocumentRow) {
-    if (recoveringId || !canResume(document)) return;
+    if (recoveringId || deletingId || !canResume(document)) return;
     setRecoveringId(document.id);
     setRecoveryError("");
     setRecoveryProgress(t.resuming);
@@ -157,7 +157,38 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
     }
   }
 
+  async function deleteDocument(document: DocumentRow) {
+    if (!supabase || deletingId || recoveringId) return;
+    setDeletingId(document.id);
+    setDeletionError("");
+    setDeletionMessage(t.deletingNow);
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke("delete-document", {
+        body: { documentId: document.id },
+      });
+      if (invokeError) throw new Error(t.deleteError);
+
+      if (data?.status === "deleted") {
+        setDocuments(current => current.filter(item => item.id !== document.id));
+        setConfirmDeleteId(null);
+        setDeletionMessage(t.deleteSuccess);
+      } else if (data?.status === "deleting") {
+        setDocuments(current => current.map(item => item.id === document.id ? { ...item, status: "deleting" } : item));
+        setConfirmDeleteId(null);
+        setDeletionMessage(t.deletePending);
+      } else {
+        throw new Error(t.deleteError);
+      }
+    } catch (cause) {
+      setDeletionError(cause instanceof Error ? cause.message : t.deleteError);
+      setDeletionMessage("");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   function statusLabel(document: DocumentRow) {
+    if (document.status === "deleting") return t.deleting;
     if (document.status === "ready") return t.ready;
     if (document.status === "processing") return t.processing;
     if (document.status !== "failed") return t.uploaded;
@@ -206,9 +237,9 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
                 {document.status === "ready" && <button type="button" className="az-btn az-btn--primary document-library-practice" onClick={() => onStartQuiz(document.id)}>{t.practice}</button>}
                 {canResume(document) && <button type="button" className="az-btn az-btn--ghost document-library-resume" disabled={recoveringId !== null || deletingId !== null} onClick={() => void resume(document)}>{recoveringId === document.id ? t.resuming : t.resume}</button>}
                 {document.status === "deleting" ? (
-                  <button type="button" className="az-btn az-btn--ghost document-library-delete" disabled={deletingId !== null} onClick={() => void deleteDocument(document)}>{deletingId === document.id ? t.deletingNow : t.retryDelete}</button>
+                  <button type="button" className="az-btn az-btn--ghost document-library-delete" disabled={deletingId !== null || recoveringId !== null} onClick={() => void deleteDocument(document)}>{deletingId === document.id ? t.deletingNow : t.retryDelete}</button>
                 ) : (
-                  <button type="button" className="az-btn az-btn--ghost document-library-delete" disabled={deletingId !== null} onClick={() => { setDeletionError(""); setConfirmDeleteId(current => current === document.id ? null : document.id); }}>{t.delete}</button>
+                  <button type="button" className="az-btn az-btn--ghost document-library-delete" disabled={deletingId !== null || recoveringId !== null} onClick={() => { setDeletionError(""); setConfirmDeleteId(current => current === document.id ? null : document.id); }}>{t.delete}</button>
                 )}
               </div>
               {confirmDeleteId === document.id && (
