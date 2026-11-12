@@ -64,6 +64,15 @@ if [[ "$PROCESSING_STARTED" != "deleting" || "$PROCESSING_LOCK_CLEARED" != "true
   exit 1
 fi
 
+# Concurrent signed-token issuance must retain the maximum expiry.
+psql_run "select public.record_document_upload_token_expiry('$DOC_PENDING','$USER_ID',now()+interval '2 hours');"
+psql_run "select public.record_document_upload_token_expiry('$DOC_PENDING','$USER_ID',now()+interval '1 hour');"
+LATEST_EXPIRY="$(psql_run "select (upload_token_expires_at > now()+interval '110 minutes')::text from public.documents where id='$DOC_PENDING';")"
+if [[ "$LATEST_EXPIRY" != "true" ]]; then
+  echo "A later-committing shorter token expiry overwrote the maximum validity window." >&2
+  exit 1
+fi
+
 PENDING_STARTED="$(psql_run "select public.begin_document_deletion('$DOC_PENDING','$USER_ID')->>'status';")"
 PENDING_CODE="$(psql_run "select public.complete_document_deletion('$DOC_PENDING','$USER_ID')->>'code';")"
 PENDING_STATUS="$(psql_run "select status from public.documents where id='$DOC_PENDING';")"
