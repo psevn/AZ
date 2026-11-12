@@ -121,6 +121,19 @@ Deno.serve(async (request: Request) => {
       console.error("Expired document upload cleanup failed:", cleanupError.name);
       return json(503, { error: "Could not clean expired uploads safely. Please retry." });
     }
+    const { error: expiredRowDeleteError } = await adminClient.from("documents").delete()
+      .eq("user_id", userId)
+      .eq("status", "failed")
+      .eq("failed_reason", "Upload expired before completion.")
+      .in("storage_path", expiredPaths);
+    if (expiredRowDeleteError) {
+      console.error("Expired document row cleanup failed:", expiredRowDeleteError.code);
+      if (reservation.ok === true) {
+        await adminClient.from("documents").delete()
+          .eq("id", documentId).eq("user_id", userId).eq("status", "uploaded");
+      }
+      return json(503, { error: "Could not finalize expired uploads safely. Please retry." });
+    }
   }
 
   if (reservation.ok !== true) {
