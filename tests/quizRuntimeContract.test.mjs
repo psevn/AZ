@@ -83,3 +83,10 @@ test("Home retains challenge, quiz, and attempt IDs only after the QuizPage call
   assert.match(app, /eq\("challenge_date", qatarDateKey\(\)\)/);
   assert.doesNotMatch(app, /awardPoints|grantPoints|points\s*\+=/i);
 });
+
+test("quiz source-page labels are explicitly unverified and never presented as verified citations", () => {
+  assert.match(page, /Unverified page reference/);
+  assert.match(page, /مرجع صفحة غير متحقق/);
+  assert.match(page, /pageReferenceNote/);
+  assert.match(page, /quiz-page-reference-note/);
+});
