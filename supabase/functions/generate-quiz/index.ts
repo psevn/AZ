@@ -60,7 +60,6 @@ Deno.serve(async (request: Request) => {
     code: cors.code ?? "CORS_REJECTED",
   });
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors.headers });
-  if (request.method === "OPTIONS") return new Response("ok", { headers: cors.headers });
   if (request.method !== "POST") return json(405, { error: "Method not allowed." });
 
   const token = readBearerToken(request);
