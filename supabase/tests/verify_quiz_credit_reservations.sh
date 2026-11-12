@@ -52,6 +52,8 @@ if [[ "$REFUNDED_COUNT" -ne 1 || "$RESERVED_CREDITS" != "0" ]]; then
   echo "Refund did not release the reservation: refunded=$REFUNDED_COUNT reserved=$RESERVED_CREDITS" >&2
   exit 1
 fi
+# Restore room for the success and failed-provider billing fixtures after the one-credit concurrency cap check.
+psql_run "update public.usage_limits set daily_credits=10 where plan='free';"
 
 # A settled request replay must return the existing success and stored safe payload.
 psql_run "select r_status from public.reserve_credits('$USER_ID','$FEATURE','replay-key',0.001,1);" | grep -qx 'reserved'
