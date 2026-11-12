@@ -317,6 +317,7 @@ Deno.serve(async (request: Request) => {
     }
   }
 
+  // The persistence RPC returns a safe projection; no correct indexes or explanations are sent to the browser.
   return json(200, {
     quizId: saved[0].quiz_id,
     document: { id: document.id, title: document.title },
