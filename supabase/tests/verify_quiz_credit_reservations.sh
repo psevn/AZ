@@ -84,4 +84,30 @@ if [[ "$FAILED_USAGE" != "refunded|openai|test-model|7|11|0.002" || "$SPEND" != 
   exit 1
 fi
 
+# Configured base credits scale by the requested question/page multiplier.
+psql_run "update public.usage_limits set daily_credits=100, monthly_credits=100 where plan='free';"
+SCALED_CREDITS="$(psql_run "select r_credits from public.reserve_credits('$USER_ID','$FEATURE','scaled-credit-key',0.001,2.5);")"
+if [[ "$SCALED_CREDITS" != "2.5" ]]; then
+  echo "Configured quiz credits did not scale with the request: got $SCALED_CREDITS" >&2
+  exit 1
+fi
+psql_run "select r_status from public.refund_credits('$USER_ID','$FEATURE','scaled-credit-key','scaled_credit_test');" | grep -qx 'refunded'
+
+# The monthly user cap is independent of the daily cap.
+psql_run "update public.usage_limits set daily_credits=100, monthly_credits=0 where plan='free';"
+MONTHLY_REASON="$(psql_run "select r_reason from public.reserve_credits('$USER_ID','$FEATURE','monthly-cap-key',0.001,1);")"
+if [[ "$MONTHLY_REASON" != "monthly_limit" ]]; then
+  echo "Expected monthly_limit denial, got $MONTHLY_REASON" >&2
+  exit 1
+fi
+
+# The global monthly spend cap is also enforced before any provider request.
+psql_run "update public.usage_limits set daily_credits=100, monthly_credits=100 where plan='free';
+  update public.app_config set value='0.0001'::jsonb where key='global_monthly_cost_cap';"
+GLOBAL_REASON="$(psql_run "select r_reason from public.reserve_credits('$USER_ID','$FEATURE','global-cap-key',0.001,1);")"
+if [[ "$GLOBAL_REASON" != "global_cap" ]]; then
+  echo "Expected global_cap denial, got $GLOBAL_REASON" >&2
+  exit 1
+fi
+
 echo "PASS: concurrent cap (1 allowed/7 denied), refunds, successful replay, safe result persistence, and failed-call token/cost logging."

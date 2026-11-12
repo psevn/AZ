@@ -39,6 +39,8 @@ test("successful quiz replays bypass new-work rate limiting and are not regenera
   const rateIndex = source.quiz.indexOf('checkUserRateLimit(adminClient, userId, "generate_quiz")');
   const providerIndex = source.quiz.indexOf('fetch("https://api.openai.com/v1/responses"');
   assert.ok(replayIndex >= 0 && rateIndex > replayIndex && providerIndex > rateIndex);
+  assert.match(source.quiz, /if \(!rateLimit\.allowed\)[\s\S]*?await refund\(adminClient, userId, requestKey, `rate_limit_/);
+  assert.match(source.quiz, /"Retry-After": String\(rateLimit\.retryAfterSeconds\)/);
 });
 
 test("database counter serializes per-user concurrent requests and fails closed without config", () => {
