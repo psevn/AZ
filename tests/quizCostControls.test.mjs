@@ -2,9 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [edge, migration, persistence, client] = await Promise.all([
+const [edge, migration, creditRpcs, persistence, client] = await Promise.all([
   readFile(new URL("../supabase/functions/generate-quiz/index.ts", import.meta.url), "utf8"),
   readFile(new URL("../supabase/migrations/20261112070000_dynamic_quiz_credit_reservations.sql", import.meta.url), "utf8"),
+  readFile(new URL("../supabase/migrations/20261105123204_credit_reservation_rpcs.sql", import.meta.url), "utf8"),
   readFile(new URL("../supabase/proposals/create_generated_quiz_rpc.sql", import.meta.url), "utf8"),
   readFile(new URL("../src/components/QuizPage.tsx", import.meta.url), "utf8"),
 ]);
