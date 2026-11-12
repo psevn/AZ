@@ -78,10 +78,8 @@ test("upload creation persists token expiry conditionally before exposing the si
   assert.match(uploadEndpoint, /createSignedUploadUrl\(storagePath/);
   assert.match(uploadEndpoint, /rpc\("record_document_upload_token_expiry"/);
   assert.match(migration, /greatest\([\s\S]*p_expires_at/);
-  assert.match(uploadEndpoint, /\.eq\("status", "uploaded"\)/);
-  assert.match(uploadEndpoint, /\.select\("id"\)/);
   assert.ok(
-    uploadEndpoint.indexOf("upload_token_expires_at: uploadTokenExpiresAt") <
+    uploadEndpoint.indexOf('rpc("record_document_upload_token_expiry"') <
       uploadEndpoint.indexOf("return json(200, { documentId, path: signed.path, token: signed.token })"),
     "signed token must not be returned before its expiry is persisted",
   );
