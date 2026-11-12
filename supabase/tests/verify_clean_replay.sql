@@ -17,17 +17,10 @@ begin
     raise exception 'Credit reservation sweep function is missing';
   end if;
 
-  if to_regprocedure('public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)') is null then
-    raise exception 'Dynamic quiz credit reservation RPC is missing';
-  end if;
-
-  if not has_function_privilege('service_role',
-      'public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)', 'EXECUTE')
-     or has_function_privilege('authenticated',
-      'public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)', 'EXECUTE')
-     or has_function_privilege('anon',
-      'public.reserve_quiz_credits(uuid,text,integer,integer,numeric,text)', 'EXECUTE') then
-    raise exception 'Quiz reservation RPC grants are not service-role-only';
+  if to_regprocedure('public.reserve_credits(uuid,text,text,numeric)') is null
+     or to_regprocedure('public.settle_credits(uuid,text,text,numeric,text,text,text,integer,text)') is null
+     or to_regprocedure('public.refund_credits(uuid,text,text,text)') is null then
+    raise exception 'Existing credit reservation lifecycle RPCs are missing';
   end if;
 
   if not exists (select 1 from information_schema.columns
