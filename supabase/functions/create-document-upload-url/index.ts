@@ -93,17 +93,28 @@ Deno.serve(async (request: Request) => {
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 255) : "";
   if (!title) return json(400, { error: "A document title is required." });
 
-  const { error: insertError } = await adminClient.from("documents").insert({
-    id: documentId,
-    user_id: userId,
-    title,
-    storage_path: storagePath,
-    status: "uploaded",
-    kind: "other",
+  const { data: created, error: insertError } = await adminClient.rpc("create_document_upload_record", {
+    p_user_id: userId,
+    p_document_id: documentId,
+    p_title: title,
+    p_storage_path: storagePath,
   });
   if (insertError) {
-    console.error("create-document-upload-url document insert failed:", insertError.code);
-    return json(409, { error: "Could not create this document upload." });
+    console.error("create-document-upload-url document reservation failed:", insertError.code);
+    return json(503, { error: "Document limits are not ready. Please try again later.", code: "DOCUMENT_LIMITS_NOT_CONFIGURED" });
+  }
+  const creation = Array.isArray(created) ? created[0] : created;
+  if (!creation || creation.ok !== true) {
+    const code = typeof creation?.code === "string" ? creation.code : "DOCUMENT_CREATE_FAILED";
+    const statusCode = typeof creation?.statusCode === "number" ? creation.statusCode : 409;
+    const messages: Record<string, string> = {
+      ACTIVE_DOCUMENT_LIMIT_EXCEEDED: "You already have the maximum number of uploads or documents currently processing.",
+      DOCUMENT_LIMIT_EXCEEDED: "You have reached the maximum number of documents for your plan.",
+      DOCUMENT_PAGE_LIMIT_EXCEEDED: "You have reached the total page limit for your plan.",
+      DOCUMENT_TEXT_LIMIT_EXCEEDED: "You have reached the extracted-text storage limit for your plan.",
+      DOCUMENT_LIMITS_NOT_CONFIGURED: "Document limits are not configured yet. Please contact the AZ owner.",
+    };
+    return json(statusCode, { error: messages[code] ?? "Could not create this document upload.", code });
   }
 
   const { data: signed, error: signError } = await adminClient.storage
