@@ -18,7 +18,7 @@ Goal: give students (free and paid) the **most AI usage per dollar** while keepi
 | Supabase Free | 500 MB DB, 1 GB storage, 5 GB egress, 2 active projects, pauses after 1 week idle | Official, same |
 | Student price | target $6.99/month; first 500 students $4.99 | PSEVN's decision (DECISIONS.md), still an assumption |
 
-**Not verified / unknown:** payment gateway fees in Qatar, Cloudflare plan limits, domain and legal costs, app-store fees (later), real token usage of our prompts, real output quality of cheap models in Arabic.
+**Not verified / unknown:** see section 11 for the second verification pass. Still unknown: fixed per-transaction fees, FX and chargeback costs, real token usage of our prompts, real output quality of cheap models in Arabic, and OpenAI's own current prices (two third-party sources disagree).
 
 ## 2. Assumed token size per action (ESTIMATES — replace with measured numbers from AZ-Staging)
 - Quiz from a lecture (8 questions): ~15k input, ~2k output.
@@ -93,3 +93,28 @@ For $10,000/month before fees/tax at $6.99 with ~$0.30 average AI cost: about **
 ## 10. How we keep this honest
 - Every AI call writes `ai_usage_log` (feature, model, tokens, cost). Weekly check: real cost per active student vs the budgets above.
 - Re-run sections 3–4 whenever the model or provider price changes. Prices change; this document's numbers carry a date.
+
+## 11. Second verification pass (2026-11-12)
+
+| Item | Finding | Level |
+|---|---|---|
+| OpenAI prices | **Unresolved.** openai.com's pricing page showed only business seat plans. Morph (2026-10-31) lists gpt-6-luna at $0.10/$0.50 and gpt-5.6-luna at $0.20/$1.20; Finout (2026-05-11) lists gpt-5.6-luna at $1.00/$6.00 and does not list the gpt-6 models. Same name, 5x apart. Treat every OpenAI number in this document as unverified until PSEVN reads OpenAI's own pricing page in his account. Planning rule: assume up to 5x the small-model numbers above. | Unverified, conflicting |
+| Payment gateway (Qatar) | Tap Payments publishes 2.0%-2.75% per transaction; MyFatoorah from 2.5% and marked as supporting recurring payments (Tap not marked). Fixed fees, FX and chargebacks excluded and not listed. The comparison site says its data is indicative and may be out of date. Confirm with each provider before choosing. | Indicative, third-party |
+| Cloudflare | Workers Free: 100,000 requests/day, 10 ms CPU per invocation. Paid: $5/month minimum, 10M requests included. Static asset requests are free and unlimited on both plans. Our collaboration Worker for Projects uses Durable Objects: check the plan requirement before launch. | Official docs |
+| Qatar licence (Wafeq article, updated 2025-09-16) | Commercial registration QAR 500; annual licence QAR 500 (QAR 300 home-based); trade name QAR 250-1,000; optional legal help QAR 1,370-4,100; LLC minimum capital QAR 200,000 (may not be due upfront). Some sources treat a physical address as required. Not legal advice; confirm with MOCI and a professional. | Secondary source, dated |
+
+## 12. How many paying students for $10,000/month net profit?
+Definition used: **net profit after AI, gateway fee, infrastructure and an assumed ~$100/month fixed overhead**; before taxes, marketing spend, support time and PSEVN's own time.
+Assumptions: gateway 2.75% (top of the published Tap range, fixed fees ignored), AI cost $0.30 per paying student per month (small model), each free student costs $0.05 per month on average (the free budget cap is $0.30; real use is lower), every free student is paid for by the paying ones.
+
+| Price | Free -> paid conversion | Net per paying student | Paying students needed | Total students needed |
+|---|---|---|---|---|
+| $6.99 | 10% | $6.05 | ~1,670 | ~16,700 |
+| $6.99 | 5% | $5.55 | ~1,820 | ~36,400 |
+| $6.99 | 3% | $4.88 | ~2,070 | ~69,000 |
+| $4.99 | 10% | $4.10 | ~2,460 | ~24,600 |
+| $4.99 | 5% | $3.60 | ~2,800 | ~56,100 |
+| $4.99 | 3% | $2.94 | ~3,440 | ~114,700 |
+
+Reading: at $6.99 about **1,700-2,100 paying students**. The $4.99 promo needs ~50% more, so keep it limited to the first 500. The 20,000-student ambition reaches $10k only if conversion is about 8-10%; at 5% it yields roughly $5.5k.
+Worst case warning: if every free student used the full $0.30 and every paying student the full $1.50, the unit margin would be negative. The global monthly spend cap is what protects the business; it must be enforced in the database before any public beta.
