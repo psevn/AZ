@@ -17,6 +17,10 @@ function readBearerToken(request: Request) {
   return match?.[1] ?? null;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function isUuid(value: unknown): value is string {
   return typeof value === "string" &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -99,7 +103,7 @@ Deno.serve(async (request: Request) => {
     p_title: title,
     p_storage_path: storagePath,
   });
-  if (reservationError || typeof reservation !== "object" || reservation === null || Array.isArray(reservation)) {
+  if (reservationError || !isRecord(reservation)) {
     console.error("create-document-upload-url reservation failed:", reservationError?.code ?? "invalid-rpc-result");
     return json(503, { error: "Could not reserve document storage. Please try again." });
   }
@@ -135,8 +139,9 @@ Deno.serve(async (request: Request) => {
   const { data: signed, error: signError } = await adminClient.storage
     .from("documents").createSignedUploadUrl(storagePath, { upsert: false });
   if (signError || !signed?.token || !signed?.path) {
-    await adminClient.from("documents")
+    const { error: deleteError } = await adminClient.from("documents")
       .delete().eq("id", documentId).eq("user_id", userId).eq("status", "uploaded");
+    if (deleteError) console.error("create-document-upload-url failed-row cleanup failed:", deleteError.code);
     console.error("create-document-upload-url signing failed:", signError?.name ?? "unknown");
     return json(503, { error: "Could not prepare the upload. Please try again." });
   }
