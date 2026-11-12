@@ -36,7 +36,7 @@ declare
   v_now timestamptz := clock_timestamp();
   v_retry_after integer;
 begin
-  if p_user_id is null or p_endpoint not in (
+  if p_user_id is null or p_endpoint is null or p_endpoint not in (
     'create_document_upload_url',
     'create_document_signed_url',
     'process_document_pages',
