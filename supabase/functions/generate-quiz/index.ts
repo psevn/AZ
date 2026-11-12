@@ -66,7 +66,7 @@ async function loadReplay(adminClient: ReturnType<typeof createClient>, userId: 
     adminClient.from("documents").select("id,title").eq("id", quiz.document_id).eq("user_id", userId).maybeSingle(),
     adminClient.from("quiz_questions")
       .select("id,prompt,choices,source_page,topic,difficulty")
-      .eq("quiz_id", quizId).eq("user_id", userId).order("created_at", { ascending: true }).order("id", { ascending: true }),
+      .eq("quiz_id", quizId).eq("user_id", userId).order("position_no", { ascending: true }),
   ]);
   if (questionsError || !document || !Array.isArray(rows) || rows.length < QUIZ_LIMITS.minQuestions) return null;
   return {
@@ -248,7 +248,22 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Quiz storage is not ready. No quiz was returned." });
   }
 
+  if (inputTokens <= 0 || outputTokens <= 0) {
+    await refund(adminClient, userId, requestKey, "provider_usage_missing");
+    return json(502, { error: "AI usage details were unavailable; the reservation was refunded." });
+  }
   const actualCost = calculateCost({ input: inputTokens, output: outputTokens }, modelPricing);
+  const { error: usageLogError } = await adminClient.from("ai_usage_log").update({
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    cost_usd: actualCost,
+  }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
+  if (usageLogError) {
+    await refund(adminClient, userId, requestKey, "usage_logging_failed");
+    console.error("generate-quiz token usage logging failed:", usageLogError.code);
+    return json(503, { error: "Could not record AI usage safely; the reservation was refunded." });
+  }
+
   const { error: settleError } = await adminClient.rpc("settle_credits", {
     p_user_id: userId,
     p_feature: FEATURE,
@@ -263,13 +278,6 @@ Deno.serve(async (request: Request) => {
     console.error("generate-quiz settlement failed:", settleError.code, responseId ?? "no-request-id");
     return json(503, { error: "The quiz was saved but usage settlement is pending. Retry this request shortly." });
   }
-
-  const { error: usageLogError } = await adminClient.from("ai_usage_log").update({
-    input_tokens: inputTokens,
-    output_tokens: outputTokens,
-    cost_usd: actualCost,
-  }).eq("user_id", userId).eq("feature", FEATURE).eq("request_key", requestKey);
-  if (usageLogError) console.error("generate-quiz token usage logging failed:", usageLogError.code);
 
   return json(200, {
     quizId: saved[0].quiz_id,
