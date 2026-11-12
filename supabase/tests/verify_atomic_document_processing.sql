@@ -2,6 +2,16 @@
 -- The transaction is rolled back so the fixture user and document never persist.
 begin;
 
+insert into public.app_config(key, value)
+values (
+  'document_limits',
+  jsonb_build_object(
+    'free', jsonb_build_object('max_documents', 100, 'max_pages', 100, 'max_text_chars', 1000000, 'max_active_uploads', 10, 'stale_uploaded_minutes', 30),
+    'pro', jsonb_build_object('max_documents', 100, 'max_pages', 100, 'max_text_chars', 1000000, 'max_active_uploads', 10, 'stale_uploaded_minutes', 30)
+  )
+)
+on conflict (key) do update set value = excluded.value;
+
 insert into auth.users (id, email)
 values ('00000000-0000-4000-8000-000000000641', 'atomic-document-test@example.invalid');
 
