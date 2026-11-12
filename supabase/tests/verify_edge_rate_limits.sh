@@ -63,7 +63,9 @@ if [[ "$SAVE_PAGES" != "true" ]]; then echo "The dedicated save_pages counter di
 # A one-second test window must reset without manual counter edits.
 psql_run "update public.app_config set value=jsonb_set(value,'{free,create_document_signed_url,max_requests}','1'::jsonb) where key='edge_rate_limits';
   update public.app_config set value=jsonb_set(value,'{free,create_document_signed_url,window_seconds}','1'::jsonb) where key='edge_rate_limits';"
-psql_run "select public.consume_edge_rate_limit('$USER_ID','create_document_signed_url')->>'allowed';" >/dev/null
+FIRST="$(psql_run "select public.consume_edge_rate_limit('$USER_ID','create_document_signed_url')->>'allowed';")"
+SECOND="$(psql_run "select public.consume_edge_rate_limit('$USER_ID','create_document_signed_url')->>'allowed';")"
+if [[ "$FIRST" != "true" || "$SECOND" != "false" ]]; then echo "One-second rate limit did not deny the second call." >&2; exit 1; fi
 sleep 2
 RESET="$(psql_run "select public.consume_edge_rate_limit('$USER_ID','create_document_signed_url')->>'allowed';")"
 if [[ "$RESET" != "true" ]]; then echo "Rate limit window did not reset." >&2; exit 1; fi
