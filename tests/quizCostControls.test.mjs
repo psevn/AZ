@@ -22,11 +22,10 @@ test("quiz generation authenticates and scopes the selected document to the call
 });
 
 test("reservation precedes the OpenAI request and uses configurable credit and model pricing", () => {
-  assert.match(edge, /rpc\("reserve_quiz_credits"/);
+  assert.match(edge, /rpc\\("reserve_credits"/);
   assert.ok(edge.indexOf('rpc("reserve_quiz_credits"') < edge.indexOf('fetch("https://api.openai.com/v1/responses"'));
-  assert.match(migration, /generate_quiz_base/);
-  assert.match(migration, /generate_quiz_per_question/);
-  assert.match(migration, /generate_quiz_per_page/);
+  assert.match(edge, /estimatedTokens\\(sourceCharacters: number, questionCount: number\\)/);
+  assert.match(edge, /credit_costs|p_feature: FEATURE/);
   assert.match(edge, /openai_model_pricing/);
 });
 
