@@ -69,9 +69,13 @@ insert into public.quiz_questions (id, user_id, quiz_id, prompt, choices) values
   ('f1000000-0000-4000-8000-000000000005', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001', 'A question 5', '["correct","wrong"]'::jsonb),
   ('f2000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'e2000000-0000-4000-8000-000000000001', 'B question', '["correct","wrong"]'::jsonb);
 
-insert into public.quiz_attempts (id, user_id, question_id, chosen_index, is_correct) values
-  ('f3000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'f1000000-0000-4000-8000-000000000001', 0, true),
-  ('f4000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'f2000000-0000-4000-8000-000000000001', 0, true);
+insert into public.quiz_attempts (id, user_id, quiz_id) values
+  ('f3000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'e1000000-0000-4000-8000-000000000001'),
+  ('f4000000-0000-4000-8000-000000000001', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'e2000000-0000-4000-8000-000000000001');
+
+insert into public.attempt_answers (user_id, attempt_id, question_id, chosen_index, is_correct) values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'f3000000-0000-4000-8000-000000000001', 'f1000000-0000-4000-8000-000000000001', 0, true),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'f4000000-0000-4000-8000-000000000001', 'f2000000-0000-4000-8000-000000000001', 0, true);
 
 insert into private.question_keys (question_id, user_id, correct_index, explanation) values
   ('f1000000-0000-4000-8000-000000000001', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 0, 'A explanation 1'),
