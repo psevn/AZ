@@ -1352,9 +1352,10 @@ button.primary-button:disabled,
 
 /* Secure document deletion: inline confirmation and retry states. */
 .document-library-status.is-deleting { color:var(--muted); }
+.document-library-item { flex-wrap:wrap; }
 .document-library-delete-confirm {
   display:grid;
-  grid-column:1 / -1;
+  flex:1 0 100%;
   gap:10px;
   width:100%;
   padding:12px 14px;
