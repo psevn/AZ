@@ -19,7 +19,7 @@ test("quiz generation authenticates and scopes the selected document to the call
 test("the existing reserve RPC runs before OpenAI and reads configurable credit costs", () => {
   assert.ok(edge.includes('rpc("reserve_credits"'));
   assert.ok(edge.indexOf('rpc("reserve_credits"') < edge.indexOf('fetch("https://api.openai.com/v1/responses"'));
-  assert.ok(edge.includes("Math.ceil(sourceCharacters / 3)"));
+  assert.ok(edge.includes("Math.ceil(sourceCharacters * 1.5)"));
   assert.ok(edge.includes("questionCount * 500"));
   assert.ok(edge.includes("p_feature: FEATURE"));
   assert.ok(creditRpcs.includes("from public.credit_costs"));
