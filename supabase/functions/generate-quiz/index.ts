@@ -269,48 +269,36 @@ Deno.serve(async (request: Request) => {
     return json(502, { error: "AI returned an invalid or incomplete quiz. No credits were charged." });
   }
 
-  const { data: saved, error: saveError } = await adminClient.rpc("create_generated_quiz", {
+  const actualCost = quizCostUsd(inputTokens, outputTokens, modelPricing);
+  const { data: finalized, error: finalizeError } = await adminClient.rpc("complete_generated_quiz", {
     p_user_id: userId,
     p_document_id: documentId,
-    p_questions: generated,
-  });
-  if (saveError || !Array.isArray(saved) || !saved[0]?.quiz_id || !Array.isArray(saved[0]?.questions)) {
-    await refund(adminClient, userId, requestKey, "quiz_persistence_failed");
-    console.error("generate-quiz save failed:", saveError?.code ?? "invalid-rpc-result");
-    return json(503, { error: "Quiz storage is not ready. No credits were charged." });
-  }
-
-  const result = responsePayload(saved[0], { id: document.id, title: document.title }, model);
-  const actualCost = quizCostUsd(inputTokens, outputTokens, modelPricing);
-  const { error: settleError } = await adminClient.rpc("settle_quiz_generation", {
-    p_user_id: userId,
-    p_feature: FEATURE,
+    p_document_title: document.title,
     p_request_key: requestKey,
+    p_questions: generated,
     p_actual_cost: actualCost,
     p_provider: "openai",
     p_model: model,
     p_prompt_version: PROMPT_VERSION,
     p_latency_ms: Date.now() - startedAt,
-    p_result_ref: saved[0].quiz_id,
     p_input_tokens: inputTokens,
     p_output_tokens: outputTokens,
-    p_result_payload: result,
   });
+  const completed = Array.isArray(finalized) ? finalized[0] : finalized;
 
-  if (settleError) {
+  if (finalizeError || !completed?.result_payload) {
+    // The RPC is transactional; this lookup handles a response lost after a committed finalization.
     const { data: reservationState } = await adminClient.from("ai_usage_log")
       .select("status,result_payload").eq("user_id", userId).eq("feature", FEATURE)
       .eq("request_key", requestKey).maybeSingle();
     if (reservationState?.status === "succeeded" && reservationState.result_payload) {
       return json(200, reservationState.result_payload);
     }
-    // Remove the uncharged quiz if settlement did not commit; then release the reservation.
-    await adminClient.from("quizzes").delete().eq("id", saved[0].quiz_id).eq("user_id", userId);
-    await refund(adminClient, userId, requestKey, "credit_settlement_failed");
-    console.error("generate-quiz settlement failed:", settleError.code);
-    return json(503, { error: "Quiz billing could not be completed. No credits were charged." });
+    await refund(adminClient, userId, requestKey, "quiz_finalization_failed");
+    console.error("generate-quiz finalization failed:", finalizeError?.code ?? "invalid-rpc-result");
+    return json(503, { error: "Quiz storage or billing is not ready. No credits were charged." });
   }
 
   // No correct indexes or explanations are sent to the browser.
-  return json(200, result);
+  return json(200, completed.result_payload);
 });
