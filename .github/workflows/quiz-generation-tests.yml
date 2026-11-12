@@ -8,7 +8,10 @@ on:
       - "tests/quizGeneration.test.mjs"
       - "tests/quizCostControls.test.mjs"
       - "tests/rateLimitContract.test.mjs"
+      - "tests/corsAllowlistContract.test.mjs"
+      - "docs/EDGE_CORS.md"
       - "supabase/functions/_shared/rateLimit.ts"
+      - "supabase/functions/_shared/cors.ts"
       - "supabase/migrations/**"
       - "supabase/proposals/create_generated_quiz_rpc.sql"
       - "src/components/QuizPage.tsx"
@@ -48,3 +51,5 @@ jobs:
         run: npm run test:quiz-cost-controls
       - name: Test endpoint rate limit contract
         run: npm run test:rate-limits
+      - name: Test CORS allowlist contract
+        run: npm run test:cors-allowlist

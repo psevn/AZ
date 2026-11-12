@@ -19,7 +19,10 @@ on:
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
       - "tests/rateLimitContract.test.mjs"
+      - "tests/corsAllowlistContract.test.mjs"
+      - "docs/EDGE_CORS.md"
       - "supabase/functions/_shared/rateLimit.ts"
+      - "supabase/functions/_shared/cors.ts"
       - "supabase/migrations/*user_rate_limits.sql"
       - "tests/documentLibraryContract.test.mjs"
       - "tests/documentProcessingContract.test.mjs"
@@ -66,6 +69,8 @@ jobs:
         run: npm run test:document-upload
       - name: Test endpoint rate limit contract
         run: npm run test:rate-limits
+      - name: Test CORS allowlist contract
+        run: npm run test:cors-allowlist
       - name: Test document library contract
         run: npm run test:document-library
       - name: Test document processing contract

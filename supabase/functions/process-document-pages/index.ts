@@ -1,23 +1,12 @@
 import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-  "Cache-Control": "no-store",
-};
+import { resolveCors } from "../_shared/cors.ts";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 400 * 1024;
 const MAX_PAGES_PER_BATCH = 20;
 const MAX_PAGE_CHARS = 18_000;
 const MAX_DOCUMENT_PAGES = 1_000;
-
-function json(status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) {
-  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, ...extraHeaders } });
-}
 
 function readBearerToken(request: Request) {
   const match = (request.headers.get("Authorization") ?? "").match(/^Bearer\s+(.+)$/i);
@@ -56,7 +45,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 Deno.serve(async (request: Request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = resolveCors(request);
+  const json = (status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors.headers, "Content-Type": "application/json", "Cache-Control": "no-store", ...extraHeaders },
+    });
+  if (!cors.allowed) return json(cors.status, { error: cors.message, code: cors.code });
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors.headers });
   if (request.method !== "POST") return json(405, { error: "Method not allowed." });
 
   const token = readBearerToken(request);
