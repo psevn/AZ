@@ -75,11 +75,11 @@ psql_run "select r_status from public.reserve_credits('$USER_ID','$FEATURE','fai
 psql_run "select r_status from public.refund_quiz_generation(
   '$USER_ID','$FEATURE','failed-provider-key','invalid_output','openai','test-model',7,11,0.002
 );" | grep -qx 'refunded'
-FAILED_USAGE="$(psql_run "select status || '|' || provider || '|' || model || '|' || input_tokens || '|' || output_tokens || '|' || cost_actual from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='failed-provider-key';")"
+FAILED_USAGE="$(psql_run "select status || '|' || provider || '|' || model || '|' || input_tokens || '|' || output_tokens || '|' || trim_scale(cost_actual) from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='failed-provider-key';")"
 psql_run "select r_status from public.refund_quiz_generation(
   '$USER_ID','$FEATURE','failed-provider-key','retry_refund','openai','test-model',7,11,0.002
 );" | grep -qx 'refunded'
-SPEND="$(psql_run "select settled_cost from public.spend_counters where month=date_trunc('month',now() at time zone 'utc')::date;")"
+SPEND="$(psql_run "select trim_scale(settled_cost) from public.spend_counters where month=date_trunc('month',now() at time zone 'utc')::date;")"
 if [[ "$FAILED_USAGE" != "refunded|openai|test-model|7|11|0.002" || "$SPEND" != "0.003" ]]; then
   echo "Failed-call usage was not logged exactly once: usage=$FAILED_USAGE settled_spend=$SPEND" >&2
   exit 1
