@@ -179,6 +179,87 @@ Initial delivery priorities should be selected from the approved AZ product scop
 - Permission-aware Planning and other AZ actions.
 - Cost tracking, quality evaluation, privacy, and deletion controls.
 
+### V1 AZI capability baseline — the student's academic companion
+
+AZI in V1 should be more than a question-answering chat. It should provide a useful, context-aware academic companion through conversation, structured memory, evidence-based observations, recommendations, and permission-checked actions. The same capability foundation serves Middle School, Secondary / High School, and University / College, while the Educational Adaptation Engine adjusts language, explanation depth, scaffolding, autonomy, and safeguards for each stage.
+
+#### A. Student interaction: text, voice, and contextual notes
+
+- Provide a persistent text conversation entry point for academic questions and help with the learner's AZ context.
+- Support convenient voice input where platform/browser support and privacy controls make it reliable and affordable. Voice input may use device/browser speech capabilities where appropriate; do not assume a paid speech API is required.
+- Support spoken responses or read-aloud as a progressive enhancement where technically reliable. Full-duplex, real-time voice conversation is not a V1 launch dependency and must have an explicit cost and quality review before commitment.
+- Allow AZI to deliver concise, contextual notes and observations in the product, not only replies inside chat. Examples include an upcoming deadline, a repeated practice error, or a useful next step.
+- Recommendations and proactive notes must be relevant, explainable, appropriately timed, dismissible, and controllable by the learner. Avoid noisy notifications, pressure, shame, manipulative streaks, or engagement-maximizing behavior.
+
+#### B. Structured academic memory
+
+AZI should maintain a purpose-limited, searchable academic context rather than treating the entire conversation transcript as permanent memory. Relevant context may include:
+
+- Learner-confirmed educational stage, grade/year, subjects/courses, curriculum context, language, goals, and preferences.
+- Learner's schedule, deadlines, study sessions, and relevant task state.
+- Uploaded learning materials and source references, subject to access and retention rules.
+- Practice attempts, outcomes, recurring error patterns, completed reviews, and progress evidence.
+- Explicitly confirmed plans and decisions that remain useful over time.
+
+For each meaningful memory item, preserve appropriate provenance, timestamp, scope, and status. Distinguish observed facts, learner-confirmed facts, hypotheses, and outdated context. Do not infer intelligence, motivation, personality, or ability from sparse activity or isolated mistakes. Learners must be able to inspect, correct, and delete relevant stored context; retention and deletion must follow the platform's data lifecycle rules.
+
+#### C. Evidence-based weakness detection and recommendations
+
+- Detect topics that may need attention from repeated, sufficiently relevant assessment evidence—not from a single wrong answer alone.
+- Show the evidence behind an observation (for example, recent attempts or repeated errors) and communicate uncertainty honestly.
+- Recommend a next step such as reviewing a source section, generating targeted practice, revisiting mistakes, or scheduling a short study session.
+- Recognize improvement as well as difficulty. Do not label a learner as weak or incapable.
+- Prefer deterministic aggregation and transparent rules for counts, trends, deadlines, and scheduling; use an AI model only when interpretation or natural-language generation adds real value.
+
+#### D. Planning assistance and permission-checked actions
+
+AZI should understand relevant Planning context and be able to propose useful changes, including:
+
+- Suggesting an available time for a study session based on existing commitments and learner preferences.
+- Proposing a new session, task, deadline adjustment, or study-plan change when supported by the user's request and context.
+- Explaining the reason for a proposed change and showing its impact on existing commitments.
+- Creating or changing schedule items only after the learner explicitly confirms the specific action. Never silently rewrite a learner's schedule.
+- Respecting permissions, ownership, time zone, conflict checks, and action audit requirements.
+
+#### E. AZ Projects — support for project leaders and members
+
+Within the shared project context, AZI may help a leader and team by:
+
+- Summarizing shared task status, completed work, overdue items, and upcoming project deadlines.
+- Highlighting project-level blockers or missing updates based only on information visible to the project.
+- Helping the leader draft task assignments, reminders, and weekly progress summaries.
+- Giving each member relevant personal reminders and suggestions about their own assigned tasks.
+- Suggesting a Planning focus session for a member, with that member's approval before creating it.
+
+Project leadership does not grant access to private AZI conversations, personal academic memory, private schedules, or unrelated learner activity. Leaders see only project data and progress explicitly shared through project permissions. AZI must not expose private member data in leader summaries.
+
+#### F. Low-cost implementation architecture
+
+Use a tiered execution model to keep AZI useful without making every interaction an AI API call:
+
+1. **Deterministic application logic first:** calculate deadlines, schedule conflicts, task status, practice counts, trends, and eligible time slots using application data and tested rules.
+2. **AI only when semantic work is needed:** use the configured provider for understanding open-ended requests, grounded explanations, synthesis, and natural-language recommendations when deterministic logic is insufficient.
+3. **Small, relevant context:** retrieve only the learner/project information needed for the current task; do not send the full academic history or entire conversation on every request.
+4. **Reuse and control:** reuse safe derived results where appropriate, avoid duplicate generation, apply model routing and token/output limits, and record cost by feature and user plan.
+5. **No always-on agent:** trigger proactive checks from scheduled jobs, application events, or deterministic thresholds; invoke a model only if the event requires interpretation or generated language.
+6. **Provider abstraction:** keep model and speech capabilities behind replaceable interfaces. Do not bind product behavior to a single provider-specific feature.
+
+These principles are architectural requirements, not a promise that every feature has zero cost. Any paid model or speech usage must be measured, budgeted, rate-limited, and governed by the product's subscription and usage limits.
+
+#### V1 acceptance checks for AZI
+
+Before calling the V1 AZI experience ready, verify that:
+
+- The same core companion workflows work for representative Middle School, Secondary / High School, and University / College scenarios, with stage-appropriate language and scaffolding.
+- Text conversation can use only authorized, relevant learner context and grounded AZ materials where applicable.
+- Memory items have provenance/status and can be corrected or deleted through supported user controls.
+- Weak-topic observations can be traced to actual attempts and avoid unsupported conclusions from isolated events.
+- Recommendations explain their evidence and can be dismissed or acted on.
+- A proposed Planning change is previewed and requires explicit confirmation; conflicts and time-zone behavior are tested.
+- Project summaries respect project membership and role permissions and never disclose private AZI conversations or personal academic memory.
+- Deterministic flows work without an AI call where possible, while AI usage, failures, and cost are observable and bounded.
+- Voice input/read-aloud, if included in the release, passes device/browser, accessibility, privacy, quality, and cost checks. Full-duplex real-time voice remains optional and separately gated.
+
 The initial release must not be blocked by building every stage-specific experience at once. However, foundational choices—such as educational-stage representation, language support, adaptation boundaries, and permission architecture—should avoid hard-coding university-only assumptions.
 
 ### V2 planned expansion — Early Learning / KG and Postgraduate / Master's / PhD
