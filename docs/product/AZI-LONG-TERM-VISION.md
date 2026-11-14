@@ -183,11 +183,11 @@ Initial delivery priorities should be selected from the approved AZ product scop
 
 AZI in V1 should be more than a question-answering chat. It should provide a useful, context-aware academic companion through conversation, structured memory, evidence-based observations, recommendations, and permission-checked actions. The same capability foundation serves Middle School, Secondary / High School, and University / College, while the Educational Adaptation Engine adjusts language, explanation depth, scaffolding, autonomy, and safeguards for each stage.
 
-#### A. Student interaction: text, voice, and contextual notes
+#### A. Student interaction: text and contextual notes (V1)
 
 - Provide a persistent text conversation entry point for academic questions and help with the learner's AZ context.
-- Support convenient voice input where platform/browser support and privacy controls make it reliable and affordable. Voice input may use device/browser speech capabilities where appropriate; do not assume a paid speech API is required.
-- Support spoken responses or read-aloud as a progressive enhancement where technically reliable. Full-duplex, real-time voice conversation is not a V1 launch dependency and must have an explicit cost and quality review before commitment.
+- V1 is text-first. Voice input, spoken responses, read-aloud, and real-time voice conversation are explicitly out of V1 scope.
+- Voice may be considered for V1.5 as a separately scoped enhancement, only after validating actual provider/device costs, browser and device support, Arabic and English quality, privacy, accessibility, and expected student usage. Prefer low-cost or on-device options only when they meet quality and privacy requirements; do not assume speech is free.
 - Allow AZI to deliver concise, contextual notes and observations in the product, not only replies inside chat. Examples include an upcoming deadline, a repeated practice error, or a useful next step.
 - Recommendations and proactive notes must be relevant, explainable, appropriately timed, dismissible, and controllable by the learner. Avoid noisy notifications, pressure, shame, manipulative streaks, or engagement-maximizing behavior.
 
@@ -242,7 +242,7 @@ Use a tiered execution model to keep AZI useful without making every interaction
 3. **Small, relevant context:** retrieve only the learner/project information needed for the current task; do not send the full academic history or entire conversation on every request.
 4. **Reuse and control:** reuse safe derived results where appropriate, avoid duplicate generation, apply model routing and token/output limits, and record cost by feature and user plan.
 5. **No always-on agent:** trigger proactive checks from scheduled jobs, application events, or deterministic thresholds; invoke a model only if the event requires interpretation or generated language.
-6. **Provider abstraction:** keep model and speech capabilities behind replaceable interfaces. Do not bind product behavior to a single provider-specific feature.
+6. **Provider abstraction:** keep model capabilities behind replaceable interfaces. Speech integration may be added behind a separate replaceable adapter in V1.5 or later; do not build or pay for speech infrastructure as a V1 dependency.
 
 These principles are architectural requirements, not a promise that every feature has zero cost. Any paid model or speech usage must be measured, budgeted, rate-limited, and governed by the product's subscription and usage limits.
 
@@ -258,7 +258,7 @@ Before calling the V1 AZI experience ready, verify that:
 - A proposed Planning change is previewed and requires explicit confirmation; conflicts and time-zone behavior are tested.
 - Project summaries respect project membership and role permissions and never disclose private AZI conversations or personal academic memory.
 - Deterministic flows work without an AI call where possible, while AI usage, failures, and cost are observable and bounded.
-- Voice input/read-aloud, if included in the release, passes device/browser, accessibility, privacy, quality, and cost checks. Full-duplex real-time voice remains optional and separately gated.
+- V1 acceptance does not depend on voice features. Any V1.5 voice proposal must first pass device/browser, Arabic and English quality, accessibility, privacy, cost-per-use, and usage-budget checks; full-duplex real-time voice requires a separate approval.
 
 The initial release must not be blocked by building every stage-specific experience at once. However, foundational choices—such as educational-stage representation, language support, adaptation boundaries, and permission architecture—should avoid hard-coding university-only assumptions.
 
