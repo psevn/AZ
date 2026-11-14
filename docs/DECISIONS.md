@@ -1,6 +1,6 @@
 # AZ — Decisions Log
 
-Last updated: 2026-11-04 (v0.2). Owner: PSEVN.
+Last updated: 2026-11-14. Owner: PSEVN.
 
 ## Settled (previously approved, unchanged)
 - Name: **AZ** (never "AZ EZORD"). EZORD and VXNORY are separate and out of focus.
@@ -25,6 +25,16 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 6. Backend = Supabase Edge Functions only; Cloudflare for static frontend hosting. This resolves former open decision #4 (SPEC §4.1) — **this is the only item that changes a previous proposal (Workers API layer); it was marked "not final".**
 7. Provider-independent AI interface + quality metrics next to cost, incl. automatic page-reference check (SPEC §8).
 8. Vertical slices, P0/P1/P2 priorities, date gated by quality (SPEC §12).
+
+## Approved on 2026-11-14 — Navigation and naming
+- The five primary destinations are **Home → Planning → Study → AZ Projects → Profile avatar**.
+- **Study** replaces the former **AZ** primary-navigation label and occupies the center position in the five-item navigation.
+- **Planning** remains unchanged. Home and AZ Projects remain unchanged.
+- The profile destination is shown as the student's avatar/image instead of visible “Me” text, with an accessible name such as “Profile”.
+- AZ remains the overall platform brand. AZ Intelligence remains the intelligence system; AZI remains the personal academic companion. Neither becomes a sixth primary-navigation destination.
+- Primary navigation stays short and clear; internal features may use a distinctive, future-forward product naming style, while clarity takes priority. Individual example feature names are not automatically approved.
+- Study is the broader learning environment for materials, study packs, summaries, flashcards, practice, Exam Mode, Ask Your Materials, and mistake/weakness review, subject to the approved V1 scope and priorities.
+- This is a product/UX naming decision only. It does not authorize broad redesign, route or identifier changes, backend/database changes, or feature removals. See [NAVIGATION-AND-NAMING.md](product/NAVIGATION-AND-NAMING.md).
 
 ## Postponed (not rejected)
 - Ambassador program: after beta; count activated users (not sign-ups), higher points for paid conversions, rewards in AI credits/free Pro months/titles, pseudonymous leaderboard, universities only (schools need legal review), start with 3–5 ambassadors.
