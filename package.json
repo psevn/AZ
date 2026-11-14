@@ -30,6 +30,7 @@
     "test:pdf-pipeline": "node --test tests/pdfTextPipeline.test.mjs",
     "test:document-reader": "node --test tests/documentReaderContract.test.mjs",
     "test:document-atomic": "node --test tests/documentProcessingAtomic.test.mjs",
+    "test:document-deletion": "node --test tests/documentDeletionContract.test.mjs",
     "test:quiz-billing": "node --test tests/quizBillingSecurity.test.mjs",
     "test:document-limits": "node --test tests/documentLimitsContract.test.mjs",
     "test:edge-rate-limits": "node --test tests/edgeRateLimitsContract.test.mjs",

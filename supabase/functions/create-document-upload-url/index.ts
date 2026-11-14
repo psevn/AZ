@@ -133,5 +133,39 @@ Deno.serve(async (request: Request) => {
     return json(503, { error: "Could not prepare the upload. Please try again." });
   }
 
+  // Signed upload tokens remain usable for two hours. Persist the expiry before
+  // returning the token; the conditional UPDATE serializes with deletion's row lock.
+  const uploadTokenExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  const { data: expiryRecord, error: expiryError } = await adminClient.rpc("record_document_upload_token_expiry", {
+    p_document_id: documentId,
+    p_user_id: userId,
+    p_expires_at: uploadTokenExpiresAt,
+  });
+  const expiryResult = Array.isArray(expiryRecord) ? expiryRecord[0] : expiryRecord;
+
+  if (expiryError || !expiryResult || expiryResult.ok !== true) {
+    console.error("create-document-upload-url expiry persistence failed:", expiryError?.code ?? "document_state_changed");
+
+    // A transport error can happen after the RPC committed. Only release the
+    // reservation when no expiry was recorded, so a concurrent successful
+    // token issuance is never marked failed.
+    if (expiryError) {
+      const { error: cleanupError } = await adminClient.from("documents")
+        .update({ status: "failed", failed_reason: "Could not prepare the upload." })
+        .eq("id", documentId)
+        .eq("user_id", userId)
+        .eq("status", "uploaded")
+        .is("upload_token_expires_at", null);
+      if (cleanupError) {
+        console.error("create-document-upload-url reservation cleanup failed:", cleanupError.code);
+      }
+    }
+
+    return json(expiryError ? 503 : 409, {
+      error: "The upload could not be started safely. Please retry.",
+      code: expiryError ? "UPLOAD_EXPIRY_PERSIST_FAILED" : "DOCUMENT_STATE_CHANGED",
+    });
+  }
+
   return json(200, { documentId, path: signed.path, token: signed.token });
 });

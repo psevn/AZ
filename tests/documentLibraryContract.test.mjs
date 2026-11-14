@@ -36,3 +36,43 @@ test("document library offers recovery only for uploaded or stale processing doc
   assert.match(library, /recoverDocumentProcessing\(document\.id, document\.title/);
   assert.match(library, /document-library-resume/);
 });
+
+
+test("document deletion requires explicit confirmation and invokes the authenticated Edge Function", () => {
+  assert.match(library, /setConfirmDeleteId/);
+  assert.match(library, /role="group" aria-label=\{t\.confirmDelete\}/);
+  assert.match(library, /This permanently removes the PDF|سيُحذف ملف PDF/);
+  assert.match(library, /functions\.invoke\("delete-document"/);
+  assert.match(library, /body: \{ documentId: document\.id \}/);
+  assert.doesNotMatch(library, /body: \{[^}]*userId/);
+});
+
+test("document deletion distinguishes completed, pending, and retryable error states", () => {
+  assert.match(library, /data\?\.status === "deleted"/);
+  assert.match(library, /data\?\.status === "deleting"/);
+  assert.match(library, /status: "deleting"/);
+  assert.match(library, /retryDelete: "متابعة الحذف"/);
+  assert.match(library, /deletionError && <p className="document-upload-error" role="alert">/);
+  assert.match(library, /deletionMessage && <p className="document-library-delete-message" role="status"/);
+});
+
+test("deleting documents cannot be opened or resumed, but can be retried", () => {
+  assert.match(library, /status: "uploaded" \| "processing" \| "ready" \| "failed" \| "deleting"/);
+  assert.match(library, /document\.status !== "failed" && document\.status !== "deleting"/);
+  assert.match(library, /document\.status === "deleting" \?/);
+  assert.match(library, /onClick=\{\(\) => void deleteDocument\(document\)\}/);
+});
+
+test("retryable deletion failures refresh the authoritative tombstone state", () => {
+  const handler = library.slice(
+    library.indexOf("async function deleteDocument"),
+    library.indexOf("function statusLabel"),
+  );
+  const catchBlock = handler.slice(handler.indexOf("} catch (cause) {"));
+  assert.ok(catchBlock.indexOf("await load()") >= 0, "deletion failure must refresh the document row");
+  assert.ok(
+    catchBlock.indexOf("await load()") < catchBlock.indexOf("setDeletionError"),
+    "refresh the row before presenting the retryable error",
+  );
+  assert.match(catchBlock, /setDeletionError/);
+});
