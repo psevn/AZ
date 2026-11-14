@@ -129,3 +129,40 @@ These are future opportunities, not V1 requirements. Each must be validated for 
 **Post-launch:** Expand into immersive 3D, advanced cursor interactions, particle systems, performance profiles, and deeper personalization.
 
 **Final principle: Build the Academic Universe from day one. Expand its dimensions progressively.**
+
+
+## 9. Home & Navigation Reference Direction — Approved 2026-11-14
+
+The founder approved three supplied screenshots as inspiration for AZ Home and its responsive navigation. They are references for usability, hierarchy, and layout—not templates to reproduce literally.
+
+### Principles taken from the references
+- A vertical sidebar/navigation rail on wider screens, with the AZ mark at the top.
+- A clear selected state for the current destination.
+- A spacious Home content area with a prominent **Today** heading and concise date/day and priority context.
+- Readable task rows, clear completion controls, and satisfying completion feedback.
+- A restrained dark interface with deliberate spacing and low visual clutter.
+
+### AZ's distinct expression
+AZ must go beyond the reference by combining its clarity with **The Academic Universe**: subtle cosmic atmosphere, ambient lighting, meaningful depth, and the official cyan/blue/violet identity. Green may communicate success or task completion, but it is not the primary AZ brand color.
+
+AZ should feel more distinctive, comfortable, enjoyable, and engaging through its own typography, iconography, geometry, surfaces, and purposeful micro-interactions. It must remain calm and easy to understand. Do not copy exact component styling or add effects that distract from academic work.
+
+### Responsive navigation decision
+- **Mobile:** five primary destinations remain the long-term core: Home, Planning, AZ Intelligence, AZ Projects, and profile/avatar. Keep future areas from crowding this navigation.
+- **Tablet:** use an adaptive compact or expanded navigation according to width and touch usability. Keep the five primary destinations clear; additional destinations are conditional on available space and a justified information architecture.
+- **Desktop/laptop:** use a vertical sidebar or collapsible rail that can grow as AZ expands. AZ Arena and AZ Community may be added to wider-screen navigation when ready; they are not current mobile primary destinations.
+
+All layouts must support Arabic RTL and English LTR, keyboard, mouse, and touch.
+
+### Home experience intent
+Home should help students identify their next useful action quickly. The Today pattern is a starting point, not a mandate to make AZ a generic task manager. The wider Home experience may organize today's priorities, upcoming/overdue work, the next exam, meaningful progress, and relevant AZI guidance without overcrowding the first viewport.
+
+### Experience promises and guardrails
+1. **Comfort:** clear hierarchy, readable typography, predictable navigation, balanced density, and accessible touch targets.
+2. **Enjoyment:** brief, polished feedback and purposeful interactions that encourage progress without pressure or excessive gamification.
+3. **Distinctiveness:** the result must be recognizable as AZ and not a generic dark productivity template.
+4. **Calm:** effects remain behind the work; Planning stays structured and Focus stays distraction-free.
+5. **Performance and accessibility:** lightweight effects, reduced-motion alternatives, accessible contrast, non-color status cues, and support for modest devices.
+6. **No scope creep:** a visual reference does not authorize adding features, changing architecture, or copying another product's design.
+
+**Implementation status:** the direction is approved. The current implementation has not been certified against these screenshots by this decision. The next step is to audit existing Home/navigation components, record concrete gaps, and implement improvements incrementally.
