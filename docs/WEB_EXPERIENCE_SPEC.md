@@ -295,3 +295,60 @@ This document is a research workspace for detailed effects and interactions. The
 5. Implement incrementally and verify on real target devices.
 
 Do not interpret the ambition to feel "better than Apple" as a literal benchmark or permission to sacrifice usability, accessibility, performance, or AZ's own identity.
+
+
+## Founder-approved reference: AZ Home and responsive navigation — 2026-11-14
+
+**Reference source:** Three screenshots supplied by the founder in the conversation.  
+**Status:** Design direction approved; exact visual specification and implementation remain open.
+
+The screenshots establish a useful interaction and layout reference: an uncluttered dark workspace, a vertical left navigation with the product mark, a strongly selected current destination, a prominent **Today** heading, concise day/priority context, and readable task rows with clear completion states.
+
+The reference is not a visual template to copy. AZ must extend these principles through its own Academic Universe identity and make the result more distinctive, comfortable, enjoyable, and engaging.
+
+### Approved direction
+- Use a clean, persistent navigation pattern on wider screens, with the AZ mark at its top.
+- Make the active navigation destination obvious without relying on color alone.
+- Give Home a clear content hierarchy; a Today heading, date/day context, and priority count are a useful pattern to explore.
+- Present tasks with readable labels, clear completion controls, and immediate, accessible feedback.
+- Use generous spacing and a restrained dark surface system, while retaining AZ's cosmic atmosphere, ambient lighting, depth, and cyan/blue/violet identity.
+- Use semantic success color for completion where appropriate; do not adopt the reference's green as AZ's primary brand accent.
+- Add character through AZ-specific typography, iconography, geometry, surfaces, transitions, and micro-interactions rather than copying the reference's exact styling.
+
+### Navigation by viewport
+| Viewport | Approved direction |
+|---|---|
+| Mobile | Keep five primary destinations: Home, Planning, AZ Intelligence, AZ Projects, and profile/avatar. Keep future sections out of the crowded primary mobile navigation unless the founder explicitly revises this direction. |
+| Tablet | Adapt between compact rail and expanded navigation according to available width and touch usability. Preserve the five primary destinations; consider additional destinations only when there is room and a clear information-architecture reason. |
+| Desktop/laptop | Use a vertical sidebar or collapsible rail with room for future growth. AZ Arena and AZ Community may be added to wider-screen navigation when those areas are ready; they are not required in the current V1 navigation. |
+
+Arabic RTL and English LTR layouts must both be designed intentionally. Navigation must work with touch, mouse, keyboard, and assistive technology.
+
+### Home experience questions to resolve during design
+- How should Today, upcoming/overdue tasks, next exam, progress, and AZI guidance be prioritized without overcrowding Home?
+- What should the sidebar look like when expanded, collapsed, or used on a tablet?
+- Which task details belong in the row, and which should appear only on opening or editing a task?
+- What completion animation or feedback feels rewarding but remains quick and calm?
+- How should empty, loading, error, and completed-day states behave?
+- How do we retain the visual character of the Academic Universe while keeping text and tasks easy to read?
+
+### Experience quality targets
+- **Comfortable:** clear hierarchy, readable text, predictable controls, balanced density, and generous touch targets.
+- **Enjoyable:** polished feedback, purposeful micro-interactions, subtle transitions, and encouraging progress cues.
+- **Distinctive:** immediately recognizable as AZ, not a generic productivity dashboard.
+- **Calm and useful:** no decorative effect may interrupt planning, reading, studying, or focus.
+- **Inclusive and fast:** accessible contrast, non-color status cues, keyboard support, reduced-motion alternatives, and graceful behavior on modest devices.
+
+### Research log
+| Date | Reference | Useful observation | AZ application | Status |
+|---|---|---|---|---|
+| 2026-11-14 | Three founder-supplied Home/sidebar screenshots | Vertical navigation, AZ mark placement, active destination, Today hierarchy, day/priority context, readable task rows, clear completion feedback | Use as a structural and usability reference; reinterpret with AZ's Academic Universe identity and responsive navigation rules | Approved direction; detailed design open |
+
+### Decision log
+| Date | Area | Decision | Reason | Status |
+|---|---|---|---|---|
+| 2026-11-14 | Home visual direction | Adopt the supplied screenshots as inspiration for Home hierarchy, sidebar clarity, task presentation, and restrained dark UI; make AZ more distinctive, comfortable, enjoyable, and engaging rather than copying them | Preserve the reference's usability while strengthening AZ's own identity | Approved |
+| 2026-11-14 | Responsive navigation | Keep five primary destinations on mobile; allow wider tablet/desktop navigation to grow over time for future areas such as AZ Arena and AZ Community | Protect mobile clarity while allowing the wider product to expand | Approved |
+
+### Implementation handoff
+The next implementation task is an audit of the current Home, sidebar/navigation, and task-row components against this direction. Record actual gaps before changing code. Do not assume that the screenshots prove the current app already matches them, and do not change backend architecture or product scope as part of this visual audit.

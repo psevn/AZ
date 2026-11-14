@@ -208,3 +208,46 @@ The goal is to make AZ feel like a product from the next generation of the web: 
 ### Exploration status
 
 The founder intends to collect more references and ideas before finalizing detailed web interactions. The Academic Universe concept and its lightweight V1 expression are approved; specific motion curves, durations, advanced pointer behavior, background techniques, component patterns, and performance budgets remain to be researched and agreed before implementation.
+
+
+## Founder-approved Home reference direction — 2026-11-14
+
+The founder approved three supplied reference screenshots as inspiration for AZ Home and its responsive navigation. This is an approval of the **design principles and experience direction**, not a request to reproduce the screenshots literally.
+
+### What AZ should learn from the references
+- A restrained, vertical navigation rail/sidebar with the AZ mark clearly placed at the top.
+- A clearly indicated active destination, using a compact, unmistakable selected state.
+- A spacious main content area with a strong page heading such as **Today**.
+- Useful context directly beneath the heading, such as the weekday/date and the number of priorities.
+- Readable task rows with clear completion controls and immediate, understandable completion feedback.
+- A dark, calm interface with strong hierarchy, generous spacing, and low visual clutter.
+
+### How AZ must make this direction its own
+- Preserve **The Academic Universe** identity: subtle cosmic atmosphere, ambient lighting, purposeful depth, and the official cyan/blue/violet brand family.
+- Use AZ gradients as distinctive, controlled accents. Green may remain a semantic success/completion color; it must not replace AZ's brand palette as the primary identity.
+- Develop AZ-specific typography, iconography, shapes, surface treatments, transitions, and interaction details. Do not copy another product's exact sidebar, icon design, proportions, or component styling.
+- Make the experience more comfortable, enjoyable, and engaging through useful feedback, thoughtful micro-interactions, and clear progress—not through distracting animation, excessive gamification, or decoration.
+- Keep the interface immediately understandable. Visual richness must never make common academic actions harder or slower.
+
+### Responsive navigation direction
+- **Mobile:** preserve the five primary destinations for the foreseeable product direction: Home, Planning, AZ Intelligence, AZ Projects, and the user's profile/avatar. Do not crowd the mobile primary navigation with every future area.
+- **Tablet:** adapt the navigation to the available width and touch context. Keep the five primary destinations clear; additional destinations may be introduced when the tablet layout has enough room and the information architecture justifies them.
+- **Desktop/laptop:** use a vertical sidebar or collapsible navigation rail with room to grow. Future areas such as AZ Arena and AZ Community may be added here when they are ready and useful; they are not a reason to overload mobile navigation now.
+- Responsive behavior must be designed intentionally for Arabic RTL and English LTR, keyboard, mouse, and touch.
+
+### Home content direction
+Home should make the student's next useful action obvious. The Today pattern from the references is a useful starting point for presenting today's priorities and tasks, alongside the wider AZ Home needs: upcoming/overdue work, the next exam, meaningful progress, and relevant AZI guidance where appropriate. Do not turn Home into a generic task manager or force every metric into the first viewport.
+
+### Comfort, enjoyment, and usability principles
+1. **Comfort:** predictable navigation, readable typography, balanced density, generous touch targets, and clear visual hierarchy.
+2. **Enjoyment:** satisfying but brief completion feedback, subtle transitions, coherent ambient effects, and progress that feels encouraging rather than pressuring.
+3. **Distinctiveness:** a recognizable AZ visual language rather than a generic dark productivity template.
+4. **Calm:** keep Planning organized, Focus distraction-free, and study content dominant.
+5. **Performance:** effects must remain lightweight and degrade gracefully on modest devices; respect reduced motion.
+6. **Accessibility and localization:** never rely on color alone; test contrast, keyboard focus, touch targets, Arabic RTL, and English LTR.
+
+### Status and implementation boundary
+- **Approved:** the screenshots as inspiration for layout clarity, sidebar navigation, Today hierarchy, task presentation, and restrained dark UI.
+- **Approved:** the direction to make AZ more distinctive, comfortable, enjoyable, and engaging while retaining its Academic Universe identity.
+- **Not approved:** pixel-for-pixel copying, final measurements, exact component styling, new product features, or immediate implementation.
+- **Next step:** inspect the current implemented Home and navigation components, compare them against this direction, document concrete gaps, and implement incrementally on an isolated branch with responsive and accessibility checks.
