@@ -180,6 +180,10 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
         throw new Error(t.deleteError);
       }
     } catch (cause) {
+      // The server may have persisted the deleting tombstone before Storage
+      // cleanup or finalization failed. Refresh from the database so the UI
+      // exposes the retry action instead of stale open/practice controls.
+      await load();
       setDeletionError(cause instanceof Error ? cause.message : t.deleteError);
       setDeletionMessage("");
     } finally {
