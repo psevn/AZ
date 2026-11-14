@@ -53,7 +53,7 @@ PAGE_ERROR="$(psql_run "do \$\$ begin
   exception when sqlstate 'P0001' then
     if sqlerrm <> 'DOCUMENT_PAGE_LIMIT_EXCEEDED' then raise; end if;
   end;
-end \$\$; select 'page-check-ok';")"
+end \$\$; select 'page-check-ok';" | tail -n 1)"
 if [[ "$PAGE_ERROR" != "page-check-ok" ]]; then echo "Page quota trigger check failed." >&2; exit 1; fi
 
 # Raise the page ceiling but keep the text ceiling; the second page must now fail on text.
@@ -65,21 +65,21 @@ TEXT_ERROR="$(psql_run "do \$\$ begin
   exception when sqlstate 'P0001' then
     if sqlerrm <> 'DOCUMENT_TEXT_LIMIT_EXCEEDED' then raise; end if;
   end;
-end \$\$; select 'text-check-ok';")"
+end \$\$; select 'text-check-ok';" | tail -n 1)"
 if [[ "$TEXT_ERROR" != "text-check-ok" ]]; then echo "Text quota trigger check failed." >&2; exit 1; fi
 
 # Upload creation also rejects already-consumed page/text quotas with stable error codes.
 PAGE_CODE="$(psql_run "update public.app_config set value=jsonb_set(value,'{free,max_pages}','1'::jsonb) where key='document_limits';
-  select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';")"
+  select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';" | tail -n 1)"
 if [[ "$PAGE_CODE" != "DOCUMENT_PAGE_LIMIT_EXCEEDED" ]]; then echo "Expected page limit code, got $PAGE_CODE" >&2; exit 1; fi
 
 TEXT_CODE="$(psql_run "update public.app_config set value=jsonb_set(value,'{free,max_pages}','5'::jsonb) where key='document_limits';
-  select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';")"
+  select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';" | tail -n 1)"
 if [[ "$TEXT_CODE" != "DOCUMENT_TEXT_LIMIT_EXCEEDED" ]]; then echo "Expected text limit code, got $TEXT_CODE" >&2; exit 1; fi
 
 DOC_CODE="$(psql_run "update public.app_config set value=jsonb_set(value,'{free,max_text_chars}','10'::jsonb) where key='document_limits';
   update public.app_config set value=jsonb_set(value,'{free,max_documents}','1'::jsonb) where key='document_limits';
-  select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';")"
+  select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';" | tail -n 1)"
 if [[ "$DOC_CODE" != "DOCUMENT_LIMIT_EXCEEDED" ]]; then echo "Expected document limit code, got $DOC_CODE" >&2; exit 1; fi
 
 echo "PASS: transactional document/active-upload caps, stale uploaded expiry, total page/text trigger limits, upsert accounting, and stable error codes."
