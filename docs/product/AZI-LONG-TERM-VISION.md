@@ -6,31 +6,35 @@
 
 ## 1. Vision
 
-AZ aims to become a trusted learning and academic environment that can support a person's educational journey from early childhood learning (KG) through school, higher education, postgraduate study, and doctoral research.
+AZ aims to become a trusted learning and academic environment that can support learners across their educational journey: from early childhood learning (KG) and school through university, postgraduate study, and doctoral research.
 
 The long-term ambition is:
 
 **AZ — From first letters to the highest levels of knowledge.**
 
+AZ is not exclusively a university application. Learners from different educational stages should be able to use AZ when the product offers an appropriate experience for their needs. The core product experience should be designed with particular attention to middle-school, secondary/high-school, and university/college learners, while the platform architecture and long-term product vision accommodate younger learners and advanced researchers too.
+
 AZ remains one coherent product universe. Its experiences, teaching methods, content, safeguards, and workflows must adapt to the learner's educational stage. This is a long-term direction, not a claim that every stage is currently supported or will launch simultaneously.
 
 AZI (the student's primary companion within AZ Intelligence) should be the consistent intelligence identity across these experiences. It should not behave identically at every age or academic level.
 
-## 2. Learner segments
+## 2. Learner segments and product priority
 
-The architecture and product strategy should be able to accommodate these segments over time:
+The product should be accessible to learners across these segments over time. Being outside the initial priority segments must not imply that a learner is unwelcome; it means that stage-specific capabilities and suitability must be validated before AZ claims to fully support that learner's needs.
 
-| Segment | Illustrative learning needs |
-|---|---|
-| Early Learning / KG | Letter recognition, phonics, early Arabic and English literacy, counting, colors, shapes, basic concepts, guided play |
-| Primary School | Reading, writing, arithmetic, foundational science, language learning, confidence and foundational skills |
-| Middle School | Subject understanding, concept connections, practice, homework support, study habits |
-| Secondary / High School | Curriculum-aligned learning, exam preparation, practice, planning, transition guidance |
-| University / College | Courses, lectures, academic materials, practice, projects, planning, research foundations |
-| Postgraduate / Master's | Advanced subject learning, research workflows, literature review support, analytical work |
-| Doctoral / PhD | Research organization, paper analysis, methodology support, evidence management, scholarly writing support |
+| Segment | Product role | Illustrative learning needs |
+|---|---|---|
+| Early Learning / KG | Dedicated future experience | Letter recognition, phonics, early Arabic and English literacy, counting, colors, shapes, basic concepts, guided play |
+| Primary School | Supported learner segment; age-appropriate capabilities required | Reading, writing, arithmetic, foundational science, language learning, foundational skills |
+| Middle School | Core design priority | Subject understanding, concept connections, practice, homework support, study habits |
+| Secondary / High School | Core design priority | Curriculum-aligned learning, exam preparation, practice, planning, transition guidance |
+| University / College | Core design priority | Courses, lectures, academic materials, practice, projects, planning, research foundations |
+| Postgraduate / Master's | Supported advanced segment | Advanced subject learning, research workflows, literature review support, analytical work |
+| Doctoral / PhD | Supported advanced segment | Research organization, paper analysis, methodology support, evidence management, scholarly writing support |
 
 Educational labels and age bands vary by country and institution. AZ should use configurable educational stages and curriculum context rather than hard-code one country's grade naming or assume that age alone determines a learner's level.
+
+**Product-priority principle:** AZ should welcome learners across stages, prioritize excellent experiences for middle school, high school, and university learners, and expand dedicated capabilities for KG, primary school, and advanced research when their distinct requirements are ready.
 
 ## 3. One AZI core, adaptive educational experiences
 
@@ -64,7 +68,8 @@ Adaptation should control vocabulary, explanation depth, examples, pacing, quest
 The same AZI identity can support materially different experiences:
 
 - **Early Learning:** short, bounded, visual and audio-supported activities; guided discovery; repetition and positive, non-manipulative feedback.
-- **School Learning:** curriculum-aware explanations, practice, homework guidance, study skills, and progressively increasing independence.
+- **Primary School:** foundational skill-building, curriculum-aware explanations, guided practice, and caregiver-supported learning where appropriate.
+- **Middle & Secondary School:** subject understanding, homework guidance, practice, exam preparation, study skills, and progressively increasing independence.
 - **Higher Education:** course and material grounding, planning, practice, mistake analysis, project workflows, and academic integrity support.
 - **Research Learning:** source-aware research organization, methodological reasoning support, literature workflows, and clear separation between assistance and the learner's scholarly responsibility.
 
@@ -72,7 +77,7 @@ These are experience profiles, not separate AI personalities or independent memo
 
 ## 4. Early Learning / KG direction
 
-Early Learning is a meaningful future opportunity, but it is not part of the current university-focused MVP.
+Early Learning is a meaningful part of AZ's long-term vision. It requires a dedicated, age-appropriate experience and is not simply the university/school interface with a different prompt.
 
 Potential future capabilities include:
 
@@ -97,7 +102,7 @@ For example, AZI could introduce the letter A, associate it with an apple, demon
 - Provide caregiver-visible controls and understandable progress summaries.
 - Do not ask children for unnecessary personal information or encourage disclosure of sensitive information.
 
-Voice, conversational companionship, and advanced multimodal capabilities are future options, not prerequisites for the first Early Learning release.
+Voice, conversational companionship, and advanced multimodal capabilities are future options, not prerequisites for an initial Early Learning release.
 
 ## 5. Child safety, privacy, and account lifecycle
 
@@ -156,11 +161,14 @@ Do not introduce a separate always-on AI process for proactive behavior. Use det
 
 ## 8. Phased delivery strategy
 
-### Current delivery priority — University-focused Phase 1
+### Initial product focus — Middle School, Secondary School, and University
 
-The current AZ launch remains focused on its approved initial market and university learner segment. Phase 1 should deliver practical text-based AZ Intelligence foundations, subject to the existing product specification and owner approvals:
+AZ should not be positioned or architected as university-only. Its core experience and product decisions should account for middle-school, high-school, and university/college learners. A learner from another stage may also use AZ where the available capabilities are appropriate, but AZ must communicate capability limits honestly and must not imply that a dedicated KG or primary-school experience exists before it is built and validated.
 
-- Secure, relevant student context.
+Initial delivery priorities should be selected from the approved AZ product scope and validated user needs. They may include:
+
+- Secure learner context and age/stage-appropriate onboarding.
+- Subject and course context, with curriculum information where available.
 - Structured academic evidence and memory foundations.
 - Context assembly rather than sending full history on every request.
 - Grounded explanations and practice workflows.
@@ -169,21 +177,17 @@ The current AZ launch remains focused on its approved initial market and univers
 - Permission-aware Planning and other AZ actions.
 - Cost tracking, quality evaluation, privacy, and deletion controls.
 
-The architecture may include extension points for future educational stages, but the current release must not implement KG, school-specific product experiences, child accounts, or child-facing AI behavior unless separately approved.
+The initial release must not be blocked by building every stage-specific experience at once. However, foundational choices—such as educational-stage representation, language support, adaptation boundaries, and permission architecture—should avoid hard-coding university-only assumptions.
 
-### Future expansion — School Learning
+### Future expansion — Early Learning and Primary School
 
-Validate school curricula, teacher/caregiver needs, assessment formats, accessibility, and local requirements. Expand stage profiles and content workflows based on evidence from the target market.
-
-### Future expansion — Early Learning / KG
-
-Treat KG as a distinct product experience with dedicated educational content, interaction design, safeguarding, caregiver controls, and age-appropriate evaluation. Do not assume that a university chat interface can be adapted simply by changing its prompt.
+Develop dedicated experiences for younger learners with appropriate educational content, interaction design, safeguarding, caregiver controls, and age-appropriate evaluation. Do not assume that a general chat interface can be adapted simply by changing its prompt.
 
 ### Future expansion — Postgraduate and Research Learning
 
 Add research-specific workflows and source-handling requirements while preserving academic integrity, attribution, and the learner's responsibility for scholarly claims.
 
-The order and timing of expansions beyond the current university-first launch remain founder decisions and require validation. This document does not approve a launch date, budget, subscription change, or implementation scope for any future segment.
+The order and timing of expansions beyond the initial core focus remain founder decisions and require validation. This document does not approve a launch date, budget, subscription change, or implementation scope for any future segment.
 
 ## 9. Success measures by segment
 
@@ -192,7 +196,8 @@ Measure educational usefulness and safety, not screen time.
 | Segment | Example outcome measures |
 |---|---|
 | Early Learning / KG | Skill acquisition on age-appropriate assessments, retention of foundational skills, caregiver trust, safe-session rates |
-| Primary / Middle School | Concept understanding, practice improvement, task completion, learner confidence, teacher/caregiver feedback |
+| Primary School | Foundational skill improvement, concept understanding, appropriate caregiver/teacher feedback, safe and useful sessions |
+| Middle School | Concept understanding, practice improvement, task completion, learner confidence, teacher/caregiver feedback |
 | Secondary School | Curriculum alignment, demonstrated understanding, practice quality, planning usefulness, exam-preparation confidence |
 | University | Material-grounded answer quality, mistake-review follow-through, useful study actions, retention, cost per useful outcome |
 | Postgraduate / PhD | Source traceability, research workflow usefulness, analytical quality, correction rates, academic-integrity compliance |
@@ -204,7 +209,8 @@ Every segment needs representative evaluation datasets, human review where appro
 This vision does **not** mean:
 
 - Every educational stage launches in V1.
-- The current university-focused MVP expands automatically.
+- AZ is exclusively for university students.
+- All learners receive the same interface or unrestricted capabilities regardless of age.
 - One generic prompt is sufficient for every age and discipline.
 - AZI should replace parents, teachers, universities, or independent learning.
 - More engagement or longer screen time means better learning.
@@ -215,10 +221,11 @@ This vision does **not** mean:
 
 ## 11. Decisions still requiring founder review
 
-- Which school curricula and countries should be validated first after the university launch.
+- Which curricula, countries, and learner segments should be validated first.
+- The exact initial feature scope for middle-school, high-school, and university learners.
 - Whether Early Learning should appear as a dedicated AZ experience (for example, an AZ Kids area) or as a separately branded experience within the AZ ecosystem.
 - Guardian account and consent model, subject to legal review.
-- Initial languages and curriculum content for KG.
+- Initial languages and curriculum content for KG and primary school.
 - Human educational-content review and quality assurance process.
 - Commercial model and affordability for family/guardian accounts.
 - Evidence and readiness gates for each expansion.
