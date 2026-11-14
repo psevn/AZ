@@ -34,7 +34,7 @@ The product should be accessible to learners across these segments over time. Be
 
 Educational labels and age bands vary by country and institution. AZ should use configurable educational stages and curriculum context rather than hard-code one country's grade naming or assume that age alone determines a learner's level.
 
-**Product-priority principle:** AZ should welcome learners across stages, prioritize excellent experiences for middle school, high school, and university learners, and expand dedicated capabilities for KG, primary school, and advanced research when their distinct requirements are ready.
+**Release-priority principle:** V1 is intentionally focused on three core learner stages: Middle School, Secondary / High School, and University / College. V2 is intended to expand the same AZ platform with dedicated Early Learning / KG and postgraduate / doctoral (Master's / PhD) experiences, subject to product, safety, quality, and readiness gates. Primary School remains part of the longer-term platform vision, but is not silently included in the V1 promise or automatically committed to V2.
 
 ## 3. One AZI core, adaptive educational experiences
 
@@ -161,9 +161,11 @@ Do not introduce a separate always-on AI process for proactive behavior. Use det
 
 ## 8. Phased delivery strategy
 
-### Initial product focus — Middle School, Secondary School, and University
+The release strategy is explicit: **V1 serves Middle School, Secondary / High School, and University / College as its three core learner stages. V2 is the planned expansion path for dedicated KG / Early Learning and postgraduate / doctoral (Master's / PhD) experiences.** This is a product-scope direction, not a claim that all listed capabilities are already implemented or a guarantee that every expansion ships simultaneously.
 
-AZ should not be positioned or architected as university-only. Its core experience and product decisions should account for middle-school, high-school, and university/college learners. A learner from another stage may also use AZ where the available capabilities are appropriate, but AZ must communicate capability limits honestly and must not imply that a dedicated KG or primary-school experience exists before it is built and validated.
+### V1 — Three core learner stages: Middle School, Secondary / High School, and University / College
+
+V1 must be designed and validated for all three core stages—not university-only and not university-first by default. The shared product foundation should support each stage through appropriate learner context, explanations, practice, planning, and safeguards. V1 scope does not mean that every feature behaves identically across the three stages; stage-appropriate adaptation is required. Learners outside these three stages must not be promised a dedicated experience until it is built and validated.
 
 Initial delivery priorities should be selected from the approved AZ product scope and validated user needs. They may include:
 
@@ -179,11 +181,20 @@ Initial delivery priorities should be selected from the approved AZ product scop
 
 The initial release must not be blocked by building every stage-specific experience at once. However, foundational choices—such as educational-stage representation, language support, adaptation boundaries, and permission architecture—should avoid hard-coding university-only assumptions.
 
-### Future expansion — Early Learning and Primary School
+### V2 planned expansion — Early Learning / KG and Postgraduate / Master's / PhD
 
-Develop dedicated experiences for younger learners with appropriate educational content, interaction design, safeguarding, caregiver controls, and age-appropriate evaluation. Do not assume that a general chat interface can be adapted simply by changing its prompt.
+V2 is the intended expansion phase for two distinct areas:
 
-### Future expansion — Postgraduate and Research Learning
+- **Early Learning / KG:** a dedicated experience for foundational literacy, phonics, counting, concepts, guided activities, caregiver controls, child safety, and age-appropriate evaluation.
+- **Postgraduate / Master's / PhD:** advanced academic and research workflows, source-aware literature work, methodology support, evidence management, and scholarly writing support with academic-integrity safeguards.
+
+These are planned V2 directions, not existing V1 capabilities. Each requires its own validation and release-readiness gates. KG must not be treated as the school/university interface with a simpler prompt, and doctoral research must not be treated as ordinary homework support.
+
+### Longer-term expansion — Primary School and further research capabilities
+
+Primary School remains within AZ's long-term learning-universe vision. Its timing and release placement are not fixed by this proposal. Develop a dedicated experience only when appropriate educational content, interaction design, safeguarding, caregiver controls, and age-appropriate evaluation are ready. Do not assume that a general chat interface can be adapted simply by changing its prompt.
+
+### Future research and advanced learning capabilities
 
 Add research-specific workflows and source-handling requirements while preserving academic integrity, attribution, and the learner's responsibility for scholarly claims.
 
@@ -208,7 +219,7 @@ Every segment needs representative evaluation datasets, human review where appro
 
 This vision does **not** mean:
 
-- Every educational stage launches in V1.
+- KG / Early Learning and postgraduate / PhD experiences are part of the V1 launch promise; they are planned V2 expansion directions instead.
 - AZ is exclusively for university students.
 - All learners receive the same interface or unrestricted capabilities regardless of age.
 - One generic prompt is sufficient for every age and discipline.
@@ -222,7 +233,8 @@ This vision does **not** mean:
 ## 11. Decisions still requiring founder review
 
 - Which curricula, countries, and learner segments should be validated first.
-- The exact initial feature scope for middle-school, high-school, and university learners.
+- The exact V1 feature scope and acceptance criteria for each of the three core stages: middle school, secondary/high school, and university/college.
+- The V2 readiness gates, sequencing, and exact feature scope for KG / Early Learning and postgraduate / PhD.
 - Whether Early Learning should appear as a dedicated AZ experience (for example, an AZ Kids area) or as a separately branded experience within the AZ ecosystem.
 - Guardian account and consent model, subject to legal review.
 - Initial languages and curriculum content for KG and primary school.
