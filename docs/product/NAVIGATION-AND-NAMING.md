@@ -19,7 +19,10 @@ The V1 primary navigation contains exactly five destinations, in this order:
 
 - **Study** occupies the center position in the five-item navigation and may receive the clearest visual emphasis as the primary learning destination.
 - Preserve the five-destination structure. Do not add AZ Intelligence/AZI as a sixth primary-navigation item.
-- On mobile, keep the five-item bottom-navigation order above. Responsive desktop/tablet navigation may adapt its layout, but must preserve the same destinations, hierarchy, and recognizable labels.
+- **Mobile — Core Academic Experience:** keep the five primary destinations in the bottom navigation. Do not add more primary slots; if additional destinations are introduced later, place them in a clearly labeled secondary destination such as “More”.
+- **Tablet — Expanded Academic Experience:** retain the same five primary destinations and hierarchy, while allowing a more spacious layout and clearly organized secondary navigation where useful.
+- **Desktop — Full Academic Universe:** retain the same five primary destinations and hierarchy, with room for an expanded, collapsible sidebar and additional secondary destinations when they are genuinely available and useful.
+- These are responsive presentation principles, not separate product tiers or promises that future sections already exist. Screen size alone must not unlock, expose, or imply availability of a feature. Secondary destinations must follow their actual release status, permissions, and feature availability; “coming soon” concepts such as AZ Arena or AZ Community must not appear as live capabilities.
 - The profile destination uses the student's avatar as its visible control. It must still have a meaningful accessible name (for example, “Profile”) for screen readers and assistive technology.
 - Navigation labels and accessible names must be localized properly for Arabic RTL and English LTR. Do not hard-code English labels into layouts that bypass the localization system.
 
