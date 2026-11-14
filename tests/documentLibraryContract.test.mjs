@@ -62,3 +62,17 @@ test("deleting documents cannot be opened or resumed, but can be retried", () =>
   assert.match(library, /document\.status === "deleting" \?/);
   assert.match(library, /onClick=\{\(\) => void deleteDocument\(document\)\}/);
 });
+
+test("retryable deletion failures refresh the authoritative tombstone state", () => {
+  const handler = library.slice(
+    library.indexOf("async function deleteDocument"),
+    library.indexOf("function statusLabel"),
+  );
+  const catchBlock = handler.slice(handler.indexOf("} catch (cause) {"));
+  assert.ok(catchBlock.indexOf("await load()") >= 0, "deletion failure must refresh the document row");
+  assert.ok(
+    catchBlock.indexOf("await load()") < catchBlock.indexOf("setDeletionError"),
+    "refresh the row before presenting the retryable error",
+  );
+  assert.match(catchBlock, /setDeletionError/);
+});
