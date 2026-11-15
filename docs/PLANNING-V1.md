@@ -1,6 +1,6 @@
 # AZ Planning — V1 spec (proposal)
 
-**Status:** PROPOSAL, pending owner approval and technical review. Does not change approved V1 scope until approved. Not implemented.
+**Status:** Direction approved by PSEVN on 2026-11-15. Technical review and the open questions in section 7 are still pending, and nothing is implemented. Planning is expected to keep evolving after V1 (P1 and P2 below).
 **Owner intent (2026-11-15):** Planning combines the best of Todoist and Notion, stays easy for students, and builds a positive daily habit so the student enjoys their day. Decided earlier (2026-11-09): quick capture, Today/Upcoming views, date chips and subject chips right after typing a task.
 **Inherits rules from:** `docs/product/AZ-INTELLIGENCE-IDENTITY.md` and `CLAUDE.md` (student control, no surveillance feel, no interrupting, approval for consequential actions).
 **Related:** `AZI-V1-LITE.md` (insights and care loop), `PROJECTS-SPEC.md` (project tasks), `PRICING.md` (Planning is free).
