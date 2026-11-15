@@ -111,3 +111,19 @@ test("the endpoint uses the shared fail-closed CORS policy and bounded POST body
   assert.match(endpoint, /MAX_BODY_BYTES = 2048/);
   assert.match(endpoint, /new TextEncoder\(\)\.encode\(rawBody\)\.byteLength/);
 });
+
+
+test("deletion fails closed when the upload-token expiry RPC value is missing or invalid", () => {
+  assert.match(endpoint, /getUploadTokenExpiryDecision\(begun\.uploadTokenExpiresAt/);
+  const invalidBranch = endpoint.slice(
+    endpoint.indexOf('expiryDecision.kind === "invalid"'),
+    endpoint.indexOf('expiryDecision.kind === "wait"'),
+  );
+  assert.match(invalidBranch, /return json\(503/);
+  assert.match(invalidBranch, /UPLOAD_EXPIRY_STATE_INVALID/);
+  assert.ok(
+    endpoint.indexOf('expiryDecision.kind === "invalid"') <
+      endpoint.indexOf('bucket.remove([storagePath])'),
+    "invalid expiry state must be rejected before deleting the Storage object",
+  );
+});
