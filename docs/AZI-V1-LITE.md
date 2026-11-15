@@ -97,3 +97,68 @@ Owner request (2026-11-15): AZI should help a group Project leader see who has s
 1. Delivery of reminders: the schema has no notifications table. In-app only, for example through `azi_insights` rows written by a server function that checks the sender is the project leader.
 2. Whether leader approval is needed for every reminder or can be a standing setting (default: every reminder).
 3. Optional AI use (drafting a message, summarizing project status) is metered and charged to the user who triggers it.
+
+## 13. Question Engine (proposal)
+Owner request (2026-11-15): produce quizzes, tests and flashcards with code and algorithms where possible, keep AI only where it is needed, and keep the student solving.
+
+**Principle: AI generates content once per document; code runs everything after that.** One generation call per document returns questions (with topic, source page, explanation), flashcards and a summary together, so the input is paid for once (see `PRICING.md`). Everything below uses stored content and has no API cost.
+
+| Function | Method | API cost |
+|---|---|---|
+| New session from the same bank | Pick about 10 questions weighted toward weak topics and unseen items, so each session differs | none |
+| Flashcards | Derived from stored questions (question, answer, source page); no new call | none |
+| Spaced review | Leitner boxes or SM-2: a missed item returns soon, a correct one returns later | none |
+| Mock exam | Assemble from the bank by topics, difficulty and time limit | none |
+| Mistake review | Re-serve only the student's missed questions | none |
+| Distractors | Reuse correct answers of other questions in the same topic where they fit (quality to be checked in Stage C) | none |
+| Parameterized numeric questions | A stored template (text with variables plus a formula); code randomizes values and computes the answer. Suits quantitative courses (accounting, economics, statistics) | none per question; templates must be authored |
+
+**What still needs AI:** turning document text into good questions, explanations and page references. Rule-based extraction (definitions, bold terms) can be tried as an experiment, but quality, especially in Arabic, is unverified and it is not a V1 dependency.
+
+**Bank exhaustion:** a student who masters the stored questions needs new ones. Generating more is the metered, paid action (credit system). Parameterized templates postpone that moment for numeric subjects.
+
+**Keeping the student solving (all rule-based, no AI):**
+1. A short daily session (about 5 minutes) assembled from items that are due for review.
+2. Missed items return later until answered correctly (spaced review).
+3. A visible mastery figure per topic that moves after each session, shown with its evidence (counts of answers).
+4. Link to the exam date: days left and the number of sessions that fit.
+5. A streak that does not reset to zero after one missed day.
+All numbers (session length, box intervals, thresholds) are placeholders to tune in beta.
+
+**Schema notes (review before any migration):**
+- Spaced review needs per-student, per-question state (box or interval, next due date). It can be derived from `attempt_answers` history, which avoids a new table but costs more at read time, or stored in a new table such as `review_schedule(user_id, question_id, box, due_at)`. Decision needed.
+- Numeric templates need a place to live (a `question_templates` table, or a JSON column). This is a schema change, so it is not a Quick win and is proposed as a V1.5 experiment for one subject.
+- Parameterized answers must be computed and graded server-side, like all grading (SPEC §7).
+
+**Priorities:** P0 (after Stage C): sessions from the bank, mistake review, flashcards from stored questions. P1: spaced review, daily session, mock exam composer. P2: numeric templates, rule-based extraction experiment.
+
+## 14. Study strategies AZI supports (proposal)
+Owner request (2026-11-15): AZI should know the most suitable way for a student to study, so AZ needs a list of study strategies backed by evidence that the product can actually support.
+
+**Evidence base used here (checked 2026-11-15):**
+- Dunlosky et al. (2013), *Psychological Science in the Public Interest*, a review of ten techniques. Practice testing and distributed practice rated high utility; elaborative interrogation, self-explanation and interleaved practice rated moderate; summarization, highlighting, keyword mnemonic, imagery for text and rereading rated low. The authors state these are not a panacea and help motivated students who can apply them.
+- Yan, Sana and Carvalho (2023/2024), a perspective piece summarizing meta-analyses: spacing g = 0.74 versus massed practice (Latimier et al., 2021); retrieval practice about g = 0.50 (classroom meta-analysis, Yang et al., 2021); interleaving g = 0.42 versus blocked practice (Brunmair and Richter, 2019). Heterogeneity is high for retrieval and interleaving. Stated limits: retrieval helps little without feedback or when too easy; worked examples can beat extra retrieval for learning a procedure; blocking can beat interleaving when concepts are easy to tell apart; too much spacing can fail; most studies used narrow, experimenter-made tests. The authors' conclusion is that no single strategy fits every learner, content type or context.
+Both sources describe groups of learners, not an individual student. AZI must not present them as a prediction for a specific person.
+
+| Strategy | Evidence rating | How AZ supports it | AI cost |
+|---|---|---|---|
+| Practice testing (quizzes, flashcards) | High | Core of the product (section 13) | stored bank: none |
+| Distributed practice (spacing) | High | Spaced review and exam-date schedule | none |
+| Interleaved practice | Moderate | Mixed-topic sessions; for numeric subjects, mix problem types | none |
+| Self-explanation | Moderate | Prompt "why is this the answer?" after a missed question; explanation stored at generation | stored: none |
+| Elaborative interrogation | Moderate | "Why is this true?" prompts on stored questions | stored: none |
+| Worked examples (from Yan et al., for procedures) | Not rated in Dunlosky; supported as a limit of retrieval in Yan et al. | Show the stored worked solution before more retrieval on a procedure the student keeps missing | stored: none |
+| Summarization, highlighting, rereading | Low | Not promoted as a way to learn; a generated summary is an orientation step before practice, not the study method | metered if generated |
+
+**Product tension to decide:** AZ sells summaries, but the cited review rates summarization low and practice testing high. Proposed default flow: summary (orientation) then quiz, with copy that does not claim summaries alone improve learning.
+
+**How AZI chooses what to suggest (rules, no AI):**
+- Inputs are observable only: days to the exam, accuracy per topic, number of attempts, repeated misses on a question, whether the question type is numeric.
+- Examples: exam far away leads to a spaced daily session; exam within days leads to a mock exam and mistake review; a procedure missed repeatedly leads to the worked solution first, then retry; a topic with too few answers leads to a diagnostic quiz instead of a guess.
+- The message states why ("you missed this question twice"), says it is a suggestion, and the student can ignore it. No personality or learning-style claims.
+
+**Open questions:**
+1. Whether to adopt this list as the product's official strategy set, or review it against more sources first (two sources checked so far).
+2. Per-subject differences (numeric versus text-heavy courses) are reasoned from the cited limits and not tested; measure in beta.
+3. Whether a self-explanation prompt reduces session completion; measure before making it default.
+4. Success measure: accuracy change on a topic after the strategy AZI suggested, versus no suggestion. Undefined until beta data exists.
