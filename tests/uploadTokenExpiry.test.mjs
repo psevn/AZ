@@ -36,7 +36,7 @@ test("an expiry older than the full safety margin is ready for cleanup", () => {
 
 test("missing, malformed, and wrongly typed expiry values fail closed", () => {
   const now = Date.parse("2026-11-15T20:00:00.000Z");
-  for (const value of [undefined, "", "not-a-date", 1_800_000_000, {}, false]) {
+  for (const value of [undefined, "", "not-a-date", "0", "2026-11-15", " 2026-11-15T20:00:00Z ", 1_800_000_000, {}, false]) {
     assert.deepEqual(
       getUploadTokenExpiryDecision(value, now, FIVE_MINUTES),
       { kind: "invalid" },
