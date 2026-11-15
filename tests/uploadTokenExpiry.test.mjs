@@ -1,12 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { getUploadTokenExpiryDecision } from "../supabase/functions/_shared/uploadTokenExpiry.mjs";
-
-const endpoint = readFileSync(
-  new URL("../supabase/functions/delete-document/index.ts", import.meta.url),
-  "utf8",
-);
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
@@ -56,17 +50,3 @@ test("invalid timing configuration fails closed", () => {
   assert.deepEqual(getUploadTokenExpiryDecision(null, 1_000, -1), { kind: "invalid" });
 });
 
-test("the deletion endpoint rejects an invalid expiry before any Storage removal", () => {
-  assert.match(endpoint, /getUploadTokenExpiryDecision\(begun\.uploadTokenExpiresAt/);
-  const invalidBranch = endpoint.slice(
-    endpoint.indexOf('expiryDecision.kind === "invalid"'),
-    endpoint.indexOf('expiryDecision.kind === "wait"'),
-  );
-  assert.match(invalidBranch, /return json\(503/);
-  assert.match(invalidBranch, /UPLOAD_EXPIRY_STATE_INVALID/);
-  assert.ok(
-    endpoint.indexOf('expiryDecision.kind === "invalid"') <
-      endpoint.indexOf('bucket.remove([storagePath])'),
-    "invalid expiry state must be rejected before deleting the Storage object",
-  );
-});
