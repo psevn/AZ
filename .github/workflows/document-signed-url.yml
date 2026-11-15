@@ -53,6 +53,7 @@ on:
       - "supabase/functions/create-document-signed-url/**"
       - "supabase/functions/create-document-upload-url/**"
       - "supabase/functions/delete-document/**"
+      - "supabase/functions/_shared/uploadTokenExpiry.*"
       - "supabase/migrations/20261112110000_document_deletion_lifecycle.sql"
       - "tests/documentDeletionContract.test.mjs"
       - "tests/uploadTokenExpiry.test.mjs"
