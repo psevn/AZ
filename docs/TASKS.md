@@ -70,3 +70,23 @@ Slices: (1) upload + status machine, (2) extraction with page numbers, (3) summa
 
 ## Accounts/decisions the owner handles personally
 GitHub (repo AZ), Supabase, Cloudflare, AI provider account with a spend limit, domain (deferred), Claude Code access (deferred), legal advice. Never paste keys into chat.
+
+## Quick wins (proposal, pending owner confirmation of the gate and the weekly budget)
+Rule proposed by the owner on 2026-11-15: ideas that are low-cost, useful and easy are added now rather than postponed. To keep "easy" honest, an item enters this list only if it passes all of:
+1. No recurring cost: no AI API call, no paid tool, no large storage.
+2. Clear value: supports the core loop (plan, study, practice, review mistakes, improve) or brings the student back.
+3. Truly easy: no database schema change, no new dependency, no impact on security, privacy or payments.
+4. Does not delay a P0 item; it is scheduled after the P0 work it sits next to.
+5. Testable before merge.
+Weekly time budget for Quick wins: about 2 hours (about 15% of the planned 12.5–15 hours), an assumption for the owner to set. Items are built one at a time; an item that grows beyond its estimate goes back to this list.
+
+| Item | Area | Estimate | Notes |
+|---|---|---|---|
+| Keyboard shortcut for quick add (Q) | Planning | TBD | Web only |
+| Undo toast after delete or complete | Planning | TBD | |
+| Task templates (assignment, exam prep) | Planning | TBD | Creates tasks from fixed templates, no AI |
+| Exam countdown on Home | Home | TBD | Uses `subjects.exam_date` |
+| Useful empty states and Arabic copy polish | UI | TBD | |
+| Skeleton loaders | UI | TBD | |
+| "Copy my context" export (AZ Connect-lite) | AZI | TBD | V1.5 experiment. Student previews and chooses what is included. No files by default. No API call. Real AZ Connect stays a V2 candidate. |
+Not Quick wins (need a schema change, new dependency or cost): link a task to a study document, recurring tasks, calendar sync, notifications outside the app, voice input, import of questions from external AI.
