@@ -25,9 +25,9 @@ In:
 - Home: today's tasks, progress, countdown to next exam (reads existing data only).
 - Usage credits (daily + monthly), per-call cost logging, global spend cap.
 - Account page: language, remaining usage, delete account (full deletion incl. files).
-- Groups: "Coming soon" card only.
+- Group Projects (collaborative projects): in V1 per PSEVN's 2026-11-08 decision. Their detailed spec is not written yet. Community and live gatherings stay out.
 
-Out (deferred): Mini Notebook, short-answer questions, advanced charts, real Groups, Arena, Community, XP, AZ Card, stylus handwriting, AI rescheduling, voice/photo schedule input, native apps, payments, ambassador program (post-beta).
+Out (deferred): Mini Notebook, short-answer questions, advanced charts, Community, Arena, XP, AZ Card, stylus handwriting, AI rescheduling, voice/photo schedule input, native apps, payments, ambassador program (post-beta).
 
 Priorities if time runs short (nothing is removed from V1 now; see §11).
 
@@ -205,10 +205,10 @@ Priority tiers (no feature removed from V1 now; this is the cut order if we slip
 Dates are targets, not promises: launch is gated by quality gates (tests passing, security review, beta results). If the gates are not met, the date moves; quality does not. Time estimates are draft and re-planned after the first slice using real hours.
 
 ## 13. Pricing (assumption, not final)
-Free tier + Pro $6.99/month; $4.99 for the first 500 students (3 vs 6 months undecided). Payments deferred. Caps blank until Stage C. Margin check at the subscriber's full cap, including the $4.99 price.
+Free tier + Pro $7.99/month (decided 2026-11-15). Early-bird discount applies to the first 3 months only; early-bird size 250 is preferred (previously 500) and the discounted price level (previously $4.99) is not re-confirmed. Payments deferred. Caps blank until Stage C (a ~$3 AI cost cap per paid student is preferred, see `PRICING.md`). Margin check at the subscriber's full cap, at both $7.99 and the early-bird price.
 
 ## 14. Versions
-V1.0 beta → web launch (target early Feb 2027); V1.1 beta fixes + deferred items; V1.2 payments (after legal check); V1.3 real Groups; post-web phase: Android + iOS apps are the next planned delivery, gated by a stable web MVP and a review of user feedback/capacity. Choose Capacitor vs React Native/Expo at that point; do not assume the choice now. Design now: responsive UI, API separate from frontend, shared authentication and data.
+V1.0 beta → web launch (target early Feb 2027); V1.1 beta fixes + deferred items; V1.2 payments (after legal check); V1.3 wider Groups/Community features (group Projects are already in V1); post-web phase: Android + iOS apps are the next planned delivery, gated by a stable web MVP and a review of user feedback/capacity. Choose Capacitor vs React Native/Expo at that point; do not assume the choice now. Design now: responsive UI, API separate from frontend, shared authentication and data.
 
 ## 15. Working process
 Spec/criteria per stage → Claude Code implements → push to GitHub with a test report (changes, what was tested, results) → ChatGPT reviews (security, permissions, cost; repo link or pasted files; PSEVN relays) → fixes → next stage only when tests pass. No architecture change without review; no paid services without approval; "works" only with a test that ran.
