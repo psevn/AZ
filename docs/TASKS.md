@@ -40,7 +40,7 @@ Slices: (1) upload + status machine, (2) extraction with page numbers, (3) summa
 - Provider interface with ≥2 adapters; evaluation run on the same PDFs; report usable % (PSEVN reviews 20 questions per PDF), page-ref accuracy, schema-valid rate, latency, cost per quiz, cost per usable question.
 - Credits: concurrency tests (same key ×50 → one provider call; per-user cap; global cap; failure refund; killed function → sweep refund).
 - Hidden "ignore previous instructions" text in a PDF does not change behavior; another user cannot read the document/quizzes/attempts.
-- Output: filled credit-cost table + unit-economics sheet (cost per active user at the subscriber cap, incl. $4.99 price).
+- Output: filled credit-cost table + unit-economics sheet (cost per active user at the subscriber cap, at $7.99 and at the early-bird price; see `PRICING.md`).
 - Pass only if questions are good enough for PSEVN to study from before an exam.
 
 ## Stage D — Planning + Focus + Home

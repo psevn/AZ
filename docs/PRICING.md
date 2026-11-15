@@ -18,9 +18,9 @@ One rule: **organizing and replaying = free; generating content with AI from the
 
 | Free (no AI cost) | Paid (AI, capped) |
 |---|---|
-| AZ Projects (tasks, sharing, collaboration) | PDF summaries |
+| AZ Projects (group Projects are in V1: tasks, sharing, collaboration) | PDF summaries |
 | Planning, Focus Timer, Home | Question generation |
-| Replaying already generated quizzes | Professional Mode |
+| Replaying already generated quizzes | Professional Mode (one free trial, as in DECISIONS.md) |
 | Mistake review | Ask Your Materials |
 | Weakness Hunter, Weekly Review (rule-based) | AI flashcard generation |
 | Manual flashcards + spaced repetition (algorithm only) | OCR |

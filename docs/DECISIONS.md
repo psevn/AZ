@@ -5,11 +5,11 @@ Last updated: 2026-11-15 (v0.3, pricing). Owner: PSEVN.
 ## Settled (previously approved, unchanged)
 - Name: **AZ** (never "AZ EZORD"). EZORD and VXNORY are separate and out of focus.
 - Web-first (responsive + installable PWA), Arabic/English + RTL, dark mode first-class. **After the web launch, the next planned product delivery is native Android + iOS apps**, reusing the same backend, accounts, and data; app-specific UI is expected. This sequence does not add native apps to V1.
-- V1 scope as in SPEC.md §2; Groups = "Coming soon" card only. No V1 feature removed.
+- V1 scope as in SPEC.md §2; collaborative group Projects are in V1 (PSEVN decision 2026-11-08, reverses the earlier "Groups = Coming soon card only"); Community and live gatherings stay out. No V1 feature removed.
 - V1 is one connected loop: Plan → Study → Practice → Review → Improve, on a shared schema.
 - Stage order: A plan → B foundation → C PDF→quiz experiment → D Planning+Home → E workspace+ME → F security/testing/beta. One stage at a time; owner approves each.
 - Credit-based usage: daily + monthly caps, higher for subscribers, never unlimited; global monthly spend cap.
-- Free: Planning, Focus, Home, library (storage-capped). Limited free AI. Professional Mode is the paid differentiator (one trial for free).
+- Free: Planning, Focus, Home, AZ Projects, library (storage-capped); full free/paid split in `PRICING.md`. Limited free AI. Professional Mode is the paid differentiator (one trial for free).
 - Beta access by invite code. Country blocking only as an optional extra layer.
 - Supabase project "AZ" in Mumbai (ap-south-1) for V1.
 - Process: Claude Code implements, ChatGPT reviews at end of each stage, owner relays via GitHub/files; tests must pass before the next stage.
@@ -45,7 +45,7 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 ## Postponed (not rejected)
 - Ambassador program: after beta; count activated users (not sign-ups), higher points for paid conversions, rewards in AI credits/free Pro months/titles, pseudonymous leaderboard, universities only (schools need legal review), start with 3–5 ambassadors.
 - Cafe/library/neon concept: separate EZORD-level idea, revisit only after AZ is profitable. Cheap test later: partner discount with an existing cafe/bookstore. Coffee-redeemable points = financial liability; not in AZ.
-- Payments, real Groups, Arena, Community, XP. Native apps are planned for the post-web phase, not V1.
+- Payments, Community, wider Groups features, Arena, XP (group Projects are in V1, see Settled). Native apps are planned for the post-web phase, not V1.
 - **AZ Connect** (students command Claude/ChatGPT to create files/quizzes inside AZ): V2 candidate. Conditions: API-first design now; scoped OAuth tokens; any path that triggers AZ's own AI goes through the credit system; prompt-injection review; verify third-party integration platforms/policies at that time; prototype on the owner's account after beta.
 - **Claude ↔ ChatGPT automation** (Codex GitHub review, bridges/MCP between the tools): postponed to V1.5 (decided 2026-11-04). Until then ChatGPT only verifies: the owner relays by pasting files or sharing the repo link. No third-party bridge tools, no paid subscriptions for this. Rule when revisited: one agent per branch at a time, no auto-reply loops, check what the owner's ChatGPT plan includes before paying.
 
