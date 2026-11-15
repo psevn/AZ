@@ -17,6 +17,14 @@ test("a valid token expiry waits through the five-minute clock-skew margin", () 
   });
 });
 
+test("PostgreSQL-style timezone offsets are accepted", () => {
+  const now = Date.parse("2026-11-15T20:00:00.000Z");
+  assert.deepEqual(
+    getUploadTokenExpiryDecision("2026-11-15T23:00:00+03:00", now, FIVE_MINUTES),
+    { kind: "wait", retryAfterSeconds: 300 },
+  );
+});
+
 test("an expiry inside the clock-skew margin still waits", () => {
   const now = Date.parse("2026-11-15T20:00:00.000Z");
   const expiry = new Date(now - 4 * 60_000).toISOString();
