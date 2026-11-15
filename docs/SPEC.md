@@ -27,7 +27,7 @@ In:
 - Account page: language, remaining usage, delete account (full deletion incl. files).
 - Group Projects (collaborative projects): in V1 per PSEVN's 2026-11-08 decision. Their detailed spec is not written yet. Community and live gatherings stay out.
 
-Out (deferred): Mini Notebook, short-answer questions, advanced charts, Community, Arena, Community, XP, AZ Card, stylus handwriting, AI rescheduling, voice/photo schedule input, native apps, payments, ambassador program (post-beta).
+Out (deferred): Mini Notebook, short-answer questions, advanced charts, Community, Arena, XP, AZ Card, stylus handwriting, AI rescheduling, voice/photo schedule input, native apps, payments, ambassador program (post-beta).
 
 Priorities if time runs short (nothing is removed from V1 now; see §11).
 
