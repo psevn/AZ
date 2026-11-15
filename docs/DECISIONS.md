@@ -1,6 +1,6 @@
 # AZ — Decisions Log
 
-Last updated: 2026-11-04 (v0.2). Owner: PSEVN.
+Last updated: 2026-11-15 (v0.3, pricing). Owner: PSEVN.
 
 ## Settled (previously approved, unchanged)
 - Name: **AZ** (never "AZ EZORD"). EZORD and VXNORY are separate and out of focus.
@@ -26,6 +26,22 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 7. Provider-independent AI interface + quality metrics next to cost, incl. automatic page-reference check (SPEC §8).
 8. Vertical slices, P0/P1/P2 priorities, date gated by quality (SPEC §12).
 
+## 2026-11-15 — Pricing v0.1 (details and assumptions in `docs/PRICING.md`)
+
+**Confirmed**
+- Subscription is $7.99 / month.
+- Early-bird discount applies to the first 3 months only (resolves the "3 vs 6 months" question).
+
+**Preferred, pending Stage C cost measurement**
+- AI cost cap of ~$3 per paid student per month (replaces the earlier $6–6.99 cap idea).
+- Early-bird size of 250 students (previously 500).
+
+**Rule adopted**
+- Organizing and replaying is free; generating content with AI from the student's files is paid and capped.
+
+**Not measured yet**
+- All cost and margin numbers are assumptions until Stage C.
+
 ## Postponed (not rejected)
 - Ambassador program: after beta; count activated users (not sign-ups), higher points for paid conversions, rewards in AI credits/free Pro months/titles, pseudonymous leaderboard, universities only (schools need legal review), start with 3–5 ambassadors.
 - Cafe/library/neon concept: separate EZORD-level idea, revisit only after AZ is profitable. Cheap test later: partner discount with an existing cafe/bookstore. Coffee-redeemable points = financial liability; not in AZ.
@@ -37,7 +53,7 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 1. Native app implementation route after web launch: evaluate Capacitor (reuse much of the web UI) vs React Native/Expo (more native UI); decide based on V1 needs, maintenance cost, and device requirements.
 2. Stage B implementation route: the initial scaffold and integration work is being authored through the GitHub-assisted ChatGPT workflow; Claude Code remains deferred and no paid plan is approved.
 3. AI provider/model and monthly spend cap (after Stage C data).
-4. Final price; $4.99 promo length (3 vs 6 months).
+4. Final price (proposed $7.99/month, see `docs/PRICING.md`); early-bird price level (previously $4.99) and size (250 vs 500). Promo length decided 2026-11-15: first 3 months.
 5. Whether Edge Function free-tier invocation quotas are enough [VERIFY in Stage B].
 6. Legal: registration, data law, payment gateway, usage-log retention after deletion, backups (professional required).
 7. Hosting region for V2.
