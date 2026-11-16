@@ -73,10 +73,12 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       quiet: true,
       debounce: 1000,
       maxDebounce: 5000,
-      async onAuthenticate({ token, documentName, socketId }) {
+      async onAuthenticate({ token, documentName, context }) {
         const claims = await verifyTicket(token, env.COLLAB_TICKET_SECRET);
         if (claims.documentId !== documentName || claims.documentId !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
-        const activeSocket = room.activeSockets.get(socketId);
+        const transportId = (context as { transportId?: string } | undefined)?.transportId;
+        if (!transportId) throw new Error("SOCKET_NOT_REGISTERED");
+        const activeSocket = room.activeSockets.get(transportId);
         if (!activeSocket) throw new Error("SOCKET_NOT_REGISTERED");
         activeSocket.userId = claims.sub;
         activeSocket.projectId = claims.projectId;
@@ -143,10 +145,10 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       await this.ctx.storage.put(`revoked:${body.projectId}:${body.userId}`, revokedAtMs);
 
       let closedConnections = 0;
-      for (const [socketId, activeSocket] of this.activeSockets) {
+      for (const [transportId, activeSocket] of this.activeSockets) {
         if (activeSocket.userId === body.userId && activeSocket.projectId === body.projectId) {
           activeSocket.socket.close(4003, "membership-revoked");
-          this.activeSockets.delete(socketId);
+          this.activeSockets.delete(transportId);
           closedConnections += 1;
         }
       }
@@ -174,10 +176,9 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       close: (code, reason) => server.close(code, reason),
       get readyState() { return server.readyState; },
     };
-    const connection = this.hocuspocus.handleConnection(socket, request);
-    // Hocuspocus 4.1.0 assigns this stable socket id to its authentication hooks.
-    const socketId = (connection as unknown as { socketId: string }).socketId;
-    this.activeSockets.set(socketId, { socket: server });
+    const transportId = crypto.randomUUID();
+    const connection = this.hocuspocus.handleConnection(socket, request, { transportId });
+    this.activeSockets.set(transportId, { socket: server });
 
     server.addEventListener("message", (event) => {
       const data = event.data;
@@ -194,7 +195,7 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
     });
 
     server.addEventListener("close", (event) => {
-      this.activeSockets.delete(socketId);
+      this.activeSockets.delete(transportId);
       connection.handleClose({ code: event.code, reason: event.reason } as CloseEvent);
     });
 
