@@ -1,6 +1,6 @@
 # AZ — Implementation Status
 
-Last checked: 2026-11-04. This file records observed repository/database state; it does not approve pending product or architecture decisions.
+Initial Supabase snapshot: 2026-11-04; migration inventory rechecked: 2026-11-16. This file records observed repository/database state; it does not approve pending product or architecture decisions.
 
 ## Supabase project
 
@@ -8,7 +8,7 @@ Last checked: 2026-11-04. This file records observed repository/database state; 
 - Region: `ap-south-1` (Mumbai)
 - Status: `ACTIVE_HEALTHY`
 - PostgreSQL: 17.11
-- Applied migrations: 11 (5 original foundation migrations + 6 security migrations)
+- Applied migrations at the initial 2026-11-04 snapshot: 11 (5 original foundation migrations + 6 security migrations). The later read-only cross-check on 2026-11-16 found 30 recorded migrations; see “Migration inventory cross-check” below.
 - Public tables observed: `profiles`, `subjects`, `tasks`, `focus_sessions`, `documents`, `notes`, `quizzes`, `quiz_questions`, `quiz_attempts`, `ai_usage_log`.
 - RLS is enabled on all 10 observed public tables.
 - The `documents` Storage bucket is private and PDF-only.
@@ -33,38 +33,40 @@ Migration `20261104145529_restrict_client_writes_to_server_managed_tables.sql` w
 - `profiles`: authenticated users can SELECT their own profile and UPDATE only `display_name` and `language`; they cannot modify other columns such as plan/entitlement fields.
 - Post-migration checks confirmed the intended table grants and row policies.
 
-The Supabase security advisor reports one INFO finding because `private.question_keys` has RLS enabled and deliberately has no policies; this is intentional default-deny behavior for the server-only answer-key table. The performance advisor's missing-index finding for the composite foreign key was addressed by migration `20261104145802_index_private_question_keys_owner_fk.sql`. Remaining performance INFO findings are unused indexes on a new database with no workload; do not drop them until real query usage is observed.
+The Supabase security advisor reports one INFO finding because `private.question_keys` has RLS enabled and deliberately has no policies; this is intentional default-deny behavior for the server-only answer-key table. The performance advisor's missing-index finding for the composite foreign key was addressed by migration `20261104145805_index_private_question_keys_owner_fk.sql` (the live version recorded in migration history and restored in this PR). Remaining performance INFO findings are unused indexes on a new database with no workload; do not drop them until real query usage is observed.
 
 **Not yet runtime-tested:** the current tables contain no quiz rows, and no test-user JWT was available for an end-to-end RPC test. Do not mark quiz security acceptance tests complete until a real authenticated test submits both correct and incorrect answers and attempts cross-user/forged writes.
 
-## Repository gaps
+## Repository gaps — status rechecked 2026-11-16
 
-- The current repository has six security migration files, but the five original foundation migration source files are still missing from GitHub. A fresh environment therefore cannot yet recreate the live database from the repository alone.
-- No application source code is present in the inspected `main` tree.
-- No Supabase Edge Functions are deployed.
-- The live schema is not yet the complete V1 schema in `docs/SPEC.md`; several planned tables and credit/idempotency mechanisms remain unimplemented.
-- `docs/TASKS.md` still has Stage A approval and Stage B acceptance tasks unchecked. The presence of applied database migrations does not mean those stages are complete.
+- **Migration source recovery:** the missing historical migrations were recovered from recorded applied statements and added in PR #97. The PR reports 23/23 recovered-file hash matches and a clean 30-migration replay on disposable PostgreSQL 16 with documented Supabase-managed stand-ins. This is pending review; it is not yet part of `main`.
+- **Projects schema:** the live Projects migrations are included in that 30-migration baseline in PR #97. Until the PR is merged, the default branch still cannot reproduce the complete observed live schema.
+- **Application and deployment status:** the repository includes a web scaffold, but the presence of source files or database migrations does not establish that the complete V1 application is runtime-verified or deployed.
+- **V1 completeness:** the live schema is not yet the complete approved V1 experience in `docs/SPEC.md`; planned application flows, integration tests, and credit/idempotency behavior still require implementation and acceptance.
+- `docs/TASKS.md` Stage A/Stage B acceptance items remain the source for outstanding gates. Do not infer completion from the existence of a PR or an applied live migration.
 
 ## Next gates
 
-1. Recover and commit the exact five original migration files from the source that applied them; do not reconstruct them from memory.
-2. Add authenticated integration tests for answer-key non-disclosure, grading, ownership, and rejected client writes.
-3. Connect the app/API to the grading RPC and test through the actual UI.
-4. Implement the remaining V1 schema and credit controls only against the approved specification.
-5. Reconcile Stage A/Stage B documentation after PSEVN confirms the pending v0.2 decisions.
+1. Review PR #97's recovered migration files and its stated replay limits; do not apply them to the live project because they are already recorded as applied there.
+2. Independently reproduce the 30-migration baseline replay on a disposable PostgreSQL environment before relying on it for a clean rebuild.
+3. Recompose the pending feature stack: PR #84 document deletion, then PR #86 beta credit limits. The 30-migration baseline does not include those pending feature migrations; the combined 37-migration stack needs its own clean replay.
+4. Add authenticated integration tests for quiz answer-key non-disclosure, grading, ownership, and rejected client writes.
+5. Connect the app/API to the grading RPC and test through the actual UI.
+6. Reconcile Stage A/Stage B acceptance in `docs/TASKS.md` against observed, executed evidence.
 
-## Migration-source recovery — blocked pending original files
+## Migration-source recovery — historical blocker, superseded 2026-11-16
 
-Checked on 2026-11-04:
+The 2026-11-04 investigation correctly recorded that the original foundation SQL bodies were not present on the then-inspected `main` branch and must not be reconstructed from memory. That blocker was addressed in PR #97: the PR adds the missing migration files using the recorded applied statements, reports trimmed-content hash equality for all 23 newly recovered files, and records a disposable PostgreSQL 16 replay of all 30 migrations.
 
-- Supabase migration history confirms the first five versions/names are `20261104141452 core_schema`, `20261104141502 storage`, `20261104142612 storage_documents_policies`, `20261104143417 fk_covering_indexes_and_storage_path_check`, and `20261104143425 profile_autocreate_and_handoff_comments`.
-- The Supabase migration-history interface exposes version/name metadata only; it does not return the original SQL bodies.
-- The GitHub `main` tree contains only the six security migration files, not the five original foundation files.
-- No exact original SQL source was found in prior project context. The local working copy is known to be `C:\\Users\\ASUS\\Projects\\AZ`, but this session cannot read files from that Windows path.
+**Current status:** recovery is present on branch `chore/sync-live-migrations` and pending PR review/merge. It is not yet present on `main`. The replay used stand-ins for Supabase-managed components and a stub for the `pg_cron` extension; see “Migration inventory cross-check” for exact scope and limitations.
 
-**Do not recreate these five files from the current schema and label them as originals.** That would hide migration drift and may fail to reproduce triggers, policies, functions, storage configuration, or ordering.
+The historical findings are retained for audit context, not as current next steps:
 
-Next action: retrieve the exact five SQL files from the environment/tool that originally created/applied them (likely the original local/Claude working directory), then commit those exact files to `supabase/migrations/`. Until then, a clean database cannot be reliably rebuilt from this repository alone.
+- On 2026-11-04, the migration-history interface exposed version/name metadata but not original SQL bodies.
+- The then-inspected `main` tree lacked the five foundation SQL files.
+- The safe rule remains: never reconstruct an applied migration from the current schema and label it as the original.
+
+Do not apply PR #97's recovered files to the live project; those versions are already recorded there. Review and validate them through a disposable replay only.
 
 ## Least-privilege grants for user-managed tables — applied
 
@@ -112,9 +114,11 @@ Checked on 2026-11-04:
 
 ## Migration inventory cross-check
 
-A follow-up comparison of the live Supabase migration history against the GitHub `supabase/migrations/` directory found a filename/version discrepancy that must be reconciled before relying on a clean database rebuild:
+A follow-up comparison of the live Supabase migration history against the GitHub `supabase/migrations/` directory found that the repository held only 7 of the 30 migrations recorded in the live project, with two version mismatches. Status of this finding (2026-11-16, branch `chore/sync-live-migrations`):
 
-- Live history reports `20261104145805 index_private_question_keys_owner_fk`.
-- GitHub currently contains `20261104145802_index_private_question_keys_owner_fk.sql`.
-- Do not rename or replay either migration until the exact applied SQL and source history are reconciled.
-- The original five foundation migration SQL bodies are not present in the repository's historical commits checked so far; the earliest planning commit contains only the three docs files. Recovery still requires the original authoring workspace or an exact SQL export/source.
+- **Recovered.** The 23 missing migrations were exported verbatim from the live `supabase_migrations.schema_migrations` history (read-only) and added under their live version numbers. Each file's content hash (after trimming leading/trailing whitespace) equals the hash of the applied statement in the live history.
+- **Renamed to the live versions** (file content unchanged): `20261104145802_index_private_question_keys_owner_fk.sql` is now `20261104145805_...`, and `20261105160000_add_academic_planning_foundation.sql` is now `20261105153306_...`. The planning foundation migration **is applied** in the live project (the statement in `AZ_PLANNING_SPEC.md` §12 that it was not applied is outdated).
+- **Comment-only differences** remain in four older repository files (`20261104144855`, `20261104145529`, `20261104145805`, `20261104150300`): their SQL is the same as the applied statement, but the comments differ. They were left as they are.
+- **Clean-rebuild test.** All 30 migrations were replayed in version order on an empty local PostgreSQL 16 database with minimal stand-ins for the Supabase-managed pieces (`auth.users` and `auth.uid()`, `storage.buckets` and `storage.objects`, the `anon`/`authenticated`/`service_role` roles with Supabase-style default privileges, the `supabase_realtime` publication, and a stub `cron` schema). All 30 applied without error, and a fingerprint of columns (247), constraints (178), indexes (107), RLS policies (45), functions (27, including bodies), triggers (5) and table grants (298) in the `public` and `private` schemas matched the live project exactly.
+- **Not covered by that test:** the real `pg_cron` extension (the `create extension` line was stubbed locally), storage bucket objects, `auth` and `storage` schema internals, data, the `private` schema's own function privileges, and anything created in the live project outside the migration history. Treat it as strong evidence, not proof, that `supabase db reset` reproduces the live schema.
+- Do not apply any of these files to the live project. They are already applied there.

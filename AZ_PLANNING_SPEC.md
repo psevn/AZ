@@ -345,6 +345,6 @@ This is the recommended V1 shape based on the live schema. It is a design propos
 
 ## 12. Initial SQL migration artifact
 
-The first additive migration has been prepared at `supabase/migrations/20261105160000_add_academic_planning_foundation.sql`.
+The first additive migration is at `supabase/migrations/20261105153306_add_academic_planning_foundation.sql` (renamed from `20261105160000_...` on 2026-11-16 to match the version recorded in the live Supabase history).
 
-It creates `academic_terms`, `class_meetings`, and `academic_setup`; adds nullable subject metadata and term linkage; adds owner-scoped RLS and authenticated CRUD grants for these user-managed tables; and preserves the existing task / document / focus-session relationships. The migration is committed to GitHub but has **not** been applied to Supabase. Review and test it before execution.
+It creates `academic_terms`, `class_meetings`, and `academic_setup`; adds nullable subject metadata and term linkage; adds owner-scoped RLS and authenticated CRUD grants for these user-managed tables; and preserves the existing task / document / focus-session relationships. The live Supabase migration history records it as applied (version `20261105153306`, checked 2026-11-16), so it must not be applied again.
