@@ -18,10 +18,13 @@ Removal uses two database phases to close the ticket-issuance race:
    `remove_project_member` RPC, which rechecks the active lead and target row, deletes the
    membership, and writes the `member_removed` audit event atomically.
 
-If a Worker request fails, the row remains marked revoked: the member has already lost database
-RLS access and cannot obtain another collaboration ticket. The lead can retry the removal from the
-workspace; the pending row remains visible to the lead until final deletion. A fresh invitation can
-reactivate a revoked member by clearing `revoked_at` only after valid invitation acceptance.
+If a Worker request fails, the row remains marked revoked: the member has lost database RLS
+access and cannot obtain another collaboration ticket. However, an already-open WebSocket is not
+guaranteed to close until the Worker acknowledges its revocation request. The operation therefore
+returns an error and remains visibly pending; the lead must retry it and must not treat the member
+as fully removed until the Worker acknowledges and the final RPC succeeds. The pending row remains
+visible to the lead. A fresh invitation can reactivate a pending revoked member by clearing
+`revoked_at` only after valid invitation acceptance.
 
 ## Worker revocation protocol
 
