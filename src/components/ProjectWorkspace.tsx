@@ -15,7 +15,7 @@ type Project = {
   created_at: string;
 };
 type ProjectDocument = { id: string; title: string; document_type: string; is_primary: boolean; updated_at: string };
-type Member = { user_id: string; role: "lead" | "member"; joined_at: string };
+type Member = { user_id: string; role: "lead" | "member"; joined_at: string; revoked_at: string | null };
 type ProjectTask = {
   id: string;
   title: string;
@@ -76,6 +76,8 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     removingMember: ar ? "جارٍ الإزالة..." : "Removing...",
     confirmRemoveMember: ar ? "هل تريد إزالة هذا العضو؟ سيتم إنهاء جلسات تحريره فوراً." : "Remove this member? Their active editing sessions will be closed immediately.",
     memberNumber: ar ? "عضو" : "Member",
+    revocationPending: ar ? "بانتظار إغلاق الجلسات" : "Revocation pending",
+    retryRemoval: ar ? "إكمال الإزالة" : "Retry removal",
     memberInvited: ar ? "تم إرسال دعوة لعضو" : "Invited a teammate",
     memberJoined: ar ? "انضم عضو إلى المشروع" : "A teammate joined the project",
     progress: ar ? "الإنجاز" : "PROGRESS",
@@ -133,7 +135,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     const [projectResult, documentResult, membersResult, tasksResult, activityResult] = await Promise.all([
       client.from("projects").select("id,title,description,subject_id,due_at,status,created_at").eq("id", projectId).maybeSingle(),
       client.from("project_documents").select("id,title,document_type,is_primary,updated_at").eq("project_id", projectId).eq("is_primary", true).maybeSingle(),
-      client.from("project_members").select("user_id,role,joined_at").eq("project_id", projectId).is("revoked_at", null).order("joined_at", { ascending: true }),
+      client.from("project_members").select("user_id,role,joined_at,revoked_at").eq("project_id", projectId).order("joined_at", { ascending: true }),
       client.from("project_tasks").select("id,title,description,assignee_id,due_at,priority,status,created_at").eq("project_id", projectId).order("created_at", { ascending: false }),
       client.from("project_activity").select("id,actor_id,event_type,payload,created_at").eq("project_id", projectId).order("created_at", { ascending: false }).limit(30),
     ]);
@@ -153,7 +155,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     setDocument((documentResult.data || null) as ProjectDocument | null);
     const loadedMembers = (membersResult.data || []) as Member[];
     setMembers(loadedMembers);
-    setCurrentUserRole(loadedMembers.find((member) => member.user_id === userId)?.role || "member");
+    setCurrentUserRole(loadedMembers.find((member) => member.user_id === userId && !member.revoked_at)?.role || "member");
     setTasks((tasksResult.data || []) as ProjectTask[]);
     setActivity((activityResult.data || []) as Activity[]);
     setLoading(false);
@@ -329,7 +331,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
             </section>
             <section className="content-panel project-stat-panel">
               <span className="eyebrow">{copy.team}</span>
-              <strong>{members.length.toString().padStart(2, "0")}</strong>
+              <strong>{members.filter((member) => !member.revoked_at).length.toString().padStart(2, "0")}</strong>
               <p>{members.length <= 1 ? copy.emptyMembers : ar ? "فريق المشروع" : "Project team"}</p>
             </section>
             <section className="content-panel project-members-panel">
@@ -339,7 +341,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
                   <article className="project-task-item" key={member.user_id}>
                     <div className="project-task-copy">
                       <strong>{member.user_id === userId ? copy.you : copy.memberNumber + " " + (index + 1)}</strong>
-                      <small>{member.role === "lead" ? copy.lead : copy.member}</small>
+                      <small>{member.revoked_at ? copy.revocationPending : member.role === "lead" ? copy.lead : copy.member}</small>
                     </div>
                     {currentUserRole === "lead" && member.role === "member" && (
                       <button
@@ -348,7 +350,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
                         disabled={removingMemberId !== null}
                         onClick={() => void removeMember(member.user_id)}
                       >
-                        {removingMemberId === member.user_id ? copy.removingMember : copy.removeMember}
+                        {removingMemberId === member.user_id ? copy.removingMember : member.revoked_at ? copy.retryRemoval : copy.removeMember}
                       </button>
                     )}
                   </article>
@@ -401,7 +403,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
             <form className="projects-create-form" onSubmit={addTask}>
               <label><span>{copy.taskTitle}</span><input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength={300} required /></label>
               <label><span>{copy.taskDescription}</span><textarea value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} rows={3} maxLength={3000} /></label>
-              <label><span>{copy.assign}</span><select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}><option value="">{copy.unassigned}</option>{members.filter((member) => currentUserRole === "lead" || member.user_id === userId).map((member) => <option key={member.user_id} value={member.user_id}>{member.user_id === userId ? copy.you : copy.teammate} · {member.role === "lead" ? copy.lead : copy.member}</option>)}</select></label>
+              <label><span>{copy.assign}</span><select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}><option value="">{copy.unassigned}</option>{members.filter((member) => !member.revoked_at && (currentUserRole === "lead" || member.user_id === userId)).map((member) => <option key={member.user_id} value={member.user_id}>{member.user_id === userId ? copy.you : copy.teammate} · {member.role === "lead" ? copy.lead : copy.member}</option>)}</select></label>
               <label><span>{copy.dueDate}</span><input type="date" value={taskDue} onChange={(event) => setTaskDue(event.target.value)} /></label>
               <label><span>{copy.priority}</span><select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="3">{copy.high}</option><option value="2">{copy.medium}</option><option value="1">{copy.low}</option></select></label>
               <button className="primary-button full-button" type="submit" disabled={!taskTitle.trim() || savingTask}>{savingTask ? copy.adding : copy.addTask}<span>↗</span></button>
