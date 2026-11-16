@@ -60,6 +60,14 @@ request fails, the row remains revoked and the lead can retry; the member does n
 or ticket issuance during the retry window. If the final database RPC fails after session revocation,
 the row remains revoked. A valid new invitation can reactivate it later.
 
+## Deployment order (future, approval required)
+
+When this change is eventually approved for deployment, apply the reviewed database migrations
+through `20261116140000_project_member_revocation_fence.sql` before deploying the updated Worker,
+Edge Function, or frontend. Then configure the matching Worker/Edge Function revocation secret and
+the Edge Function's Worker URL. Do not deploy only one side of the protocol: the database fence,
+ticket filter, and revocation endpoint are a coordinated security boundary.
+
 ## Verification and deployment boundary
 
 The Worker unit test covers authorization of the internal endpoint. The Worker integration test
