@@ -110,6 +110,7 @@ describe("AZ collaboration Worker runtime", () => {
       projectId,
       role: "lead",
       exp: result.expiresAt,
+      iatMs: expect.any(Number),
     });
   });
 
@@ -136,6 +137,19 @@ describe("AZ collaboration Worker runtime", () => {
     }));
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "UNAUTHORIZED" });
+  });
+
+  it("accepts a trusted revocation request and routes it to the document Durable Object", async () => {
+    const response = await exports.default.fetch(new Request("http://az-collaboration/internal/revoke", {
+      method: "POST",
+      headers: {
+        authorization: "Bearer test-only-revoke-secret-that-is-long-enough",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ documentId, projectId, userId }),
+    }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ revoked: true, closedConnections: 0 });
   });
 
   it("rejects a disallowed browser origin without contacting Supabase", async () => {
