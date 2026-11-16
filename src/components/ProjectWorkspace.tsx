@@ -74,7 +74,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     copyInvite: ar ? "نسخ الرابط" : "Copy link",
     removeMember: ar ? "إزالة العضو" : "Remove member",
     removingMember: ar ? "جارٍ الإزالة..." : "Removing...",
-    confirmRemoveMember: ar ? "هل تريد إزالة هذا العضو؟ سيتم إنهاء جلسات تحريره فوراً." : "Remove this member? Their active editing sessions will be closed immediately.",
+    confirmRemoveMember: ar ? "هل تريد بدء إزالة هذا العضو؟ سنمنع وصوله ونطلب إغلاق جلسات التحرير المفتوحة." : "Start removing this member? Their access will be fenced and active editing sessions will be asked to close.",
     memberNumber: ar ? "عضو" : "Member",
     revocationPending: ar ? "بانتظار إغلاق الجلسات" : "Revocation pending",
     retryRemoval: ar ? "إكمال الإزالة" : "Retry removal",
