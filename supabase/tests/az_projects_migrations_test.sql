@@ -51,7 +51,7 @@ insert into auth.users (id,email) values
 \ir ../migrations/20261108134104_record_project_task_activity.sql
 \ir ../migrations/20261108153310_fix_create_project_rls_and_project_grants.sql
 \ir ../migrations/20261108150000_secure_project_invitation_acceptance.sql
-\\ir ../migrations/20261116120000_harden_project_membership_mutations.sql
+\ir ../migrations/20261116120000_harden_project_membership_mutations.sql
 
 -- A signed-in lead can create a project and gets a primary shared document.
 begin;
