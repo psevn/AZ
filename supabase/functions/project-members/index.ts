@@ -125,6 +125,7 @@ Deno.serve(async (request: Request) => {
           "Authorization": "Bearer " + revokeSecret,
           "Content-Type": "application/json",
         },
+        signal: AbortSignal.timeout(5000),
         body: JSON.stringify({
           documentId: document.id,
           projectId: body.projectId,
