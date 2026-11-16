@@ -7,10 +7,21 @@ Removing a project member is a server-side operation. Browser clients must not d
 which authenticates the caller, checks the project and target membership, and asks the collaboration
 Worker to revoke the target user's sessions for every project document.
 
-The Edge Function only calls the service-role-only `remove_project_member` RPC after all document
-revocation requests have been acknowledged. The RPC locks the project and both membership rows,
-re-checks that the caller is still a lead, refuses self-removal and lead/creator removal, deletes the
-member row, and writes the `member_removed` audit event in the same database transaction.
+Removal uses two database phases to close the ticket-issuance race:
+
+1. The service-role-only `begin_project_member_removal` RPC locks and validates the project and
+   membership rows, then sets `project_members.revoked_at`. The RLS membership helpers exclude
+   revoked rows immediately, and the Worker ticket endpoint only issues tickets for rows where
+   `revoked_at IS NULL`.
+2. The Edge Function asks the Worker to revoke the target user's sessions for every project
+   document. Only after every document acknowledges does it call the service-role-only
+   `remove_project_member` RPC, which rechecks the active lead and target row, deletes the
+   membership, and writes the `member_removed` audit event atomically.
+
+If a Worker request fails, the row remains marked revoked: the member has already lost database
+RLS access and cannot obtain another collaboration ticket. The lead can retry the removal from the
+workspace; the pending row remains visible to the lead until final deletion. A fresh invitation can
+reactivate a revoked member by clearing `revoked_at` only after valid invitation acceptance.
 
 ## Worker revocation protocol
 
@@ -19,9 +30,10 @@ member row, and writes the `member_removed` audit event in the same database tra
 - The Worker routes the request to the Durable Object bound to that document.
 - The Durable Object persists a revocation timestamp scoped to `projectId:userId`, then closes
   only live Hocuspocus connections whose authenticated context matches both values.
-- Ticket claims include `iatMs`. Authentication, document messages, and awareness updates compare
-  the ticket issue time with the stored revocation timestamp. A ticket issued before revocation
-  cannot reconnect or continue sending updates.
+- Ticket claims include `iatMs`. Ticket issuance also requires an active membership
+  (`revoked_at IS NULL`). Authentication, document messages, and awareness updates compare the
+  ticket issue time with the stored revocation timestamp. A ticket issued before revocation cannot
+  reconnect or continue sending updates.
 - A newly issued ticket after a successful re-invitation has a later `iatMs` and can be accepted
   after the current membership check succeeds.
 
@@ -43,11 +55,10 @@ commit them to the repository, or reuse the collaboration ticket-signing secret.
 
 ## Failure behavior
 
-The Edge Function revokes sessions before removing the database membership. If a Worker request
-fails, the membership row is not deleted and the function returns an error. If a later database
-RPC fails after revocation, the member can still obtain a fresh ticket only while their membership
-remains valid; previously issued tickets remain revoked. This ordering favors access safety over
-availability.
+The Edge Function marks the membership revoked before contacting the Worker. If a Worker
+request fails, the row remains revoked and the lead can retry; the member does not regain RLS access
+or ticket issuance during the retry window. If the final database RPC fails after session revocation,
+the row remains revoked. A valid new invitation can reactivate it later.
 
 ## Verification and deployment boundary
 
