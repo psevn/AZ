@@ -133,7 +133,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     const [projectResult, documentResult, membersResult, tasksResult, activityResult] = await Promise.all([
       client.from("projects").select("id,title,description,subject_id,due_at,status,created_at").eq("id", projectId).maybeSingle(),
       client.from("project_documents").select("id,title,document_type,is_primary,updated_at").eq("project_id", projectId).eq("is_primary", true).maybeSingle(),
-      client.from("project_members").select("user_id,role,joined_at").eq("project_id", projectId).order("joined_at", { ascending: true }),
+      client.from("project_members").select("user_id,role,joined_at").eq("project_id", projectId).is("revoked_at", null).order("joined_at", { ascending: true }),
       client.from("project_tasks").select("id,title,description,assignee_id,due_at,priority,status,created_at").eq("project_id", projectId).order("created_at", { ascending: false }),
       client.from("project_activity").select("id,actor_id,event_type,payload,created_at").eq("project_id", projectId).order("created_at", { ascending: false }).limit(30),
     ]);
