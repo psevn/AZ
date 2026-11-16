@@ -71,11 +71,11 @@ async function createTicket(request: Request, env: Cloudflare.Env): Promise<Resp
   const memberResponse = await supabaseGet(
     env,
     "/rest/v1/project_members?project_id=eq." + encodeURIComponent(document.project_id) +
-      "&user_id=eq." + encodeURIComponent(user.id) + "&select=role",
+      "&user_id=eq." + encodeURIComponent(user.id) + "&revoked_at=is.null&select=role,revoked_at",
     accessToken,
   );
   if (!memberResponse.ok) return json({ error: "MEMBERSHIP_LOOKUP_FAILED" }, 403);
-  const memberships = await memberResponse.json() as Array<{ role: string }>;
+  const memberships = await memberResponse.json() as Array<{ role: string; revoked_at: string | null }>;
   const membership = memberships[0];
   if (!membership) return json({ error: "PROJECT_ACCESS_DENIED" }, 403);
 
