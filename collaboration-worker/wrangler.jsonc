@@ -29,7 +29,8 @@
     "required": [
       "SUPABASE_URL",
       "SUPABASE_ANON_KEY",
-      "COLLAB_TICKET_SECRET"
+      "COLLAB_TICKET_SECRET",
+      "COLLAB_REVOKE_SECRET"
     ]
   }
 }
