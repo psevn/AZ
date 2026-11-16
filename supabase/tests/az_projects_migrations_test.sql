@@ -51,6 +51,7 @@ insert into auth.users (id,email) values
 \ir ../migrations/20261108134104_record_project_task_activity.sql
 \ir ../migrations/20261108153310_fix_create_project_rls_and_project_grants.sql
 \ir ../migrations/20261108150000_secure_project_invitation_acceptance.sql
+\\ir ../migrations/20261116120000_harden_project_membership_mutations.sql
 
 -- A signed-in lead can create a project and gets a primary shared document.
 begin;
@@ -157,6 +158,39 @@ begin
   end if;
 end;
 $$;
+
+-- A project lead must not bypass email-bound invitations by inserting a
+-- membership directly or promoting an existing member to lead.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+do $membership_guard$
+declare
+  affected integer;
+begin
+  begin
+    insert into public.project_members (project_id,user_id,role,invited_by)
+    select id,'00000000-0000-0000-0000-000000000003','member',
+           '00000000-0000-0000-0000-000000000001'
+    from public.projects where title = 'CI collaboration project';
+    raise exception 'Lead unexpectedly inserted a member without invitation';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  update public.project_members
+     set role = 'lead'
+   where project_id = (
+     select id from public.projects where title = 'CI collaboration project'
+   )
+     and user_id = '00000000-0000-0000-0000-000000000002';
+  get diagnostics affected = row_count;
+  if affected <> 0 then
+    raise exception 'Lead unexpectedly promoted a member through direct UPDATE';
+  end if;
+end;
+$membership_guard$;
+commit;
 
 -- RLS must hide the project from a non-member.
 begin;
