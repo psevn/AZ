@@ -25,7 +25,9 @@ The function derives the owner from `auth.getUser(token)`. It does not accept a 
 
 The upload endpoint now stores `upload_token_expires_at` through a service-role RPC before returning the signed token. The RPC serializes on the document row and uses `greatest(existing_expiry, new_expiry)`, so concurrent token issuances can never shorten the recorded validity window. If deletion wins, the upload endpoint does not return the token; if token-expiry persistence wins, deletion sees the latest expiry and waits. If expiry persistence reports a transport/database error, the endpoint best-effort marks the reservation failed only when no expiry was recorded; this avoids marking a concurrent successful token issuance as failed. The signed token is never returned on that error path.
 
-Supabase documents signed upload URLs as valid for two hours. Existing rows are backfilled conservatively from `created_at + 2 hours`; the completion RPC adds a five-minute margin.
+Supabase documents signed upload URLs as valid for two hours ([official JavaScript reference](https://supabase.com/docs/reference/javascript/file-buckets-createsigneduploadurl)). Existing rows are backfilled conservatively from `created_at + 2 hours`; the completion RPC adds a five-minute margin.
+
+The deletion function treats an explicit database `null` expiry as “no token was issued”. A missing, wrongly typed, or malformed expiry value is an invalid RPC contract response: the function returns HTTP 503 before touching Storage. It must never interpret an unreadable expiry as an expired token.
 
 ## Response states
 

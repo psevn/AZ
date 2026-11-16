@@ -19,6 +19,7 @@ on:
       - "supabase/functions/delete-document/**"
       - "supabase/functions/_shared/rateLimit.ts"
       - "supabase/functions/_shared/cors.ts"
+      - "supabase/functions/_shared/uploadTokenExpiry.*"
       - "supabase/migrations/20261112100000_edge_function_rate_limits.sql"
       - "supabase/migrations/20261112110000_document_deletion_lifecycle.sql"
       - "supabase/tests/verify_edge_rate_limits.sh"
@@ -28,6 +29,7 @@ on:
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
       - "tests/documentDeletionContract.test.mjs"
+      - "tests/uploadTokenExpiry.test.mjs"
       - "tests/documentLimitsContract.test.mjs"
       - "tests/edgeRateLimitsContract.test.mjs"
       - "tests/edgeCorsAllowlist.test.mjs"
@@ -51,8 +53,10 @@ on:
       - "supabase/functions/create-document-signed-url/**"
       - "supabase/functions/create-document-upload-url/**"
       - "supabase/functions/delete-document/**"
+      - "supabase/functions/_shared/uploadTokenExpiry.*"
       - "supabase/migrations/20261112110000_document_deletion_lifecycle.sql"
       - "tests/documentDeletionContract.test.mjs"
+      - "tests/uploadTokenExpiry.test.mjs"
       - "tests/documentSignedUrlContract.test.mjs"
       - "tests/documentUploadContract.test.mjs"
       - "package.json"
@@ -81,6 +85,8 @@ jobs:
         run: npm run test:document-upload
       - name: Test retry-safe document deletion contract
         run: npm run test:document-deletion
+      - name: Test signed-upload expiry fail-closed behavior
+        run: npm run test:upload-token-expiry
       - name: Test document and extracted-text quotas
         run: npm run test:document-limits
       - name: Test per-user Edge Function rate limits

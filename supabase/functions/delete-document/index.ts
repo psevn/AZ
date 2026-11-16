@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsForRequest } from "../_shared/cors.ts";
 import { checkUserRateLimit } from "../_shared/rateLimit.ts";
+import { getUploadTokenExpiryDecision } from "../_shared/uploadTokenExpiry.mjs";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 2048;
@@ -104,18 +105,24 @@ Deno.serve(async (request: Request) => {
     return json(409, { error: "Document storage path is invalid.", code: "DOCUMENT_PATH_INVALID" });
   }
 
-  const uploadTokenExpiresAt = typeof begun.uploadTokenExpiresAt === "string"
-    ? Date.parse(begun.uploadTokenExpiresAt)
-    : null;
-  if (uploadTokenExpiresAt !== null && Number.isFinite(uploadTokenExpiresAt)) {
-    const cleanupAfter = uploadTokenExpiresAt + UPLOAD_CLOCK_SKEW_MS;
-    if (cleanupAfter > Date.now()) {
-      return json(202, {
-        ok: true,
-        status: "deleting",
-        retryAfterSeconds: Math.max(1, Math.ceil((cleanupAfter - Date.now()) / 1000)),
-      });
-    }
+  const expiryDecision = getUploadTokenExpiryDecision(
+    begun.uploadTokenExpiresAt,
+    Date.now(),
+    UPLOAD_CLOCK_SKEW_MS,
+  );
+  if (expiryDecision.kind === "invalid") {
+    console.error("delete-document rejected an invalid upload-token expiry value.");
+    return json(503, {
+      error: "Upload-token expiry could not be verified. Please retry.",
+      code: "UPLOAD_EXPIRY_STATE_INVALID",
+    });
+  }
+  if (expiryDecision.kind === "wait") {
+    return json(202, {
+      ok: true,
+      status: "deleting",
+      retryAfterSeconds: expiryDecision.retryAfterSeconds,
+    });
   }
 
   const bucket = adminClient.storage.from("documents");
