@@ -29,15 +29,24 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 ## Postponed (not rejected)
 - Ambassador program: after beta; count activated users (not sign-ups), higher points for paid conversions, rewards in AI credits/free Pro months/titles, pseudonymous leaderboard, universities only (schools need legal review), start with 3–5 ambassadors.
 - Cafe/library/neon concept: separate EZORD-level idea, revisit only after AZ is profitable. Cheap test later: partner discount with an existing cafe/bookstore. Coffee-redeemable points = financial liability; not in AZ.
-- Payments, real Groups, Arena, Community, XP. Native apps are planned for the post-web phase, not V1.
+- Payments, real Groups, Arena (V1.5, decided 2026-11-16), Community, XP. Native apps are planned for the post-web phase, not V1.
 - **AZ Connect** (students command Claude/ChatGPT to create files/quizzes inside AZ): V2 candidate. Conditions: API-first design now; scoped OAuth tokens; any path that triggers AZ's own AI goes through the credit system; prompt-injection review; verify third-party integration platforms/policies at that time; prototype on the owner's account after beta.
 - **Claude ↔ ChatGPT automation** (Codex GitHub review, bridges/MCP between the tools): postponed to V1.5 (decided 2026-11-04). Until then ChatGPT only verifies: the owner relays by pasting files or sharing the repo link. No third-party bridge tools, no paid subscriptions for this. Rule when revisited: one agent per branch at a time, no auto-reply loops, check what the owner's ChatGPT plan includes before paying.
+
+## Approved 2026-11-16 — V1 audience, Arena, numeric templates (PSEVN)
+1. **Target audience** (supersedes "V1 targets university students" in SPEC §1/§10): AZ serves students from **preparatory and secondary school through university and postgraduate** (the "KG to postgraduate" idea is a long-term vision only, not V1). Secondary and preparatory students are required, not optional.
+2. **Minors gate (launch condition):** features for users under 18 are **not opened** until (a) legal review (Qatar data-protection and minors rules; not yet verified), and (b) a guardian-consent and minor-safe-mode design is approved. Until then the beta stays on invite codes for adults (university). This keeps the SPEC §10 rule "school programs only after legal review".
+3. **Design direction now:** do not hard-code "university" in UI text or data model; use "institution/stage". Requirements to design before opening to minors: age at sign-up, guardian consent, no contact with strangers, restricted Projects for minors, age-appropriate AZI behavior, minimal data, parent-paid billing. No schema or code change is authorized by this entry.
+4. **Arena** moves to **V1.5** (not shown as live in V1).
+5. **Numeric question templates** (code-generated, random numbers, no AI call per question) move from V1.5 **into V1**, with a deliberately small scope: about 5 to 10 templates for 2 subjects chosen by PSEVN. Every template needs automated checks of its answers before release. Needs a schema addition (`question_templates` or similar) that is NOT yet designed or approved. Effort is unmeasured.
+6. **Price:** $7.99/month is recorded as confirmed in `docs/PRICING.md` v0.1 (PR #91). Real AI cost per PDF is still unmeasured (Stage C); the AI cost cap (~$3) stays a preference.
+Not verified: minors law, payment-gateway fees, cost per PDF.
 
 ## Open (need a decision)
 1. Native app implementation route after web launch: evaluate Capacitor (reuse much of the web UI) vs React Native/Expo (more native UI); decide based on V1 needs, maintenance cost, and device requirements.
 2. Stage B implementation route: the initial scaffold and integration work is being authored through the GitHub-assisted ChatGPT workflow; Claude Code remains deferred and no paid plan is approved.
 3. AI provider/model and monthly spend cap (after Stage C data).
-4. Final price; $4.99 promo length (3 vs 6 months).
+4. Promo length and level (3 vs 6 months). The $7.99 base price is recorded in PRICING.md (PR #91).
 5. Whether Edge Function free-tier invocation quotas are enough [VERIFY in Stage B].
 6. Legal: registration, data law, payment gateway, usage-log retention after deletion, backups (professional required).
 7. Hosting region for V2.

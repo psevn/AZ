@@ -4,7 +4,7 @@ Status: APPROVED v0.2 — PSEVN approved the eight proposed technical correction
 
 ## 1. Product
 
-AZ is an AI academic platform for university students. V1 closes one loop, with every feature reading/writing the same data:
+AZ is an AI academic platform for students (preparatory/secondary through postgraduate; under-18 access only after legal review, see DECISIONS 2026-11-16). V1 closes one loop, with every feature reading/writing the same data:
 
 **Plan → Study → Practice → Review mistakes → Improve**
 
@@ -19,6 +19,7 @@ In:
 - Document library: PDF upload, text extraction with page numbers.
 - AI summary with source page references.
 - Multiple-choice question generation: correct answer, explanation, page reference. If the material does not support a question, say so.
+- Numeric question templates (code-generated, small scope: about 5 to 10 templates, 2 subjects; decided 2026-11-16, schema not yet designed).
 - Attempts, results, retry, mistake review list.
 - Professional Mode: practice built from the user's own private slides/past exams (never shared; never claim to predict the real exam).
 - Ask (questions about a document), small usage limit.
@@ -27,7 +28,7 @@ In:
 - Account page: language, remaining usage, delete account (full deletion incl. files).
 - Groups: "Coming soon" card only.
 
-Out (deferred): Mini Notebook, short-answer questions, advanced charts, real Groups, Arena, Community, XP, AZ Card, stylus handwriting, AI rescheduling, voice/photo schedule input, native apps, payments, ambassador program (post-beta).
+Out (deferred): Mini Notebook, short-answer questions, advanced charts, real Groups, Arena (V1.5), Community, XP, AZ Card, stylus handwriting, AI rescheduling, voice/photo schedule input, native apps, payments, ambassador program (post-beta).
 
 Priorities if time runs short (nothing is removed from V1 now; see §11).
 
@@ -190,7 +191,7 @@ Test: create a user with rows in every user table and several files; delete; ass
 - RLS + composite FKs (§5); server-side grading (§7); prompt-injection: document text is data, never instructions, tested with hidden "ignore previous instructions" text.
 - Secrets only in function secrets/Cloudflare env; `.env` in `.gitignore`; never in browser or chat.
 - Abuse: beta invite code; later verified university email + bot check (Cloudflare Turnstile **[VERIFY]**); country restriction only an optional extra layer.
-- Minors: V1 targets university students; school programs only after legal review.
+- Minors: preparatory/secondary students are part of the target audience (DECISIONS 2026-11-16), but under-18 access opens only after legal review and an approved guardian-consent design. Beta stays adult-only.
 - Legal (needs a professional, not verified): Qatar registration for subscriptions, personal data protection law, payment gateway supporting Qatar, app-store rules.
 
 ## 12. Scope priorities and delivery **[v0.2]**
