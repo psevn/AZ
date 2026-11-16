@@ -194,13 +194,13 @@ $membership_guard$;
 commit;
 
 -- Membership removal is service-role-only and records an audit event atomically.
-do $
+do $membership_privilege$
 begin
   if has_table_privilege('authenticated','public.project_members','DELETE') then
     raise exception 'Authenticated users must not directly delete project memberships';
   end if;
 end;
-$;
+$membership_privilege$;
 
 begin;
 set local role service_role;
@@ -211,25 +211,28 @@ select public.remove_project_member(
 );
 commit;
 
-do $
+do $member_remove_assert$
+declare
+  v_project_id uuid;
 begin
+  select id into v_project_id from public.projects where title = 'CI collaboration project';
   if exists (
     select 1 from public.project_members
-    where project_id = :'ci_project_id'::uuid
+    where project_id = v_project_id
       and user_id = '00000000-0000-0000-0000-000000000002'
   ) then
     raise exception 'Service-role member removal did not delete membership';
   end if;
   if not exists (
     select 1 from public.project_activity
-    where project_id = :'ci_project_id'::uuid
+    where project_id = v_project_id
       and event_type = 'member_removed'
       and payload->>'user_id' = '00000000-0000-0000-0000-000000000002'
   ) then
     raise exception 'Member removal did not write the member_removed audit event';
   end if;
 end;
-$;
+$member_remove_assert$;
 
 -- RLS must hide the project from a non-member.
 begin;
