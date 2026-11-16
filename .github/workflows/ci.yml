@@ -33,13 +33,15 @@ jobs:
       - name: Generate updated npm lockfile
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Commit generated lockfile
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           if ! git diff --quiet -- package-lock.json; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add package-lock.json
             git commit -m "chore: sync npm lockfile for collaborative editor"
-            git push origin "HEAD:${{ github.head_ref }}"
+            git push origin "HEAD:${HEAD_REF}"
           fi
 
   build:
