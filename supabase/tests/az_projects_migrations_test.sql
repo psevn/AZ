@@ -226,10 +226,43 @@ end;
 $revoked_member_rls$;
 commit;
 
--- Phase two finalizes deletion only after the Edge Function has received
--- successful Worker revocation acknowledgements.
+-- A fresh, valid invitation reactivates a member left in the pending-revocation state.
 begin;
 set local role service_role;
+insert into public.project_invitations (project_id,token_hash,invited_email,expires_at,created_by)
+values (
+  :'ci_project_id'::uuid, repeat('b',64), 'member@example.test', now() + interval '1 day',
+  '00000000-0000-0000-0000-000000000001'
+);
+select public.accept_project_invitation(
+  repeat('b',64), '00000000-0000-0000-0000-000000000002', 'member@example.test'
+);
+commit;
+
+do $member_reactivation_assert$
+declare
+  v_project_id uuid;
+begin
+  select id into v_project_id from public.projects where title = 'CI collaboration project';
+  if not exists (
+    select 1 from public.project_members
+    where project_id = v_project_id
+      and user_id = '00000000-0000-0000-0000-000000000002'
+      and revoked_at is null
+  ) then
+    raise exception 'A valid new invitation did not reactivate the revoked member';
+  end if;
+end;
+$member_reactivation_assert$;
+
+-- Revoke again, then finalize after the Worker acknowledgement phase.
+begin;
+set local role service_role;
+select public.begin_project_member_removal(
+  :'ci_project_id'::uuid,
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000001'
+);
 select public.remove_project_member(
   :'ci_project_id'::uuid,
   '00000000-0000-0000-0000-000000000002',
@@ -259,35 +292,6 @@ begin
   end if;
 end;
 $member_remove_assert$;
-
--- A fresh, valid invitation can reactivate a previously revoked member.
-begin;
-set local role service_role;
-insert into public.project_invitations (project_id,token_hash,invited_email,expires_at,created_by)
-values (
-  :'ci_project_id'::uuid, repeat('b',64), 'member@example.test', now() + interval '1 day',
-  '00000000-0000-0000-0000-000000000001'
-);
-select public.accept_project_invitation(
-  repeat('b',64), '00000000-0000-0000-0000-000000000002', 'member@example.test'
-);
-commit;
-
-do $member_reactivation_assert$
-declare
-  v_project_id uuid;
-begin
-  select id into v_project_id from public.projects where title = 'CI collaboration project';
-  if not exists (
-    select 1 from public.project_members
-    where project_id = v_project_id
-      and user_id = '00000000-0000-0000-0000-000000000002'
-      and revoked_at is null
-  ) then
-    raise exception 'A valid new invitation did not reactivate the revoked member';
-  end if;
-end;
-$member_reactivation_assert$;
 
 -- RLS must hide the project from a non-member.
 begin;
