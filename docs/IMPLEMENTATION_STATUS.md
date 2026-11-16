@@ -37,34 +37,36 @@ The Supabase security advisor reports one INFO finding because `private.question
 
 **Not yet runtime-tested:** the current tables contain no quiz rows, and no test-user JWT was available for an end-to-end RPC test. Do not mark quiz security acceptance tests complete until a real authenticated test submits both correct and incorrect answers and attempts cross-user/forged writes.
 
-## Repository gaps
+## Repository gaps — status rechecked 2026-11-16
 
-- The current repository has six security migration files, but the five original foundation migration source files are still missing from GitHub. A fresh environment therefore cannot yet recreate the live database from the repository alone.
-- No application source code is present in the inspected `main` tree.
-- No Supabase Edge Functions are deployed.
-- The live schema is not yet the complete V1 schema in `docs/SPEC.md`; several planned tables and credit/idempotency mechanisms remain unimplemented.
-- `docs/TASKS.md` still has Stage A approval and Stage B acceptance tasks unchecked. The presence of applied database migrations does not mean those stages are complete.
+- **Migration source recovery:** the missing historical migrations were recovered from recorded applied statements and added in PR #97. The PR reports 23/23 recovered-file hash matches and a clean 30-migration replay on disposable PostgreSQL 16 with documented Supabase-managed stand-ins. This is pending review; it is not yet part of `main`.
+- **Projects schema:** the live Projects migrations are included in that 30-migration baseline in PR #97. Until the PR is merged, the default branch still cannot reproduce the complete observed live schema.
+- **Application and deployment status:** the repository includes a web scaffold, but the presence of source files or database migrations does not establish that the complete V1 application is runtime-verified or deployed.
+- **V1 completeness:** the live schema is not yet the complete approved V1 experience in `docs/SPEC.md`; planned application flows, integration tests, and credit/idempotency behavior still require implementation and acceptance.
+- `docs/TASKS.md` Stage A/Stage B acceptance items remain the source for outstanding gates. Do not infer completion from the existence of a PR or an applied live migration.
 
 ## Next gates
 
-1. Recover and commit the exact five original migration files from the source that applied them; do not reconstruct them from memory.
-2. Add authenticated integration tests for answer-key non-disclosure, grading, ownership, and rejected client writes.
-3. Connect the app/API to the grading RPC and test through the actual UI.
-4. Implement the remaining V1 schema and credit controls only against the approved specification.
-5. Reconcile Stage A/Stage B documentation after PSEVN confirms the pending v0.2 decisions.
+1. Review PR #97's recovered migration files and its stated replay limits; do not apply them to the live project because they are already recorded as applied there.
+2. Independently reproduce the 30-migration baseline replay on a disposable PostgreSQL environment before relying on it for a clean rebuild.
+3. Recompose the pending feature stack: PR #84 document deletion, then PR #86 beta credit limits. The 30-migration baseline does not include those pending feature migrations; the combined 37-migration stack needs its own clean replay.
+4. Add authenticated integration tests for quiz answer-key non-disclosure, grading, ownership, and rejected client writes.
+5. Connect the app/API to the grading RPC and test through the actual UI.
+6. Reconcile Stage A/Stage B acceptance in `docs/TASKS.md` against observed, executed evidence.
 
-## Migration-source recovery — blocked pending original files
+## Migration-source recovery — historical blocker, superseded 2026-11-16
 
-Checked on 2026-11-04:
+The 2026-11-04 investigation correctly recorded that the original foundation SQL bodies were not present on the then-inspected `main` branch and must not be reconstructed from memory. That blocker was addressed in PR #97: the PR adds the missing migration files using the recorded applied statements, reports trimmed-content hash equality for all 23 newly recovered files, and records a disposable PostgreSQL 16 replay of all 30 migrations.
 
-- Supabase migration history confirms the first five versions/names are `20261104141452 core_schema`, `20261104141502 storage`, `20261104142612 storage_documents_policies`, `20261104143417 fk_covering_indexes_and_storage_path_check`, and `20261104143425 profile_autocreate_and_handoff_comments`.
-- The Supabase migration-history interface exposes version/name metadata only; it does not return the original SQL bodies.
-- The GitHub `main` tree contains only the six security migration files, not the five original foundation files.
-- No exact original SQL source was found in prior project context. The local working copy is known to be `C:\\Users\\ASUS\\Projects\\AZ`, but this session cannot read files from that Windows path.
+**Current status:** recovery is present on branch `chore/sync-live-migrations` and pending PR review/merge. It is not yet present on `main`. The replay used stand-ins for Supabase-managed components and a stub for the `pg_cron` extension; see “Migration inventory cross-check” for exact scope and limitations.
 
-**Do not recreate these five files from the current schema and label them as originals.** That would hide migration drift and may fail to reproduce triggers, policies, functions, storage configuration, or ordering.
+The historical findings are retained for audit context, not as current next steps:
 
-Next action: retrieve the exact five SQL files from the environment/tool that originally created/applied them (likely the original local/Claude working directory), then commit those exact files to `supabase/migrations/`. Until then, a clean database cannot be reliably rebuilt from this repository alone.
+- On 2026-11-04, the migration-history interface exposed version/name metadata but not original SQL bodies.
+- The then-inspected `main` tree lacked the five foundation SQL files.
+- The safe rule remains: never reconstruct an applied migration from the current schema and label it as the original.
+
+Do not apply PR #97's recovered files to the live project; those versions are already recorded there. Review and validate them through a disposable replay only.
 
 ## Least-privilege grants for user-managed tables — applied
 
