@@ -57,6 +57,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteLink, setInviteLink] = useState("");
   const [creatingInvite, setCreatingInvite] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const ar = lang === "ar";
 
   const copy = {
@@ -71,6 +72,10 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     creatingInvite: ar ? "جارٍ إنشاء الدعوة..." : "Creating invitation...",
     inviteReady: ar ? "انسخ الرابط وأرسله لعضو الفريق." : "Copy this link and send it to your teammate.",
     copyInvite: ar ? "نسخ الرابط" : "Copy link",
+    removeMember: ar ? "إزالة العضو" : "Remove member",
+    removingMember: ar ? "جارٍ الإزالة..." : "Removing...",
+    confirmRemoveMember: ar ? "هل تريد إزالة هذا العضو؟ سيتم إنهاء جلسات تحريره فوراً." : "Remove this member? Their active editing sessions will be closed immediately.",
+    memberNumber: ar ? "عضو" : "Member",
     memberInvited: ar ? "تم إرسال دعوة لعضو" : "Invited a teammate",
     memberJoined: ar ? "انضم عضو إلى المشروع" : "A teammate joined the project",
     progress: ar ? "الإنجاز" : "PROGRESS",
@@ -241,6 +246,22 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     setCreatingInvite(false);
   }
 
+  async function removeMember(memberUserId: string) {
+    if (!client || currentUserRole !== "lead" || removingMemberId) return;
+    if (!window.confirm(copy.confirmRemoveMember)) return;
+    setRemovingMemberId(memberUserId);
+    setError("");
+    const { error: removalError } = await client.functions.invoke("project-members", {
+      body: { action: "remove", projectId, memberUserId },
+    });
+    if (removalError) {
+      setError(removalError.message || copy.failed);
+    } else {
+      await refresh();
+    }
+    setRemovingMemberId(null);
+  }
+
   async function copyInvitation() {
     if (!inviteLink) return;
     try {
@@ -310,6 +331,29 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
               <span className="eyebrow">{copy.team}</span>
               <strong>{members.length.toString().padStart(2, "0")}</strong>
               <p>{members.length <= 1 ? copy.emptyMembers : ar ? "فريق المشروع" : "Project team"}</p>
+            </section>
+            <section className="content-panel project-members-panel">
+              <div className="panel-heading"><div><span className="eyebrow">{copy.team}</span><h3>{ar ? "أعضاء المشروع" : "Project members"}</h3></div></div>
+              <div className="project-task-list">
+                {members.map((member, index) => (
+                  <article className="project-task-item" key={member.user_id}>
+                    <div className="project-task-copy">
+                      <strong>{member.user_id === userId ? copy.you : copy.memberNumber + " " + (index + 1)}</strong>
+                      <small>{member.role === "lead" ? copy.lead : copy.member}</small>
+                    </div>
+                    {currentUserRole === "lead" && member.role === "member" && (
+                      <button
+                        className="small-action"
+                        type="button"
+                        disabled={removingMemberId !== null}
+                        onClick={() => void removeMember(member.user_id)}
+                      >
+                        {removingMemberId === member.user_id ? copy.removingMember : copy.removeMember}
+                      </button>
+                    )}
+                  </article>
+                ))}
+              </div>
             </section>
             {currentUserRole === "lead" && <section className="content-panel project-invite-panel">
               <span className="eyebrow">{ar ? "أضف فريقك" : "GROW YOUR TEAM"}</span>
