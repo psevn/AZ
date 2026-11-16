@@ -128,6 +128,16 @@ describe("AZ collaboration Worker runtime", () => {
     expect(await response.json()).toEqual({ error: "PROJECT_ACCESS_DENIED" });
   });
 
+  it("requires the internal revocation secret before addressing a document", async () => {
+    const response = await exports.default.fetch(new Request("http://az-collaboration/internal/revoke", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ documentId, projectId, userId }),
+    }));
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "UNAUTHORIZED" });
+  });
+
   it("rejects a disallowed browser origin without contacting Supabase", async () => {
     const response = await exports.default.fetch(ticketRequest({ documentId }, {
       authorization: "Bearer " + accessToken,
