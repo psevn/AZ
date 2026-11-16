@@ -200,7 +200,7 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
     });
 
     server.addEventListener("error", () => {
-      this.activeSockets.delete(socketId);
+      this.activeSockets.delete(transportId);
       connection.handleClose();
     });
 
