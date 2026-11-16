@@ -2,7 +2,7 @@
 
 **Status:** PROPOSAL for owner review. Group Projects are part of V1 by PSEVN's decision of 2026-11-08. Nothing in this file approves new scope; open items need a decision.
 **Source of the "as-built" section:** read-only inspection of the live Supabase project `AZ` on 2026-11-15 (table and column listing only). A staging project `AZ-Staging` also exists and was not inspected.
-**Drift warning:** the Projects tables exist in the live project but no migration in `supabase/migrations` on `main` mentions them (the latest file there is `20261105160000_add_academic_planning_foundation.sql`). The repo cannot currently recreate the live schema. Resolve before relying on this document.
+**Drift note (updated 2026-11-16):** on `main` the Projects tables exist in the live project but no migration in `supabase/migrations` mentions them. PR #97 (`chore/sync-live-migrations`) adds all 30 live migrations, including the Projects ones (`20261108131220` to `20261108153310`), verified against the live history. Until #97 is merged, the repo cannot recreate the live schema.
 
 ## 1. Purpose
 Let students run a private team project for a course: members, a deadline, tasks with assignees, a shared report document, attachments and an activity log. A leader can see who has done what.
@@ -47,7 +47,7 @@ AZI presentation of this view is specified in `AZI-V1-LITE.md` §12.
 Everything above is database reads and templates, so it carries no AI API cost. Any optional AI feature (drafting a message, summarizing project state) goes through the credit system and is charged to the user who triggers it. Per `PRICING.md`, Projects are free; attachments and documents need storage limits.
 
 ## 7. Open questions
-1. Reconcile the live schema with the repo: add the Projects migrations to `supabase/migrations`, or confirm where they live.
+1. Reconcile the live schema with the repo: done in PR #97 (pending review and merge).
 2. Where project documents are stored (rows, Storage, or both) and how concurrent editing is handled.
 3. Storage limits per project and per member.
 4. Leadership transfer, and what happens if the leader leaves.
