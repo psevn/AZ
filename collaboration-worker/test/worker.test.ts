@@ -83,7 +83,8 @@ describe("AZ collaboration Worker runtime", () => {
         const url = new URL(request.url);
         expect(url.searchParams.get("project_id")).toBe("eq." + projectId);
         expect(url.searchParams.get("user_id")).toBe("eq." + userId);
-        expect(url.searchParams.get("select")).toBe("role");
+        expect(url.searchParams.get("revoked_at")).toBe("is.null");
+        expect(url.searchParams.get("select")).toBe("role,revoked_at");
         return HttpResponse.json([{ role: "lead" }]);
       }),
     );
@@ -102,7 +103,7 @@ describe("AZ collaboration Worker runtime", () => {
 
     const payload = result.token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
     const claims = JSON.parse(atob(payload + "=".repeat((4 - payload.length % 4) % 4))) as {
-      sub: string; documentId: string; projectId: string; role: string; exp: number;
+      sub: string; documentId: string; projectId: string; role: string; exp: number; iatMs: number;
     };
     expect(claims).toEqual({
       sub: userId,
