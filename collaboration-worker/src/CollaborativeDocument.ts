@@ -59,6 +59,7 @@ async function verifyTicket(token: string, secret: string): Promise<TicketClaims
 
 export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
   private readonly hocuspocus: Hocuspocus;
+  private readonly activeSockets = new Map<string, { socket: WebSocket; userId?: string; projectId?: string }>();
   private documentId = "";
 
   constructor(
@@ -72,9 +73,13 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       quiet: true,
       debounce: 1000,
       maxDebounce: 5000,
-      async onAuthenticate({ token, documentName }) {
+      async onAuthenticate({ token, documentName, socketId }) {
         const claims = await verifyTicket(token, env.COLLAB_TICKET_SECRET);
         if (claims.documentId !== documentName || claims.documentId !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
+        const activeSocket = room.activeSockets.get(socketId);
+        if (!activeSocket) throw new Error("SOCKET_NOT_REGISTERED");
+        activeSocket.userId = claims.sub;
+        activeSocket.projectId = claims.projectId;
         const context = {
           userId: claims.sub,
           projectId: claims.projectId,
@@ -138,18 +143,13 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       await this.ctx.storage.put(`revoked:${body.projectId}:${body.userId}`, revokedAtMs);
 
       let closedConnections = 0;
-      const document = this.hocuspocus.documents.get(documentId) as {
-        connections?: Map<{
-          context?: { userId?: string; projectId?: string };
-          close: (event?: CloseEvent) => void;
-        }, unknown>;
-      } | undefined;
-      document?.connections?.forEach((_clients, connection) => {
-        if (connection.context?.userId === body.userId && connection.context?.projectId === body.projectId) {
-          connection.close({ code: 4003, reason: "membership-revoked" } as CloseEvent);
+      for (const [socketId, activeSocket] of this.activeSockets) {
+        if (activeSocket.userId === body.userId && activeSocket.projectId === body.projectId) {
+          activeSocket.socket.close(4003, "membership-revoked");
+          this.activeSockets.delete(socketId);
           closedConnections += 1;
         }
-      });
+      }
       return Response.json({ revoked: true, closedConnections });
     }
 
@@ -175,6 +175,9 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       get readyState() { return server.readyState; },
     };
     const connection = this.hocuspocus.handleConnection(socket, request);
+    // Hocuspocus 4.1.0 assigns this stable socket id to its authentication hooks.
+    const socketId = (connection as unknown as { socketId: string }).socketId;
+    this.activeSockets.set(socketId, { socket: server });
 
     server.addEventListener("message", (event) => {
       const data = event.data;
@@ -191,10 +194,12 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
     });
 
     server.addEventListener("close", (event) => {
+      this.activeSockets.delete(socketId);
       connection.handleClose({ code: event.code, reason: event.reason } as CloseEvent);
     });
 
     server.addEventListener("error", () => {
+      this.activeSockets.delete(socketId);
       connection.handleClose();
     });
 
