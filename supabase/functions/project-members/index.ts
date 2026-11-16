@@ -49,7 +49,7 @@ Deno.serve(async (request: Request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const revokeUrl = Deno.env.get("COLLAB_REVOKE_URL")?.replace(/\/$/, "");
   const revokeSecret = Deno.env.get("COLLAB_REVOKE_SECRET");
-  if (!supabaseUrl || !anonKey || !serviceRoleKey || !revokeUrl || !revokeSecret) {
+  if (!supabaseUrl || !anonKey || !serviceRoleKey || !revokeUrl || !revokeSecret || revokeSecret.length < 32) {
     return jsonResponse({ error: "Server configuration is incomplete" }, 503, allowedOrigin);
   }
 
