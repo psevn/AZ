@@ -2,7 +2,7 @@
 
 **Status:** PROPOSAL for owner review. Group Projects are part of V1 by PSEVN's decision of 2026-11-08. Nothing in this file approves new scope; open items need a decision.
 **Source of the "as-built" section:** read-only inspection of the live Supabase project `AZ` on 2026-11-15 (table and column listing only). A staging project `AZ-Staging` also exists and was not inspected.
-**Drift note (updated 2026-11-16):** on `main` the Projects tables exist in the live project but no migration in `supabase/migrations` mentions them. PR #97 (`chore/sync-live-migrations`) adds all 30 live migrations, including the Projects ones (`20261108131220` to `20261108153310`), verified against the live history. Until #97 is merged, the repo cannot recreate the live schema.
+**Migration/replay status (rechecked 2026-11-16):** PR #97 (`chore/sync-live-migrations`) restores the 30 migrations recorded in the live project's migration history, including the Projects migrations (`20261108131220` to `20261108153310`). Its author reports 23/23 recovered-file hash matches and a clean replay on disposable PostgreSQL 16 with stand-ins for Supabase-managed components; the real `pg_cron` extension and live data/storage/auth internals were not covered. This recovery remains pending review and is not on `main`, so the default branch still cannot reproduce the observed Projects schema. Do not apply these already-applied migrations to the live project.
 
 ## 1. Purpose
 Let students run a private team project for a course: members, a deadline, tasks with assignees, a shared report document, attachments and an activity log. A leader can see who has done what.
@@ -47,7 +47,7 @@ AZI presentation of this view is specified in `AZI-V1-LITE.md` §12.
 Everything above is database reads and templates, so it carries no AI API cost. Any optional AI feature (drafting a message, summarizing project state) goes through the credit system and is charged to the user who triggers it. Per `PRICING.md`, Projects are free; attachments and documents need storage limits.
 
 ## 7. Open questions
-1. Reconcile the live schema with the repo: done in PR #97 (pending review and merge).
+1. Review PR #97's restored migration history and replay evidence; after it is accepted, keep this as-built description aligned with the versioned schema. No live migration application is needed.
 2. Where project documents are stored (rows, Storage, or both) and how concurrent editing is handled.
 3. Storage limits per project and per member.
 4. Leadership transfer, and what happens if the leader leaves.
