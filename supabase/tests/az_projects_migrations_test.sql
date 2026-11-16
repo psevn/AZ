@@ -52,6 +52,7 @@ insert into auth.users (id,email) values
 \ir ../migrations/20261108153310_fix_create_project_rls_and_project_grants.sql
 \ir ../migrations/20261108150000_secure_project_invitation_acceptance.sql
 \ir ../migrations/20261116120000_harden_project_membership_mutations.sql
+\ir ../migrations/20261116130000_project_member_removal_rpc_and_revoke_policy.sql
 
 -- A signed-in lead can create a project and gets a primary shared document.
 begin;
@@ -191,6 +192,44 @@ begin
 end;
 $membership_guard$;
 commit;
+
+-- Membership removal is service-role-only and records an audit event atomically.
+do $
+begin
+  if has_table_privilege('authenticated','public.project_members','DELETE') then
+    raise exception 'Authenticated users must not directly delete project memberships';
+  end if;
+end;
+$;
+
+begin;
+set local role service_role;
+select public.remove_project_member(
+  :'ci_project_id'::uuid,
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000001'
+);
+commit;
+
+do $
+begin
+  if exists (
+    select 1 from public.project_members
+    where project_id = :'ci_project_id'::uuid
+      and user_id = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'Service-role member removal did not delete membership';
+  end if;
+  if not exists (
+    select 1 from public.project_activity
+    where project_id = :'ci_project_id'::uuid
+      and event_type = 'member_removed'
+      and payload->>'user_id' = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'Member removal did not write the member_removed audit event';
+  end if;
+end;
+$;
 
 -- RLS must hide the project from a non-member.
 begin;
