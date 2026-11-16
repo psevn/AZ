@@ -111,7 +111,10 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const revokeMatch = url.pathname.match(/^\\/internal\\/revoke\\/([0-9a-f-]{36})$/i);
+    const revokePrefix = "/internal/revoke/";
+    const revokeMatch = url.pathname.startsWith(revokePrefix)
+      ? url.pathname.slice(revokePrefix.length).match(/^[0-9a-f-]{36}$/i)
+      : null;
     if (revokeMatch && request.method === "POST") {
       const secret = this.env.COLLAB_REVOKE_SECRET;
       if (!secret || secret.length < 32) return Response.json({ error: "REVOKE_NOT_CONFIGURED" }, { status: 503 });
@@ -129,7 +132,7 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       if (!isUuid(body.projectId) || !isUuid(body.userId)) {
         return Response.json({ error: "INVALID_REVOCATION" }, { status: 400 });
       }
-      const documentId = revokeMatch[1].toLowerCase();
+      const documentId = revokeMatch[0].toLowerCase();
       this.documentId = documentId;
       const revokedAtMs = Date.now();
       await this.ctx.storage.put(`revoked:${body.projectId}:${body.userId}`, revokedAtMs);
