@@ -83,7 +83,7 @@ Deno.serve(async (request: Request) => {
     serviceClient.from("projects").select("id,created_by").eq("id", body.projectId).maybeSingle(),
     serviceClient.from("project_members").select("role").eq("project_id", body.projectId)
       .eq("user_id", authData.user.id).maybeSingle(),
-    serviceClient.from("project_members").select("role").eq("project_id", body.projectId)
+    serviceClient.from("project_members").select("role,revoked_at").eq("project_id", body.projectId)
       .eq("user_id", body.memberUserId).maybeSingle(),
     serviceClient.from("project_documents").select("id").eq("project_id", body.projectId),
   ]);
@@ -98,6 +98,19 @@ Deno.serve(async (request: Request) => {
   }
   if (memberResult.data?.role !== "member" || body.memberUserId === project.created_by) {
     return jsonResponse({ error: "This project member cannot be removed" }, 409, allowedOrigin);
+  }
+
+  const { error: beginError } = await serviceClient.rpc("begin_project_member_removal", {
+    p_project_id: body.projectId,
+    p_member_user_id: body.memberUserId,
+    p_actor_user_id: authData.user.id,
+  });
+  if (beginError) {
+    const message = beginError.message || "";
+    const status = message.includes("PROJECT_LEAD_REQUIRED") ? 403
+      : message.includes("PROJECT_NOT_FOUND") ? 404
+      : 409;
+    return jsonResponse({ error: "Could not begin member removal" }, status, allowedOrigin);
   }
 
   // Revoke all document sessions first. If the Worker cannot confirm each
