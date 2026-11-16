@@ -24,7 +24,7 @@ AZ's documents are read by the owner (PSEVN), ChatGPT and Claude. A number or sc
 
 ## 3. Names and wording rules (from CLAUDE.md)
 - **AZ** = platform. **AZ Intelligence** = the intelligence system and section (never "AZ Core"). **AZI** = default name of the companion; students may set a nickname.
-- Never "AZ EZORD". EZORD, VXNORY and ELYSERA are separate projects.
+- Never "AZ EZORD". EZORDOM, VXNORY and ELYSERA are separate projects.
 - No claim that AZI/AZ Intelligence capabilities exist unless the codebase demonstrably supports them. "AZ المطلق" is a long-term vision only.
 - No guarantee or prediction of a professor's real exam.
 
