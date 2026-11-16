@@ -5,6 +5,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as Y from "yjs";
 
 const ticketSecret = "test-only-secret-that-is-long-enough-for-local-tests";
+const revokeSecret = "test-only-revoke-secret-that-is-long-enough";
+const projectId = "20000000-0000-4000-8000-000000000002";
 const harness = createTestHarness({
   workers: [{
     configPath: "./wrangler.jsonc",
@@ -13,6 +15,7 @@ const harness = createTestHarness({
       SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_ANON_KEY: "test-anon-key",
       COLLAB_TICKET_SECRET: ticketSecret,
+      COLLAB_REVOKE_SECRET: revokeSecret,
     },
   }],
 });
@@ -33,13 +36,14 @@ function base64Url(bytes: Uint8Array): string {
   return Buffer.from(bytes).toString("base64url");
 }
 
-async function makeTicket(documentId: string): Promise<string> {
+async function makeTicket(documentId: string, userId = "10000000-0000-4000-8000-000000000001"): Promise<string> {
   const claims = {
-    sub: "10000000-0000-4000-8000-000000000001",
+    sub: userId,
     documentId,
-    projectId: "20000000-0000-4000-8000-000000000002",
+    projectId,
     role: "member",
     exp: Math.floor(Date.now() / 1000) + 120,
+    iatMs: Date.now(),
   };
   const payload = base64Url(encoder.encode(JSON.stringify(claims)));
   const key = await crypto.subtle.importKey(
@@ -92,6 +96,47 @@ async function waitForValue(check: () => boolean, message: string, timeoutMs = 5
 }
 
 describe("AZ collaboration Worker end-to-end", () => {
+  it("revokes the removed member while preserving another member session", async () => {
+    const documentId = "30000000-0000-4000-8000-000000000013";
+    const firstUserId = "10000000-0000-4000-8000-000000000001";
+    const secondUserId = "10000000-0000-4000-8000-000000000002";
+    const firstToken = await makeTicket(documentId, firstUserId);
+    const secondToken = await makeTicket(documentId, secondUserId);
+    const socketUrl = new URL("/collab/" + documentId, workerUrl);
+    socketUrl.protocol = socketUrl.protocol === "https:" ? "wss:" : "ws:";
+    const firstDoc = new Y.Doc();
+    const secondDoc = new Y.Doc();
+    let firstProvider: HocuspocusProvider | undefined;
+    let secondProvider: HocuspocusProvider | undefined;
+    const createProvider = (document: Y.Doc, token: string) => (
+      onSynced: () => void, onFailure: (reason: string) => void,
+    ) => new HocuspocusProvider({
+      url: socketUrl.toString(), name: documentId, document, token, WebSocketPolyfill: WebSocket,
+      onSynced: ({ state }) => { if (state) onSynced(); },
+      onAuthenticationFailed: ({ reason }) => onFailure(reason),
+    });
+    try {
+      firstProvider = await waitForSync(createProvider(firstDoc, firstToken));
+      secondProvider = await waitForSync(createProvider(secondDoc, secondToken));
+      const response = await fetch(new URL("/internal/revoke", workerUrl), {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + revokeSecret, "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId, projectId, userId: firstUserId }),
+      });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ revoked: true, closedConnections: 1 });
+      secondDoc.getText("content").insert(0, "still-authorized");
+      await waitForValue(() => secondDoc.getText("content").toString() === "still-authorized", "Remaining member could not edit");
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      expect(firstDoc.getText("content").toString()).toBe("");
+      const retryDoc = new Y.Doc();
+      try {
+        await expect(waitForSync(createProvider(retryDoc, firstToken))).rejects.toThrow(/authentication failed/i);
+      } finally { retryDoc.destroy(); }
+    } finally {
+      firstProvider?.destroy(); secondProvider?.destroy(); firstDoc.destroy(); secondDoc.destroy();
+    }
+  }, 30000);
   it("synchronizes two users, shares presence, and restores the document after reconnect", async () => {
     const documentId = "30000000-0000-4000-8000-000000000003";
     const token = await makeTicket(documentId);
