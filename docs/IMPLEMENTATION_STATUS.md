@@ -112,9 +112,11 @@ Checked on 2026-11-04:
 
 ## Migration inventory cross-check
 
-A follow-up comparison of the live Supabase migration history against the GitHub `supabase/migrations/` directory found a filename/version discrepancy that must be reconciled before relying on a clean database rebuild:
+A follow-up comparison of the live Supabase migration history against the GitHub `supabase/migrations/` directory found that the repository held only 7 of the 30 migrations recorded in the live project, with two version mismatches. Status of this finding (2026-11-16, branch `chore/sync-live-migrations`):
 
-- Live history reports `20261104145805 index_private_question_keys_owner_fk`.
-- GitHub currently contains `20261104145802_index_private_question_keys_owner_fk.sql`.
-- Do not rename or replay either migration until the exact applied SQL and source history are reconciled.
-- The original five foundation migration SQL bodies are not present in the repository's historical commits checked so far; the earliest planning commit contains only the three docs files. Recovery still requires the original authoring workspace or an exact SQL export/source.
+- **Recovered.** The 23 missing migrations were exported verbatim from the live `supabase_migrations.schema_migrations` history (read-only) and added under their live version numbers. Each file's content hash (after trimming leading/trailing whitespace) equals the hash of the applied statement in the live history.
+- **Renamed to the live versions** (file content unchanged): `20261104145802_index_private_question_keys_owner_fk.sql` is now `20261104145805_...`, and `20261105160000_add_academic_planning_foundation.sql` is now `20261105153306_...`. The planning foundation migration **is applied** in the live project (the statement in `AZ_PLANNING_SPEC.md` §12 that it was not applied is outdated).
+- **Comment-only differences** remain in four older repository files (`20261104144855`, `20261104145529`, `20261104145805`, `20261104150300`): their SQL is the same as the applied statement, but the comments differ. They were left as they are.
+- **Clean-rebuild test.** All 30 migrations were replayed in version order on an empty local PostgreSQL 16 database with minimal stand-ins for the Supabase-managed pieces (`auth.users` and `auth.uid()`, `storage.buckets` and `storage.objects`, the `anon`/`authenticated`/`service_role` roles with Supabase-style default privileges, the `supabase_realtime` publication, and a stub `cron` schema). All 30 applied without error, and a fingerprint of columns (247), constraints (178), indexes (107), RLS policies (45), functions (27, including bodies), triggers (5) and table grants (298) in the `public` and `private` schemas matched the live project exactly.
+- **Not covered by that test:** the real `pg_cron` extension (the `create extension` line was stubbed locally), storage bucket objects, `auth` and `storage` schema internals, data, the `private` schema's own function privileges, and anything created in the live project outside the migration history. Treat it as strong evidence, not proof, that `supabase db reset` reproduces the live schema.
+- Do not apply any of these files to the live project. They are already applied there.
