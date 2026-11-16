@@ -274,10 +274,13 @@ select public.accept_project_invitation(
 commit;
 
 do $member_reactivation_assert$
+declare
+  v_project_id uuid;
 begin
+  select id into v_project_id from public.projects where title = 'CI collaboration project';
   if not exists (
     select 1 from public.project_members
-    where project_id = :'ci_project_id'::uuid
+    where project_id = v_project_id
       and user_id = '00000000-0000-0000-0000-000000000002'
       and revoked_at is null
   ) then
