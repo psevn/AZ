@@ -136,7 +136,7 @@ Deno.serve(async (request: Request) => {
     const status = message.includes("PROJECT_LEAD_REQUIRED") ? 403
       : message.includes("PROJECT_NOT_FOUND") ? 404
       : 409;
-    return jsonResponse({ error: "Could not remove this project member", code: message }, status, allowedOrigin);
+    return jsonResponse({ error: "Could not remove this project member" }, status, allowedOrigin);
   }
 
   return jsonResponse({ removed: true, projectId: body.projectId }, 200, allowedOrigin);
