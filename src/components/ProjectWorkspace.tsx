@@ -253,18 +253,20 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     if (!window.confirm(copy.confirmRemoveMember)) return;
     setRemovingMemberId(memberUserId);
     setError("");
+    let removalMessage = "";
     try {
       const { error: removalError } = await client.functions.invoke("project-members", {
         body: { action: "remove", projectId, memberUserId },
       });
-      if (removalError) {
-        setError(removalError.message || copy.failed);
-      } else {
-        await refresh();
-      }
+      if (removalError) removalMessage = removalError.message || copy.failed;
     } catch {
-      setError(copy.failed);
+      removalMessage = copy.failed;
     } finally {
+      // A failed request may still have completed phase one (the database
+      // revocation fence). Refresh so the pending state and retry action are
+      // visible instead of leaving stale membership data on screen.
+      await refresh();
+      if (removalMessage) setError(removalMessage);
       setRemovingMemberId(null);
     }
   }
