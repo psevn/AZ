@@ -253,15 +253,20 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     if (!window.confirm(copy.confirmRemoveMember)) return;
     setRemovingMemberId(memberUserId);
     setError("");
-    const { error: removalError } = await client.functions.invoke("project-members", {
-      body: { action: "remove", projectId, memberUserId },
-    });
-    if (removalError) {
-      setError(removalError.message || copy.failed);
-    } else {
-      await refresh();
+    try {
+      const { error: removalError } = await client.functions.invoke("project-members", {
+        body: { action: "remove", projectId, memberUserId },
+      });
+      if (removalError) {
+        setError(removalError.message || copy.failed);
+      } else {
+        await refresh();
+      }
+    } catch {
+      setError(copy.failed);
+    } finally {
+      setRemovingMemberId(null);
     }
-    setRemovingMemberId(null);
   }
 
   async function copyInvitation() {
