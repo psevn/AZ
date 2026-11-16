@@ -58,3 +58,32 @@ test("invalid timing configuration fails closed", () => {
   assert.deepEqual(getUploadTokenExpiryDecision(null, 1_000, -1), { kind: "invalid" });
 });
 
+test("impossible calendar dates and out-of-range clock fields fail closed", () => {
+  const now = Date.parse("2026-11-15T20:00:00.000Z");
+  const invalidValues = [
+    "2026-02-30T20:00:00Z",
+    "2026-11-31T20:00:00Z",
+    "2025-02-29T20:00:00Z",
+    "2026-11-15T24:00:00Z",
+    "2026-11-15T20:60:00Z",
+    "2026-11-15T20:00:60Z",
+    "2026-11-15T20:00:00+24:00",
+    "2026-11-15T20:00:00+03:60",
+  ];
+
+  for (const value of invalidValues) {
+    assert.deepEqual(
+      getUploadTokenExpiryDecision(value, now, FIVE_MINUTES),
+      { kind: "invalid" },
+      `expected impossible timestamp ${value} to fail closed`,
+    );
+  }
+});
+
+test("a real leap-day timestamp remains valid", () => {
+  const now = Date.parse("2024-02-28T20:00:00.000Z");
+  assert.deepEqual(
+    getUploadTokenExpiryDecision("2024-02-29T20:00:00Z", now, FIVE_MINUTES),
+    { kind: "wait", retryAfterSeconds: 24 * 60 * 60 + 5 * 60 },
+  );
+});
