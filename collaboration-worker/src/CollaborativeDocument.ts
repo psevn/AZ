@@ -8,15 +8,29 @@ interface TicketClaims {
   projectId: string;
   role: string;
   exp: number;
+  iatMs: number;
 }
 
 const decoder = new TextDecoder();
 
-function assertLiveContext(context: unknown): asserts context is { userId: string; projectId: string; ticketExpiresAt: number } {
-  const claims = context as { userId?: string; projectId?: string; ticketExpiresAt?: number } | undefined;
+async function assertLiveContext(
+  context: unknown,
+  storage: DurableObjectStorage,
+): Promise<void> {
+  const claims = context as {
+    userId?: string;
+    projectId?: string;
+    ticketExpiresAt?: number;
+    ticketIssuedAtMs?: number;
+  } | undefined;
   if (!claims?.userId || !claims.projectId) throw new Error("AUTH_REQUIRED");
   if (!claims.ticketExpiresAt || claims.ticketExpiresAt < Math.floor(Date.now() / 1000)) {
     throw new Error("TICKET_EXPIRED");
+  }
+  if (!Number.isSafeInteger(claims.ticketIssuedAtMs)) throw new Error("INVALID_TICKET");
+  const revokedAtMs = await storage.get<number>(`revoked:${claims.projectId}:${claims.userId}`);
+  if (typeof revokedAtMs === "number" && claims.ticketIssuedAtMs! <= revokedAtMs) {
+    throw new Error("MEMBERSHIP_REVOKED");
   }
 }
 
@@ -61,12 +75,15 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
       async onAuthenticate({ token, documentName }) {
         const claims = await verifyTicket(token, env.COLLAB_TICKET_SECRET);
         if (claims.documentId !== documentName || claims.documentId !== room.documentId) throw new Error("DOCUMENT_MISMATCH");
-        return {
+        const context = {
           userId: claims.sub,
           projectId: claims.projectId,
           role: claims.role,
           ticketExpiresAt: claims.exp,
+          ticketIssuedAtMs: claims.iatMs,
         };
+        await assertLiveContext(context, storage);
+        return context;
       },
       async onLoadDocument({ documentName }) {
         if (documentName !== room.documentId) {
@@ -84,15 +101,55 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
         await storage.put("saved-at", new Date().toISOString());
       },
       async beforeHandleMessage({ context }) {
-        assertLiveContext(context);
+        await assertLiveContext(context, storage);
       },
       async beforeHandleAwareness({ context }) {
-        assertLiveContext(context);
+        await assertLiveContext(context, storage);
       },
     });
   }
 
   async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const revokeMatch = url.pathname.match(/^\\/internal\\/revoke\\/([0-9a-f-]{36})$/i);
+    if (revokeMatch && request.method === "POST") {
+      const secret = this.env.COLLAB_REVOKE_SECRET;
+      if (!secret || secret.length < 32) return Response.json({ error: "REVOKE_NOT_CONFIGURED" }, { status: 503 });
+      if (request.headers.get("authorization") !== "Bearer " + secret) {
+        return Response.json({ error: "UNAUTHORIZED" }, { status: 401 });
+      }
+      let body: { projectId?: string; userId?: string };
+      try {
+        body = await request.json() as { projectId?: string; userId?: string };
+      } catch {
+        return Response.json({ error: "INVALID_JSON" }, { status: 400 });
+      }
+      const isUuid = (value: unknown): value is string =>
+        typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+      if (!isUuid(body.projectId) || !isUuid(body.userId)) {
+        return Response.json({ error: "INVALID_REVOCATION" }, { status: 400 });
+      }
+      const documentId = revokeMatch[1].toLowerCase();
+      this.documentId = documentId;
+      const revokedAtMs = Date.now();
+      await this.ctx.storage.put(`revoked:${body.projectId}:${body.userId}`, revokedAtMs);
+
+      let closedConnections = 0;
+      const document = this.hocuspocus.documents.get(documentId) as {
+        connections?: Map<{
+          context?: { userId?: string; projectId?: string };
+          close: (event?: CloseEvent) => void;
+        }, unknown>;
+      } | undefined;
+      document?.connections?.forEach((_clients, connection) => {
+        if (connection.context?.userId === body.userId && connection.context?.projectId === body.projectId) {
+          connection.close({ code: 4003, reason: "membership-revoked" } as CloseEvent);
+          closedConnections += 1;
+        }
+      });
+      return Response.json({ revoked: true, closedConnections });
+    }
+
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       if (new URL(request.url).pathname.endsWith("/health")) {
         return Response.json({ status: "ready", document: this.documentId || "unbound" });
