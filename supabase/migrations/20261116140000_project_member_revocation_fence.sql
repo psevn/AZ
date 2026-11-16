@@ -220,13 +220,13 @@ begin
     raise exception 'INVITATION_EMAIL_MISMATCH' using errcode = 'P0001';
   end if;
 
-  insert into public.project_members (project_id, user_id, role, invited_by)
+  insert into public.project_members as existing_member (project_id, user_id, role, invited_by)
   values (v_invitation.project_id, p_user_id, 'member', v_invitation.created_by)
   on conflict (project_id, user_id) do update
     set revoked_at = null,
         invited_by = excluded.invited_by
-    where public.project_members.role = 'member'
-      and public.project_members.revoked_at is not null;
+    where existing_member.role = 'member'
+      and existing_member.revoked_at is not null;
 
   update public.project_invitations
      set accepted_at = now()
