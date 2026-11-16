@@ -1,6 +1,6 @@
 # AZ — Implementation Status
 
-Last checked: 2026-11-04. This file records observed repository/database state; it does not approve pending product or architecture decisions.
+Initial Supabase snapshot: 2026-11-04; migration inventory rechecked: 2026-11-16. This file records observed repository/database state; it does not approve pending product or architecture decisions.
 
 ## Supabase project
 
@@ -8,7 +8,7 @@ Last checked: 2026-11-04. This file records observed repository/database state; 
 - Region: `ap-south-1` (Mumbai)
 - Status: `ACTIVE_HEALTHY`
 - PostgreSQL: 17.11
-- Applied migrations: 11 (5 original foundation migrations + 6 security migrations)
+- Applied migrations at the initial 2026-11-04 snapshot: 11 (5 original foundation migrations + 6 security migrations). The later read-only cross-check on 2026-11-16 found 30 recorded migrations; see “Migration inventory cross-check” below.
 - Public tables observed: `profiles`, `subjects`, `tasks`, `focus_sessions`, `documents`, `notes`, `quizzes`, `quiz_questions`, `quiz_attempts`, `ai_usage_log`.
 - RLS is enabled on all 10 observed public tables.
 - The `documents` Storage bucket is private and PDF-only.
