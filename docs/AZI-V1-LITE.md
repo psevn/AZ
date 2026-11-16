@@ -127,7 +127,7 @@ All numbers (session length, box intervals, thresholds) are placeholders to tune
 
 **Schema notes (review before any migration):**
 - Spaced review needs per-student, per-question state (box or interval, next due date). It can be derived from `attempt_answers` history, which avoids a new table but costs more at read time, or stored in a new table such as `review_schedule(user_id, question_id, box, due_at)`. Decision needed.
-- Numeric templates need a place to live (a `question_templates` table, or a JSON column). This is a schema change, so it is not a Quick win and is proposed as a V1.5 experiment for one subject.
+- Numeric templates need a place to live (a `question_templates` table, or a JSON column). This is a schema change, so it is not a Quick win and was proposed as a V1.5 experiment, but PSEVN decided on 2026-11-16 to include it in V1 with a small scope (about 5 to 10 templates, 2 subjects); see DECISIONS.md (PR docs/v1-scope-audience-20261116). The schema is not yet designed.
 - Parameterized answers must be computed and graded server-side, like all grading (SPEC §7).
 
 **Priorities:** P0 (after Stage C): sessions from the bank, mistake review, flashcards from stored questions. P1: spaced review, daily session, mock exam composer. P2: numeric templates, rule-based extraction experiment.
