@@ -4,6 +4,7 @@ interface TicketClaims {
   projectId: string;
   role: string;
   exp: number;
+  iatMs: number;
 }
 
 const encoder = new TextEncoder();
@@ -89,6 +90,7 @@ async function createTicket(request: Request, env: Cloudflare.Env): Promise<Resp
     projectId: document.project_id,
     role: membership.role,
     exp: expiresAt,
+    iatMs: Date.now(),
   }, env.COLLAB_TICKET_SECRET);
 
   return json({ token, expiresAt });
@@ -112,6 +114,37 @@ export default {
 
     if (url.pathname === "/health" && request.method === "GET") {
       return json({ service: "az-collaboration", status: "ready" });
+    }
+
+  if (url.pathname === "/internal/revoke" && request.method === "POST") {
+      const secret = env.COLLAB_REVOKE_SECRET;
+      if (!secret || secret.length < 32) return json({ error: "REVOKE_NOT_CONFIGURED" }, 503);
+      if (request.headers.get("authorization") !== "Bearer " + secret) {
+        return json({ error: "UNAUTHORIZED" }, 401);
+      }
+      let body: { documentId?: string; projectId?: string; userId?: string };
+      try {
+        body = await request.json() as { documentId?: string; projectId?: string; userId?: string };
+      } catch {
+        return json({ error: "INVALID_JSON" }, 400);
+      }
+      const isUuid = (value: unknown): value is string =>
+        typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+      if (!isUuid(body.documentId) || !isUuid(body.projectId) || !isUuid(body.userId)) {
+        return json({ error: "INVALID_REVOCATION" }, 400);
+      }
+      const id = env.DOCUMENTS.idFromName(body.documentId.toLowerCase());
+      const stub = env.DOCUMENTS.get(id);
+      const response = await stub.fetch(new Request(
+        "http://document/internal/revoke/" + body.documentId.toLowerCase(),
+        {
+          method: "POST",
+          headers: { authorization: "Bearer " + secret, "content-type": "application/json" },
+          body: JSON.stringify({ projectId: body.projectId, userId: body.userId }),
+        },
+      ));
+      if (!response.ok) return json({ error: "REVOCATION_FAILED" }, 503);
+      return json(await response.json());
     }
 
     if (url.pathname === "/ticket" && request.method === "POST") {
