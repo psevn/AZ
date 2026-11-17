@@ -7,6 +7,7 @@ const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const panel = readFileSync(new URL("../src/components/DocumentUpload.tsx", import.meta.url), "utf8");
 const endpoint = readFileSync(new URL("../supabase/functions/create-document-upload-url/index.ts", import.meta.url), "utf8");
 const corsHelper = readFileSync(new URL("../supabase/functions/_shared/cors.ts", import.meta.url), "utf8");
+const processingMigration = readFileSync(new URL("../supabase/migrations/20261111080000_atomic_document_processing.sql", import.meta.url), "utf8");
 
 test("Academic workspace renders the authenticated PDF upload panel", () => {
   assert.match(app, /<DocumentUpload lang=\{lang\} onUploaded=\{\(\) => \{/);
@@ -102,4 +103,17 @@ test("upload and recovery surfaces use the shared terminal-error contract", () =
   assert.match(recovery, /processingStarted && !isTerminalDocumentProcessingError\(cause\)/);
   assert.match(library, /isTerminalDocumentProcessingError/);
   assert.match(library, /ملف PDF مصوّر ويحتاج إلى OCR/);
+});
+
+
+test("the no-text response is terminal and releases the processing lock", () => {
+  const noTextBranch = processingMigration.slice(
+    processingMigration.indexOf("if length(regexp_replace"),
+    processingMigration.indexOf("v_arabic_count :="),
+  );
+  assert.ok(noTextBranch.length > 0, "no-text terminal branch exists");
+  assert.match(noTextBranch, /status = 'failed'/);
+  assert.match(noTextBranch, /locked_at = null/);
+  assert.match(noTextBranch, /statusCode', 422/);
+  assert.match(noTextBranch, /code', 'no_text'/);
 });
