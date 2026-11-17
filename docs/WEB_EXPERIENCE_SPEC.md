@@ -85,31 +85,68 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 
 ## 2. Motion System
 
-**Goal:** Make the interface feel fluid and responsive, with motion that communicates meaning rather than delaying work.
+**Status:** V1 foundation approved; detailed component rollout remains incremental.
 
-### Areas to explore
-- Motion principles and hierarchy.
-- Duration ranges for micro, standard, and expressive transitions.
-- Easing curves and spring behavior.
-- Page and route transitions.
-- Panel, modal, menu, tab, and disclosure transitions.
-- Loading, success, error, completion, and progress feedback.
-- Hover, pressed, focus, and drag feedback.
-- Reduced-motion alternatives and interruption behavior.
+**Goal:** Make AZ feel precise, responsive, and coherent. Motion must explain a state change, preserve spatial context, or provide feedback. It must never delay the student's work.
 
-### Questions to resolve
-- Which transitions should feel nearly instantaneous?
-- Where does motion help users understand spatial or state changes?
-- Which actions should never be delayed by an animation?
-- How should animations behave when users act rapidly or repeatedly?
-- What is the fallback when reduced motion is enabled?
+### Approved V1 principles
+
+1. **Purpose before spectacle.** Every animation must have a clear interaction or comprehension purpose. Decorative motion is limited to the quiet cosmic atmosphere.
+2. **Immediate control.** Clicks, keyboard activation, form submission, navigation, and cancellation are never held until an animation finishes.
+3. **Short and consistent.** Use the shared duration and easing tokens in `docs/MOTION_SYSTEM.md`; avoid one-off timing values for common interactions.
+4. **State is truthful.** Loading, upload, extraction, success, and failure visuals reflect real application state. Never simulate upload or AI progress that the application cannot verify.
+5. **Compositor-first.** Prefer opacity and transform. Do not animate layout dimensions, large blur surfaces, or expensive filters for routine UI feedback.
+6. **Interruptible.** Rapid repeated actions must settle on the latest real state without queued or overlapping transitions.
+7. **Accessible by default.** Respect `prefers-reduced-motion`, retain visible focus, and never communicate meaning through motion alone.
+8. **Direction-aware.** RTL and LTR transitions must use logical direction and preserve the meaning of spatial relationships. Hover effects are enhancements, never the only feedback.
+9. **Intensity follows context.** Home may be expressive; Planning stays calm; Focus is minimal; Study/Workspace prioritizes reading and source material.
+10. **Progressive enhancement.** Touch, keyboard, reduced-motion, and modest hardware must receive a complete experience without pointer-reactive or continuous effects.
+
+### V1 motion tokens
+
+The initial shared tokens are defined in `src/styles.css` and documented in `docs/MOTION_SYSTEM.md`:
+
+- Feedback: 120ms.
+- Micro-interaction: 160ms.
+- Standard content transition: 220ms.
+- Emphasis transition: 280ms.
+- Shared standard, enter, and exit easing curves.
+- Small movement distances only; no spring physics or motion library in the V1 foundation.
+
+These are starting system values, not a requirement to animate every component. A component may use no motion when immediate state feedback is clearer.
+
+### Interaction rules
+
+- Buttons: concise hover/pressed feedback; disabled controls do not move.
+- Inputs: focus is immediate and clearly visible; no animated focus delay.
+- Navigation: active state changes immediately; any future content transition must not block navigation.
+- Menus, dialogs, tabs, and disclosure: animate only when it helps users understand appearance, dismissal, or hierarchy; support keyboard and rapid repeated activation.
+- Lists and cards: animate only meaningful insertion, removal, or expansion; static informational cards do not react as if clickable.
+- Upload and processing: distinguish selection, real transfer (if exposed), extraction, and server processing. Never invent a percentage.
+- Success and error: show the result immediately; avoid celebratory or alarming motion.
+- Focus sessions: no ambient movement, pulsing, or attention-seeking animation while the student is focusing.
+
+### Reduced motion and interruption
+
+When `prefers-reduced-motion: reduce` is active, CSS animations and transitions are disabled globally for the web UI. State changes, progress values, focus indicators, and status text remain available without movement. No essential information may depend on animation.
+
+### V1 exclusions
+
+- No full-page route-transition system in this foundation pass.
+- No spring physics, scroll-jacking, parallax, cursor-following glow, animated pointer, or particle field.
+- No new animation library.
+- No continuous movement on routine workspace controls.
+- AZI will receive a separately designed motion language later; this foundation does not prescribe an avatar animation.
+
+### Verification requirements
+
+Test desktop and mobile, Arabic RTL and English LTR, keyboard and touch, reduced-motion enabled, and a modest device profile. Confirm that rapid clicks are not blocked, focus remains visible, and the production build stays free of motion-related runtime errors.
 
 ### Evidence and decisions
-- References: _To be collected._
-- Open questions: _To be researched._
-- Approved decisions: Short, purposeful transitions and meaningful micro-interactions are part of the V1 direction; detailed timings and curves remain open.
 
----
+- References and rationale are recorded in `docs/MOTION_SYSTEM.md`.
+- Approved decisions: purposeful short transitions, shared timing/easing tokens, truthful state feedback, global reduced-motion fallback, and context-specific intensity.
+- Implementation status: foundational tokens and baseline safeguards only; component-by-component adoption remains incremental.
 
 ## 3. Cursor Experience
 
@@ -272,6 +309,7 @@ Only record a decision here after it has been explicitly approved.
 |---|---|---|---|---|
 | 2026-11-04 | Overall direction | Explore a future-forward experience built around fluidity, spatial UI, cursor interaction, living backgrounds, micro-interactions, intelligent motion, and performance. | Founder-approved direction. | Approved |
 | 2026-11-05 | Visual identity | Adopt **The Academic Universe** as AZ's guiding visual concept. V1 includes a lightweight 2D cosmic atmosphere, ambient lighting, controlled AZ gradients, spatial depth, layered surfaces, and purposeful micro-interactions. Full 3D, advanced cursor-reactive lighting, particles, and deeper environmental personalization remain post-launch. | Establish a distinctive future-forward identity in V1 without compromising delivery, accessibility, or performance. | Approved |
+| 2026-11-17 | Motion foundation | Adopt shared V1 motion durations/easing, truthful state feedback, context-specific intensity, and a global reduced-motion fallback. | Make interaction feedback consistent without delaying academic work or excluding reduced-motion users. | Approved |
 
 ## Readiness Checklist
 
