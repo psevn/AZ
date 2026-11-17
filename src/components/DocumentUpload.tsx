@@ -46,10 +46,32 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
   const ar = lang === "ar";
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [stage, setStage] = useState<UploadStage | null>(null);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  function selectFile(nextFile: File | null) {
+    setError("");
+    setMessage("");
+    if (!nextFile) {
+      setFile(null);
+      return;
+    }
+    if (!nextFile.name.toLowerCase().endsWith(".pdf") ||
+      (nextFile.type !== "" && nextFile.type !== "application/pdf")) {
+      setFile(null);
+      setError(ar ? "اختر ملف PDF فقط." : "Choose a PDF file only.");
+      return;
+    }
+    if (nextFile.size <= 0 || nextFile.size > MAX_FILE_BYTES) {
+      setFile(null);
+      setError(ar ? "حجم الملف يجب أن يكون أكبر من صفر وألا يتجاوز 20 ميجابايت." : "The file must be larger than zero and no larger than 20 MB.");
+      return;
+    }
+    setFile(nextFile);
+  }
 
   async function upload() {
     const client = supabase;
@@ -156,28 +178,82 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
     }
   }
 
-  return <section className="document-upload-panel" aria-labelledby="document-upload-title">
-    <div className="document-upload-copy">
-      <span className="eyebrow">{ar ? "مكتبة المواد" : "YOUR MATERIALS"}</span>
-      <h3 id="document-upload-title">{ar ? "أضف مستنداً دراسياً" : "Add a study document"}</h3>
-      <p>{ar ? "ارفع محاضراتك وملخصاتك بصيغة PDF لتجميع موادك في مكان واحد. الحد الأقصى 20 ميجابايت." : "Add lecture slides and notes to keep your study materials in one place. Maximum size: 20 MB."}</p>
-    </div>
-    <label className="document-upload-picker">
-      <span>{file ? file.name : (ar ? "اختر ملف PDF" : "Choose a PDF")}</span>
-      <input type="file" accept="application/pdf,.pdf" disabled={busy} onChange={event => {
-        setError("");
-        setMessage("");
-        setFile(event.target.files?.[0] ?? null);
-      }} />
-    </label>
-    <button type="button" className="az-btn az-btn--primary" disabled={!file || busy} onClick={() => void upload()}>
-      {busy ? (ar ? "جارٍ التجهيز..." : "Preparing...") : (ar ? "رفع وتجهيز المستند" : "Upload and prepare")} ↗
-    </button>
-    {busy && stage && <p className="document-upload-progress" role="status" aria-live="polite">
-      {STAGE_COPY[lang][stage]}
-      {progress && progress.total > 0 && <span>{progress.current} / {progress.total}</span>}
-    </p>}
-    {error && <p className="document-upload-error" role="alert">{error}</p>}
-    {message && <p className="document-upload-success" role="status">{message}</p>}
-  </section>;
+  return (
+    <section className="document-upload-panel" aria-label={ar ? "رفع مستند دراسي" : "Upload a study document"}>
+      <label
+        className={"document-upload-dropzone" + (dragActive ? " is-dragging" : "") + (file ? " has-file" : "")}
+        onDragOver={event => {
+          event.preventDefault();
+          if (!busy) {
+            event.dataTransfer.dropEffect = "copy";
+            setDragActive(true);
+          }
+        }}
+        onDragLeave={event => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragActive(false);
+        }}
+        onDrop={event => {
+          event.preventDefault();
+          setDragActive(false);
+          if (!busy) selectFile(event.dataTransfer.files.item(0));
+        }}
+      >
+        <span className="document-upload-file-icon" aria-hidden="true">PDF</span>
+        <strong>{dragActive
+          ? (ar ? "أفلت الملف هنا" : "Drop your file here")
+          : file ? file.name : (ar ? "اسحب ملف PDF إلى هنا" : "Drop your PDF here")}</strong>
+        <span className="document-upload-drop-hint">
+          {file
+            ? (ar ? "تم اختيار الملف" : "File selected")
+            : (ar ? "أو اضغط لاختيار ملف من جهازك" : "or browse files from your device")}
+        </span>
+        <span className="document-upload-limit">{file
+          ? (file.size / (1024 * 1024)).toFixed(1) + " MB"
+          : (ar ? "PDF · حتى 20 ميجابايت" : "PDF · Up to 20 MB")}</span>
+        <input
+          type="file"
+          accept="application/pdf,.pdf"
+          aria-label={ar ? "اختر ملف PDF" : "Choose a PDF file"}
+          disabled={busy}
+          onChange={event => {
+            selectFile(event.currentTarget.files?.[0] ?? null);
+            event.currentTarget.value = "";
+          }}
+        />
+      </label>
+
+      <ol className="document-upload-steps" aria-label={ar ? "خطوات الدراسة" : "Study steps"}>
+        <li>
+          <span className="document-upload-step-number">01</span>
+          <span><strong>{ar ? "ارفع ملفك" : "Upload your file"}</strong><small>{ar ? "محاضراتك وملخصاتك بصيغة PDF" : "Lecture slides and notes in PDF"}</small></span>
+        </li>
+        <li>
+          <span className="document-upload-step-number">02</span>
+          <span><strong>{ar ? "جهّز محتواه" : "Prepare its content"}</strong><small>{ar ? "استخراج النص من صفحات المستند" : "Text is extracted from document pages"}</small></span>
+        </li>
+        <li>
+          <span className="document-upload-step-number">03</span>
+          <span><strong>{ar ? "ابدأ التدريب" : "Start practising"}</strong><small>{ar ? "افتح المستند وأنشئ تدريباً منه" : "Open the document and practise from it"}</small></span>
+        </li>
+      </ol>
+
+      <button
+        type="button"
+        className="az-btn az-btn--primary document-upload-submit"
+        disabled={!file || busy}
+        onClick={() => void upload()}
+      >
+        {busy
+          ? (ar ? "جارٍ تجهيز المستند..." : "Preparing document...")
+          : (ar ? "رفع وتجهيز المستند" : "Upload and prepare")}
+      </button>
+
+      {busy && stage && <p className="document-upload-progress" role="status" aria-live="polite">
+        {STAGE_COPY[lang][stage]}
+        {progress && progress.total > 0 && <span>{progress.current} / {progress.total}</span>}
+      </p>}
+      {error && <p className="document-upload-error" role="alert">{error}</p>}
+      {message && <p className="document-upload-success" role="status">{message}</p>}
+    </section>
+  );
 }

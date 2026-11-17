@@ -23,9 +23,8 @@ type Props = {
 const COPY = {
   ar: {
     title: "مستنداتك",
-    intro: "ملفاتك الدراسية محفوظة هنا، وستظهر أدوات الدراسة عند اكتمال تجهيز المستند.",
     loading: "جارٍ تحميل المستندات…",
-    empty: "لم ترفع أي مستند بعد.",
+    empty: "ستظهر مستنداتك هنا بعد رفع أول ملف PDF.",
     retry: "إعادة المحاولة",
     ready: "جاهز للدراسة",
     uploaded: "تم الرفع · بانتظار المعالجة",
@@ -55,9 +54,8 @@ const COPY = {
   },
   en: {
     title: "Your documents",
-    intro: "Your study files are kept here. Study tools will appear when a document is processed.",
     loading: "Loading documents…",
-    empty: "You haven’t uploaded a document yet.",
+    empty: "Your documents will appear here after your first PDF upload.",
     retry: "Try again",
     ready: "Ready to study",
     uploaded: "Uploaded · awaiting processing",
@@ -205,11 +203,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
   return (
     <section className="document-library" aria-labelledby="document-library-title">
       <div className="document-library-heading">
-        <div>
-          <span className="eyebrow">{ar ? "مكتبة المواد" : "STUDY LIBRARY"}</span>
-          <h3 id="document-library-title">{t.title}</h3>
-          <p>{t.intro}</p>
-        </div>
+        <h3 id="document-library-title">{t.title}</h3>
         {!loading && !error && documents.length > 0 && (
           <span className="document-library-count">{documents.length} {t.count}</span>
         )}
@@ -223,7 +217,7 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
           <button type="button" className="az-btn az-btn--ghost" onClick={() => void load()}>{t.retry}</button>
         </div>
       ) : documents.length === 0 ? (
-        <p className="document-library-state">{t.empty}</p>
+        <p className="document-library-state is-empty">{t.empty}</p>
       ) : (
         <ul className="document-library-list">
           {documents.map((document) => (
