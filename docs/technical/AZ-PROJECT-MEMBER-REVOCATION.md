@@ -23,8 +23,10 @@ access and cannot obtain another collaboration ticket. However, an already-open 
 guaranteed to close until the Worker acknowledges its revocation request. The operation therefore
 returns an error and remains visibly pending; the lead must retry it and must not treat the member
 as fully removed until the Worker acknowledges and the final RPC succeeds. The pending row remains
-visible to the lead. A fresh invitation can reactivate a pending revoked member by clearing
-`revoked_at` only after valid invitation acceptance.
+visible to the lead. A fresh invitation is rejected while this row is pending: reactivation at that
+point could restore membership while an unacknowledged document still has the old socket open.
+After all Worker acknowledgements succeed and the membership row is deleted, a fresh invitation
+can create a new membership row.
 
 ## Worker revocation protocol
 
@@ -37,8 +39,8 @@ visible to the lead. A fresh invitation can reactivate a pending revoked member 
   (`revoked_at IS NULL`). Authentication, document messages, and awareness updates compare the
   ticket issue time with the stored revocation timestamp. A ticket issued before revocation cannot
   reconnect or continue sending updates.
-- A newly issued ticket after a successful re-invitation has a later `iatMs` and can be accepted
-  after the current membership check succeeds.
+- Re-invitation is permitted only after the prior removal has fully completed and its membership row
+  has been deleted. The new ticket has a later `iatMs` than the persisted revocation marker.
 
 The revocation timestamp is stored in Durable Object storage, so it survives object eviction and
 restart. Revocation is document-scoped; the Edge Function enumerates all project documents.
@@ -60,8 +62,10 @@ commit them to the repository, or reuse the collaboration ticket-signing secret.
 
 The Edge Function marks the membership revoked before contacting the Worker. If a Worker
 request fails, the row remains revoked and the lead can retry; the member does not regain RLS access
-or ticket issuance during the retry window. If the final database RPC fails after session revocation,
-the row remains revoked. A valid new invitation can reactivate it later.
+or ticket issuance during the retry window, although a socket on a document whose acknowledgement
+failed may remain connected until retry succeeds. Invitation acceptance is blocked while the row is
+pending. If the final database RPC fails after session revocation, the row remains revoked and
+invitation acceptance remains blocked until the lead retries finalization.
 
 ## Deployment order (future, approval required)
 
