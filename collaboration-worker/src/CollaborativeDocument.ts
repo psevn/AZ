@@ -82,15 +82,15 @@ export class CollaborativeDocument extends DurableObject<Cloudflare.Env> {
         if (!activeSocket) throw new Error("SOCKET_NOT_REGISTERED");
         activeSocket.userId = claims.sub;
         activeSocket.projectId = claims.projectId;
-        const context = {
+        const authContext = {
           userId: claims.sub,
           projectId: claims.projectId,
           role: claims.role,
           ticketExpiresAt: claims.exp,
           ticketIssuedAtMs: claims.iatMs,
         };
-        await assertLiveContext(context, storage);
-        return context;
+        await assertLiveContext(authContext, storage);
+        return authContext;
       },
       async onLoadDocument({ documentName }) {
         if (documentName !== room.documentId) {
