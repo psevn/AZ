@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { createDocumentProcessingError, isTerminalDocumentProcessingError, normalizeDocumentProcessingError } from "../lib/documentProcessingResponse.mjs";
 
 type Props = { lang: "ar" | "en"; onUploaded: () => void };
 type UploadStage = "uploading" | "extracting" | "saving" | "finalizing";
@@ -26,8 +27,8 @@ async function invokeProcessing(
   body: Record<string, unknown>,
 ) {
   const { data, error } = await client.functions.invoke("process-document-pages", { body });
-  if (error) throw error;
-  if (!data || data.ok !== true) throw new Error("Document processing did not complete.");
+  if (error) throw await normalizeDocumentProcessingError(error);
+  if (!data || data.ok !== true) throw createDocumentProcessingError(data);
   return data as Record<string, unknown>;
 }
 
@@ -154,22 +155,27 @@ export default function DocumentUpload({ lang, onUploaded }: Props) {
       setFile(null);
       onUploaded();
     } catch (cause) {
-      if (processingStarted) {
+      const terminalNoTextFailure = isTerminalDocumentProcessingError(cause);
+      if (processingStarted && !terminalNoTextFailure) {
         const { error: statusError } = await client.functions.invoke(
           "process-document-pages",
           { body: { action: "fail", documentId, processingToken, reasonCode: failureReason(cause) } },
         );
         if (statusError) console.error("Could not record document processing failure:", statusError.message);
-      } else if (uploadRecordMayExist && !uploadCompleted) {
+      } else if (!processingStarted && uploadRecordMayExist && !uploadCompleted) {
         const { error: statusError } = await client.functions.invoke(
           "create-document-upload-url",
           { body: { documentId, action: "mark_failed" } },
         );
         if (statusError) console.error("Could not mark failed document upload:", statusError.message);
       }
-      setError(cause instanceof Error
-        ? cause.message
-        : (ar ? "تعذر تجهيز المستند." : "Could not prepare the document."));
+      setError(terminalNoTextFailure
+        ? (ar
+          ? "لم يُعثر على نص قابل للاستخراج. يبدو أن ملف PDF مصوّر ويحتاج إلى OCR، وهي ميزة غير متاحة بعد."
+          : "No selectable text was found. This appears to be a scanned PDF; OCR is not available yet.")
+        : cause instanceof Error
+          ? cause.message
+          : (ar ? "تعذر تجهيز المستند." : "Could not prepare the document."));
       if (uploadRecordMayExist) onUploaded();
     } finally {
       setBusy(false);
