@@ -93,7 +93,7 @@ Deno.serve(async (request: Request) => {
   }
   const project = projectResult.data;
   if (!project) return jsonResponse({ error: "Project not found" }, 404, allowedOrigin);
-  if (actorResult.data?.role !== "lead" || actorResult.data.revoked_at !== null) {
+  if (actorResult.data?.role !== "lead" || actorResult.data?.revoked_at !== null) {
     return jsonResponse({ error: "Only the project lead can remove members" }, 403, allowedOrigin);
   }
   if (memberResult.data?.role !== "member" || body.memberUserId === project.created_by) {
