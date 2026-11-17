@@ -161,6 +161,23 @@ begin
 end;
 $$;
 
+-- The active member can upload an attachment before revocation.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
+insert into public.project_attachments (
+  project_id, uploaded_by, storage_path, filename, mime_type, byte_size
+)
+values (
+  :'ci_project_id'::uuid,
+  '00000000-0000-0000-0000-000000000002',
+  'ci/project-member-attachment.txt',
+  'member-note.txt',
+  'text/plain',
+  12
+);
+commit;
+
 -- A project lead must not bypass email-bound invitations by inserting a
 -- membership directly or promoting an existing member to lead.
 begin;
