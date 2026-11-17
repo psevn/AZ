@@ -85,11 +85,11 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 
 ## 2. Motion System
 
-**Status:** V1 foundation approved; detailed component rollout remains incremental.
+**Status:** Proposed V1 foundation; detailed component rollout remains incremental.
 
 **Goal:** Make AZ feel precise, responsive, and coherent. Motion must explain a state change, preserve spatial context, or provide feedback. It must never delay the student's work.
 
-### Approved V1 principles
+### Proposed V1 principles
 
 1. **Purpose before spectacle.** Every animation must have a clear interaction or comprehension purpose. Decorative motion is limited to the quiet cosmic atmosphere.
 2. **Immediate control.** Clicks, keyboard activation, form submission, navigation, and cancellation are never held until an animation finishes.
@@ -102,7 +102,7 @@ Keep unresolved questions open. Prefer a small number of excellent, coherent int
 9. **Intensity follows context.** Home may be expressive; Planning stays calm; Focus is minimal; Study/Workspace prioritizes reading and source material.
 10. **Progressive enhancement.** Touch, keyboard, reduced-motion, and modest hardware must receive a complete experience without pointer-reactive or continuous effects.
 
-### V1 motion tokens
+### Proposed V1 motion tokens
 
 The initial shared tokens are defined in `src/styles.css` and documented in `docs/MOTION_SYSTEM.md`:
 
