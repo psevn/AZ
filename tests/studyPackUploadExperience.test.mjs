@@ -60,6 +60,7 @@ test("document library retains real statuses and only offers practice for ready 
 });
 
 test("Study Pack upload controls keep readable type and visible keyboard focus", () => {
+  assert.match(styles, /\.document-upload-dropzone input \{\s*pointer-events: auto/);
   assert.match(styles, /\.document-upload-dropzone:focus-within/);
   assert.match(styles, /\.document-upload-submit:focus-visible/);
   assert.match(styles, /\.document-upload-submit\.az-btn--primary:disabled/);
