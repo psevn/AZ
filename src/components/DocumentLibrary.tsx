@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { recoverDocumentProcessing } from "../lib/recoverDocumentProcessing";
+import { isTerminalDocumentProcessingError } from "../lib/documentProcessingResponse.mjs";
 
 type DocumentRow = {
   id: string;
@@ -148,7 +149,11 @@ export default function DocumentLibrary({ userId, lang, refreshKey, onOpenDocume
       setRecoveryProgress("");
       await load();
     } catch (cause) {
-      setRecoveryError(cause instanceof Error ? cause.message : t.resumeError);
+      setRecoveryError(isTerminalDocumentProcessingError(cause)
+        ? (ar
+          ? "لم يُعثر على نص قابل للاستخراج. يبدو أن ملف PDF مصوّر ويحتاج إلى OCR، وهي ميزة غير متاحة بعد."
+          : "No selectable text was found. This appears to be a scanned PDF; OCR is not available yet.")
+        : cause instanceof Error ? cause.message : t.resumeError);
       await load();
     } finally {
       setRecoveringId(null);
