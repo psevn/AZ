@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createDocumentProcessingError, isTerminalDocumentProcessingError, normalizeDocumentProcessingError } from "../src/lib/documentProcessingResponse.mjs";
 
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
 const panel = readFileSync(new URL("../src/components/DocumentUpload.tsx", import.meta.url), "utf8");
@@ -54,4 +55,51 @@ test("upload URL endpoint rejects malformed JSON and keeps privileged credential
   assert.match(endpoint, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(corsHelper, /"Cache-Control": "no-store"/);
   assert.doesNotMatch(panel, /SUPABASE_SERVICE_ROLE_KEY|service_role/i);
+});
+
+
+test("structured processing errors preserve the server message, code, and HTTP status", async () => {
+  const response = new Response(JSON.stringify({
+    error: "No selectable text was found. OCR is not available yet.",
+    code: "no_text",
+  }), { status: 422, headers: { "content-type": "application/json" } });
+  const normalized = await normalizeDocumentProcessingError(Object.assign(
+    new Error("Edge Function returned a non-2xx status code"),
+    { context: response },
+  ));
+  assert.equal(normalized.message, "No selectable text was found. OCR is not available yet.");
+  assert.equal(normalized.code, "no_text");
+  assert.equal(normalized.status, 422);
+  assert.equal(isTerminalDocumentProcessingError(normalized), true);
+  assert.equal(await response.clone().text().then(Boolean), true);
+});
+
+test("only the known terminal no-text response skips a redundant failure transition", () => {
+  assert.equal(isTerminalDocumentProcessingError(createDocumentProcessingError({ error: "no text", code: "no_text" }, 422)), true);
+  assert.equal(isTerminalDocumentProcessingError(createDocumentProcessingError({ error: "busy", code: "PROCESSING_BUSY" }, 409)), false);
+  assert.equal(isTerminalDocumentProcessingError(createDocumentProcessingError({ error: "server", code: "internal" }, 500)), false);
+});
+
+test("non-JSON Edge Function errors preserve the original error", async () => {
+  const original = Object.assign(new Error("request failed"), {
+    context: new Response("not-json", { status: 500 }),
+  });
+  const normalized = await normalizeDocumentProcessingError(original);
+  assert.equal(normalized, original);
+});
+
+test("processing payloads without a server message use a safe fallback", () => {
+  assert.equal(createDocumentProcessingError(null).message, "Document processing did not complete.");
+});
+
+test("upload and recovery surfaces use the shared terminal-error contract", () => {
+  const recovery = readFileSync(new URL("../src/lib/recoverDocumentProcessing.ts", import.meta.url), "utf8");
+  const library = readFileSync(new URL("../src/components/DocumentLibrary.tsx", import.meta.url), "utf8");
+  assert.match(panel, /normalizeDocumentProcessingError/);
+  assert.match(panel, /processingStarted && !terminalNoTextFailure/);
+  assert.match(panel, /OCR is not available yet/);
+  assert.match(recovery, /normalizeDocumentProcessingError/);
+  assert.match(recovery, /processingStarted && !isTerminalDocumentProcessingError\(cause\)/);
+  assert.match(library, /isTerminalDocumentProcessingError/);
+  assert.match(library, /ملف PDF مصوّر ويحتاج إلى OCR/);
 });
