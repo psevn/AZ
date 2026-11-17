@@ -186,7 +186,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $function$
 declare
   v_invitation public.project_invitations%rowtype;
   v_inserted integer;
@@ -254,7 +254,7 @@ begin
   );
   return v_invitation.project_id;
 end;
-$;
+$function$;
 
 revoke all on function public.accept_project_invitation(text, uuid, text) from public;
 revoke all on function public.accept_project_invitation(text, uuid, text) from anon;
