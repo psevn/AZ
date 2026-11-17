@@ -25,8 +25,9 @@ test("non-failed documents can be previewed and ready documents offer practice",
 });
 
 test("workspace mounts the library and refreshes it after upload", () => {
-  assert.match(app, /import DocumentLibrary from "\.\/components\/DocumentLibrary"/);
-  assert.match(app, /setDocumentsRefresh\(value => value \+ 1\)/);
+  assert.match(app, /const DocumentLibrary = lazy\(\(\) => import\("\.\/components\/DocumentLibrary"\)\)/);
+  assert.match(app, /<Suspense fallback=\{loadingFallback\}><DocumentLibrary\b/);
+  assert.match(app, /onUploaded=\{\(\) => \{ setDocumentsRefresh\(value\s*=>\s*value\s*\+\s*1\); void loadData\(\); \}\}/);
   assert.match(app, /<DocumentLibrary userId=\{user\.id\}/);
 });
 
