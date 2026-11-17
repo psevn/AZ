@@ -16,7 +16,9 @@ Removal uses two database phases to close the ticket-issuance race:
 2. The Edge Function asks the Worker to revoke the target user's sessions for every project
    document. Only after every document acknowledges does it call the service-role-only
    `remove_project_member` RPC, which rechecks the active lead and target row, deletes the
-   membership, and writes the `member_removed` audit event atomically.
+   membership, and writes the `member_removed` audit event atomically. The final migration also
+  closes the historical uploader-only attachment deletion policy, so a revoked uploader cannot
+  delete project attachment metadata after losing membership.
 
 If a Worker request fails, the row remains marked revoked: the member has lost database RLS
 access and cannot obtain another collaboration ticket. However, an already-open WebSocket is not
@@ -80,7 +82,8 @@ ticket filter, and revocation endpoint are a coordinated security boundary.
 The Worker unit test covers authorization of the internal endpoint. The Worker integration test
 covers targeted active-connection closure, unaffected collaborator continuity, and rejection of the
 removed member's old ticket. The disposable PostgreSQL contract test covers direct-delete denial,
-the service-role-only removal RPC, and the audit event.
+the service-role-only removal RPC, pending-invitation rejection, fresh invitation after completed
+removal, revoked-uploader attachment deletion denial, and the audit event.
 
 These changes are source-only. Do not deploy the Worker or Edge Function, set live secrets, or apply
 the migration to the connected Supabase project until reviewed and explicitly approved.
