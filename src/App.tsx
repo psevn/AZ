@@ -124,6 +124,15 @@ export default function App() {
 
   useEffect(() => {
     try {
+      const pendingInvite = new URL(window.location.href).searchParams.get("projectInvite");
+      if (pendingInvite) window.sessionStorage.setItem("az-pending-project-invite", pendingInvite);
+    } catch {
+      // The invitation remains in the URL when session storage is unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
       window.localStorage.setItem("az-language",lang);
     } catch {
       // Keep the selected language for the current session if storage is unavailable.
@@ -168,6 +177,31 @@ export default function App() {
     setLoading(false);
   }
   useEffect(() => { if (user) void loadData(); else { setSubjects([]); setTasks([]); } },[user]);
+
+  useEffect(() => {
+    if (!user || !supabase) return;
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get("projectInvite") || window.sessionStorage.getItem("az-pending-project-invite");
+    if (!token) return;
+    let active = true;
+    void (async () => {
+      const { data, error: inviteError } = await supabase!.functions.invoke("project-invitations", {
+        body: { action: "accept", token },
+      });
+      if (!active) return;
+      if (inviteError || !data?.projectId) {
+        setError(inviteError?.message || (ar ? "رابط الدعوة غير صالح أو منتهي." : "This invitation is invalid or expired."));
+        return;
+      }
+      url.searchParams.delete("projectInvite");
+      window.sessionStorage.removeItem("az-pending-project-invite");
+      window.history.replaceState(window.history.state, "", url.toString());
+      setSelectedProjectId(data.projectId as string);
+      setSection("projects");
+      setMessage(ar ? "انضممت إلى المشروع بنجاح." : "You joined the project successfully.");
+    })();
+    return () => { active = false; };
+  }, [user]);
 
   useEffect(() => {
     if (!user || !supabase) {

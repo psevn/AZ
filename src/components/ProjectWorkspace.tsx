@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+
+const ProjectCollaborativeEditor = lazy(() => import("./ProjectCollaborativeEditor"));
 
 type Language = "ar" | "en";
 type Project = {
@@ -13,7 +15,7 @@ type Project = {
   created_at: string;
 };
 type ProjectDocument = { id: string; title: string; document_type: string; is_primary: boolean; updated_at: string };
-type Member = { user_id: string; role: "lead" | "member"; joined_at: string };
+type Member = { user_id: string; role: "lead" | "member"; joined_at: string; revoked_at: string | null };
 type ProjectTask = {
   id: string;
   title: string;
@@ -52,6 +54,10 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
   const [taskDue, setTaskDue] = useState("");
   const [priority, setPriority] = useState("2");
   const [currentUserRole, setCurrentUserRole] = useState<"lead" | "member">("member");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+  const [creatingInvite, setCreatingInvite] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const ar = lang === "ar";
 
   const copy = {
@@ -61,15 +67,28 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     tasks: ar ? "المهام" : "Tasks",
     activity: ar ? "النشاط" : "Activity",
     team: ar ? "الفريق" : "TEAM",
+    inviteEmail: ar ? "بريد العضو (اختياري)" : "Teammate email (optional)",
+    inviteAction: ar ? "إنشاء رابط دعوة" : "Create invite link",
+    creatingInvite: ar ? "جارٍ إنشاء الدعوة..." : "Creating invitation...",
+    inviteReady: ar ? "انسخ الرابط وأرسله لعضو الفريق." : "Copy this link and send it to your teammate.",
+    copyInvite: ar ? "نسخ الرابط" : "Copy link",
+    removeMember: ar ? "إزالة العضو" : "Remove member",
+    removingMember: ar ? "جارٍ الإزالة..." : "Removing...",
+    confirmRemoveMember: ar ? "هل تريد بدء إزالة هذا العضو؟ سنمنع وصوله ونطلب إغلاق جلسات التحرير المفتوحة." : "Start removing this member? Their access will be fenced and active editing sessions will be asked to close.",
+    memberNumber: ar ? "عضو" : "Member",
+    revocationPending: ar ? "بانتظار إغلاق الجلسات" : "Revocation pending",
+    retryRemoval: ar ? "إكمال الإزالة" : "Retry removal",
+    memberInvited: ar ? "تم إرسال دعوة لعضو" : "Invited a teammate",
+    memberJoined: ar ? "انضم عضو إلى المشروع" : "A teammate joined the project",
     progress: ar ? "الإنجاز" : "PROGRESS",
     due: ar ? "موعد التسليم" : "DEADLINE",
     noDue: ar ? "لم يحدد موعد" : "No deadline",
     primary: ar ? "المستند الرئيسي المشترك" : "PRIMARY SHARED DOCUMENT",
     docTitle: ar ? "مستند المشروع" : "Project document",
     docDescription: ar
-      ? "هذا هو المستند الأساسي الذي سيعمل عليه الفريق معاً. يجري تجهيز المحرر التعاوني وحفظ التعديلات المتزامنة."
-      : "This is the team's central working document. The collaborative editor and durable real-time sync are the next implementation milestone.",
-    editorStatus: ar ? "تجهيز المحرر التعاوني" : "COLLABORATIVE EDITOR IN PROGRESS",
+      ? "مستند واحد يعمل عليه الفريق معاً. تظهر التعديلات المشتركة مباشرة وتُحفظ تلقائياً."
+      : "One shared document for the team. Edits sync live between members and save automatically.",
+    editorStatus: ar ? "مستند تعاوني للفريق" : "SHARED TEAM DOCUMENT",
     taskTitle: ar ? "عنوان المهمة" : "Task title",
     taskDescription: ar ? "تفاصيل المهمة (اختياري)" : "Task details (optional)",
     assign: ar ? "إسناد إلى" : "Assign to",
@@ -116,7 +135,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     const [projectResult, documentResult, membersResult, tasksResult, activityResult] = await Promise.all([
       client.from("projects").select("id,title,description,subject_id,due_at,status,created_at").eq("id", projectId).maybeSingle(),
       client.from("project_documents").select("id,title,document_type,is_primary,updated_at").eq("project_id", projectId).eq("is_primary", true).maybeSingle(),
-      client.from("project_members").select("user_id,role,joined_at").eq("project_id", projectId).order("joined_at", { ascending: true }),
+      client.from("project_members").select("user_id,role,joined_at,revoked_at").eq("project_id", projectId).order("joined_at", { ascending: true }),
       client.from("project_tasks").select("id,title,description,assignee_id,due_at,priority,status,created_at").eq("project_id", projectId).order("created_at", { ascending: false }),
       client.from("project_activity").select("id,actor_id,event_type,payload,created_at").eq("project_id", projectId).order("created_at", { ascending: false }).limit(30),
     ]);
@@ -136,7 +155,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     setDocument((documentResult.data || null) as ProjectDocument | null);
     const loadedMembers = (membersResult.data || []) as Member[];
     setMembers(loadedMembers);
-    setCurrentUserRole(loadedMembers.find((member) => member.user_id === userId)?.role || "member");
+    setCurrentUserRole(loadedMembers.find((member) => member.user_id === userId && !member.revoked_at)?.role || "member");
     setTasks((tasksResult.data || []) as ProjectTask[]);
     setActivity((activityResult.data || []) as Activity[]);
     setLoading(false);
@@ -209,6 +228,63 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
     else await refresh();
   }
 
+  async function createInvitation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!client || currentUserRole !== "lead" || creatingInvite) return;
+    setCreatingInvite(true);
+    setError("");
+    setInviteLink("");
+    const { data, error: inviteError } = await client.functions.invoke("project-invitations", {
+      body: { action: "create", projectId, invitedEmail: inviteEmail.trim() || null },
+    });
+    if (inviteError || !data?.token) {
+      setError(inviteError?.message || (ar ? "تعذر إنشاء رابط الدعوة." : "Could not create the invitation link."));
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.set("projectInvite", data.token);
+      setInviteLink(url.toString());
+      setInviteEmail("");
+    }
+    setCreatingInvite(false);
+  }
+
+  async function removeMember(memberUserId: string) {
+    if (!client || currentUserRole !== "lead" || removingMemberId) return;
+    if (!window.confirm(copy.confirmRemoveMember)) return;
+    setRemovingMemberId(memberUserId);
+    setError("");
+    let removalMessage = "";
+    try {
+      const { error: removalError } = await client.functions.invoke("project-members", {
+        body: { action: "remove", projectId, memberUserId },
+      });
+      if (removalError) removalMessage = removalError.message || copy.failed;
+    } catch {
+      removalMessage = copy.failed;
+    } finally {
+      // A failed request may still have completed phase one (the database
+      // revocation fence). Refresh so the pending state and retry action are
+      // visible instead of leaving stale membership data on screen.
+      try {
+        await refresh();
+      } catch {
+        if (!removalMessage) removalMessage = copy.failed;
+      }
+      if (removalMessage) setError(removalMessage);
+      setRemovingMemberId(null);
+    }
+  }
+
+  async function copyInvitation() {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setError("");
+    } catch {
+      setError(ar ? "تعذر النسخ تلقائياً؛ انسخ الرابط من الحقل." : "Automatic copy failed; copy the link from the field.");
+    }
+  }
+
   function eventLabel(event: Activity) {
     const title = typeof event.payload?.title === "string" ? event.payload.title : "";
     const labels: Record<string, string> = {
@@ -218,6 +294,8 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
       task_status_changed: copy.statusChanged,
       task_completed: copy.taskCompleted,
       document_created: copy.docCreated,
+      member_invited: copy.memberInvited,
+      member_joined: copy.memberJoined,
     };
     return (labels[event.event_type] || copy.unknownEvent) + (title ? ": " + title : "");
   }
@@ -264,9 +342,41 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
             </section>
             <section className="content-panel project-stat-panel">
               <span className="eyebrow">{copy.team}</span>
-              <strong>{members.length.toString().padStart(2, "0")}</strong>
+              <strong>{members.filter((member) => !member.revoked_at).length.toString().padStart(2, "0")}</strong>
               <p>{members.length <= 1 ? copy.emptyMembers : ar ? "فريق المشروع" : "Project team"}</p>
             </section>
+            <section className="content-panel project-members-panel">
+              <div className="panel-heading"><div><span className="eyebrow">{copy.team}</span><h3>{ar ? "أعضاء المشروع" : "Project members"}</h3></div></div>
+              <div className="project-task-list">
+                {members.map((member, index) => (
+                  <article className="project-task-item" key={member.user_id}>
+                    <div className="project-task-copy">
+                      <strong>{member.user_id === userId ? copy.you : copy.memberNumber + " " + (index + 1)}</strong>
+                      <small>{member.revoked_at ? copy.revocationPending : member.role === "lead" ? copy.lead : copy.member}</small>
+                    </div>
+                    {currentUserRole === "lead" && member.role === "member" && (
+                      <button
+                        className="small-action"
+                        type="button"
+                        disabled={removingMemberId !== null}
+                        onClick={() => void removeMember(member.user_id)}
+                      >
+                        {removingMemberId === member.user_id ? copy.removingMember : member.revoked_at ? copy.retryRemoval : copy.removeMember}
+                      </button>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </section>
+            {currentUserRole === "lead" && <section className="content-panel project-invite-panel">
+              <span className="eyebrow">{ar ? "أضف فريقك" : "GROW YOUR TEAM"}</span>
+              <h3>{ar ? "دعوة عضو جديد" : "Invite a teammate"}</h3>
+              <form className="projects-create-form" onSubmit={createInvitation}>
+                <label><span>{copy.inviteEmail}</span><input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} maxLength={320} placeholder="name@example.com" /></label>
+                <button className="primary-button full-button" type="submit" disabled={creatingInvite}>{creatingInvite ? copy.creatingInvite : copy.inviteAction}<span>↗</span></button>
+              </form>
+              {inviteLink && <div className="project-invite-link"><p>{copy.inviteReady}</p><input readOnly value={inviteLink} onFocus={(event) => event.currentTarget.select()} /><button className="small-action" type="button" onClick={() => void copyInvitation()}>{copy.copyInvite}</button></div>}
+            </section>}
           </div>
           <section className="content-panel project-recent-panel">
             <div className="panel-heading"><div><span className="eyebrow">{copy.activity}</span><h3>{ar ? "آخر المستجدات" : "Latest updates"}</h3></div><button className="text-action" type="button" onClick={() => setTab("activity")}>{ar ? "عرض الكل" : "View all"} ↗</button></div>
@@ -276,13 +386,25 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
       )}
 
       {tab === "document" && (
-        <section className="content-panel project-document-detail">
-          <div className="project-document-detail-icon">▤</div>
-          <span className="eyebrow">{copy.primary}</span>
-          <h3>{document?.title || copy.docTitle}</h3>
-          <p>{copy.docDescription}</p>
-          <div className="project-document-state"><span className="status-dot" />{copy.editorStatus}</div>
-        </section>
+        document ? (
+          <Suspense fallback={<section className="content-panel project-editor-loading"><span className="skeleton-line skeleton-line-wide" /><span className="skeleton-line" /></section>}>
+            <ProjectCollaborativeEditor
+              client={client}
+              documentId={document.id}
+              documentTitle={document.title || copy.docTitle}
+              lang={lang}
+              userId={userId}
+            />
+          </Suspense>
+        ) : (
+          <section className="content-panel project-document-detail">
+            <div className="project-document-detail-icon">▤</div>
+            <span className="eyebrow">{copy.primary}</span>
+            <h3>{copy.docTitle}</h3>
+            <p>{error || copy.docDescription}</p>
+            <div className="project-document-state"><span className="status-dot" />{copy.editorStatus}</div>
+          </section>
+        )
       )}
 
       {tab === "tasks" && (
@@ -292,7 +414,7 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
             <form className="projects-create-form" onSubmit={addTask}>
               <label><span>{copy.taskTitle}</span><input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} maxLength={300} required /></label>
               <label><span>{copy.taskDescription}</span><textarea value={taskDescription} onChange={(event) => setTaskDescription(event.target.value)} rows={3} maxLength={3000} /></label>
-              <label><span>{copy.assign}</span><select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}><option value="">{copy.unassigned}</option>{members.filter((member) => currentUserRole === "lead" || member.user_id === userId).map((member) => <option key={member.user_id} value={member.user_id}>{member.user_id === userId ? copy.you : copy.teammate} · {member.role === "lead" ? copy.lead : copy.member}</option>)}</select></label>
+              <label><span>{copy.assign}</span><select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}><option value="">{copy.unassigned}</option>{members.filter((member) => !member.revoked_at && (currentUserRole === "lead" || member.user_id === userId)).map((member) => <option key={member.user_id} value={member.user_id}>{member.user_id === userId ? copy.you : copy.teammate} · {member.role === "lead" ? copy.lead : copy.member}</option>)}</select></label>
               <label><span>{copy.dueDate}</span><input type="date" value={taskDue} onChange={(event) => setTaskDue(event.target.value)} /></label>
               <label><span>{copy.priority}</span><select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="3">{copy.high}</option><option value="2">{copy.medium}</option><option value="1">{copy.low}</option></select></label>
               <button className="primary-button full-button" type="submit" disabled={!taskTitle.trim() || savingTask}>{savingTask ? copy.adding : copy.addTask}<span>↗</span></button>

@@ -1,0 +1,380 @@
+-- Isolated PostgreSQL contract test for the recovered AZ Projects migrations.
+-- Runs only against the disposable CI Postgres service, never the connected AZ DB.
+
+create role anon nologin;
+create role authenticated nologin;
+create role service_role nologin bypassrls;
+
+create schema auth;
+create table auth.users (
+  id uuid primary key,
+  email text unique
+);
+create function auth.uid()
+returns uuid
+language sql
+stable
+as $$
+  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
+$$;
+grant usage on schema auth to anon, authenticated, service_role;
+grant execute on function auth.uid() to anon, authenticated, service_role;
+
+create table public.subjects (
+  id uuid not null,
+  user_id uuid not null,
+  primary key (id, user_id),
+  unique (id, user_id)
+);
+
+create table public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  title text not null,
+  due_at timestamptz,
+  status text not null default 'todo',
+  priority smallint not null default 2,
+  est_minutes integer,
+  subject_id uuid
+);
+
+insert into auth.users (id,email) values
+  ('00000000-0000-0000-0000-000000000001','lead@example.test'),
+  ('00000000-0000-0000-0000-000000000002','member@example.test'),
+  ('00000000-0000-0000-0000-000000000003','outsider@example.test');
+
+\ir ../migrations/20261108131220_az_projects_foundation_and_unified_planning.sql
+\ir ../migrations/20261108131237_az_projects_policy_and_index_hardening.sql
+\ir ../migrations/20261108131303_az_projects_planning_deadline_title.sql
+\ir ../migrations/20261108133920_create_primary_project_document_on_lead_membership.sql
+\ir ../migrations/20261108134005_add_atomic_create_project_rpc.sql
+\ir ../migrations/20261108134104_record_project_task_activity.sql
+\ir ../migrations/20261108153310_fix_create_project_rls_and_project_grants.sql
+\ir ../migrations/20261108150000_secure_project_invitation_acceptance.sql
+\ir ../migrations/20261116120000_harden_project_membership_mutations.sql
+\ir ../migrations/20261116130000_project_member_removal_rpc_and_revoke_policy.sql
+\ir ../migrations/20261116140000_project_member_revocation_fence.sql
+
+-- A signed-in lead can create a project and gets a primary shared document.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+select public.create_project('CI collaboration project','migration contract test',null,null);
+commit;
+
+do $$
+begin
+  if not exists (
+    select 1 from public.projects p
+    join public.project_members pm on pm.project_id = p.id
+    where p.title = 'CI collaboration project'
+      and pm.user_id = '00000000-0000-0000-0000-000000000001'
+      and pm.role = 'lead'
+  ) then
+    raise exception 'Project creation or lead membership failed';
+  end if;
+
+  if not exists (
+    select 1 from public.project_documents d
+    join public.projects p on p.id = d.project_id
+    where p.title = 'CI collaboration project' and d.is_primary
+  ) then
+    raise exception 'Primary project document trigger failed';
+  end if;
+end;
+$$;
+
+-- The lead can create a task; the security-definer trigger records activity.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+insert into public.project_tasks (project_id,title,created_by,assignee_id)
+select id,'Write project introduction',
+       '00000000-0000-0000-0000-000000000001',
+       '00000000-0000-0000-0000-000000000001'
+from public.projects where title = 'CI collaboration project';
+commit;
+
+do $$
+begin
+  if not exists (
+    select 1 from public.project_activity a
+    join public.projects p on p.id = a.project_id
+    where p.title = 'CI collaboration project' and a.event_type = 'task_created'
+  ) then
+    raise exception 'Task activity trigger failed';
+  end if;
+
+  if has_table_privilege('authenticated','public.project_activity','INSERT') then
+    raise exception 'Authenticated users must not be able to forge activity rows';
+  end if;
+
+  if has_table_privilege('authenticated','public.project_invitations','SELECT') then
+    raise exception 'Authenticated users must not be able to read invitation tokens';
+  end if;
+end;
+$$;
+
+-- Service-role-only invitation acceptance is email-bound and adds the member.
+select id as ci_project_id from public.projects
+where title = 'CI collaboration project' \gset
+
+grant all on table public.project_invitations to service_role;
+begin;
+set local role service_role;
+insert into public.project_invitations (
+  project_id,token_hash,invited_email,expires_at,created_by
+)
+values (
+  :'ci_project_id'::uuid,
+  repeat('a',64),
+  'member@example.test',
+  now() + interval '1 day',
+  '00000000-0000-0000-0000-000000000001'
+);
+select public.accept_project_invitation(
+  repeat('a',64),
+  '00000000-0000-0000-0000-000000000002',
+  'member@example.test'
+);
+commit;
+
+do $$
+begin
+  if not exists (
+    select 1 from public.project_members pm
+    join public.projects p on p.id = pm.project_id
+    where p.title = 'CI collaboration project'
+      and pm.user_id = '00000000-0000-0000-0000-000000000002'
+      and pm.role = 'member'
+  ) then
+    raise exception 'Invitation acceptance failed to add member';
+  end if;
+
+  if not exists (
+    select 1 from public.project_activity a
+    join public.projects p on p.id = a.project_id
+    where p.title = 'CI collaboration project' and a.event_type = 'member_joined'
+  ) then
+    raise exception 'Invitation acceptance did not write member_joined audit event';
+  end if;
+end;
+$$;
+
+-- The active member can upload an attachment before revocation.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
+insert into public.project_attachments (
+  project_id, uploaded_by, storage_path, filename, mime_type, byte_size
+)
+values (
+  :'ci_project_id'::uuid,
+  '00000000-0000-0000-0000-000000000002',
+  'ci/project-member-attachment.txt',
+  'member-note.txt',
+  'text/plain',
+  12
+);
+commit;
+
+-- A project lead must not bypass email-bound invitations by inserting a
+-- membership directly or promoting an existing member to lead.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+do $membership_guard$
+declare
+  affected integer;
+begin
+  begin
+    insert into public.project_members (project_id,user_id,role,invited_by)
+    select id,'00000000-0000-0000-0000-000000000003','member',
+           '00000000-0000-0000-0000-000000000001'
+    from public.projects where title = 'CI collaboration project';
+    raise exception 'Lead unexpectedly inserted a member without invitation';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  update public.project_members
+     set role = 'lead'
+   where project_id = (
+     select id from public.projects where title = 'CI collaboration project'
+   )
+     and user_id = '00000000-0000-0000-0000-000000000002';
+  get diagnostics affected = row_count;
+  if affected <> 0 then
+    raise exception 'Lead unexpectedly promoted a member through direct UPDATE';
+  end if;
+end;
+$membership_guard$;
+commit;
+
+-- Membership removal is service-role-only and records an audit event atomically.
+do $membership_privilege$
+begin
+  if has_table_privilege('authenticated','public.project_members','DELETE') then
+    raise exception 'Authenticated users must not directly delete project memberships';
+  end if;
+end;
+$membership_privilege$;
+
+-- Phase one revokes database/RLS access before any Worker request, closing the
+-- race where a removed user could obtain a fresh collaboration ticket.
+begin;
+set local role service_role;
+select public.begin_project_member_removal(
+  :'ci_project_id'::uuid,
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000001'
+);
+commit;
+
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
+do $revoked_member_rls$
+begin
+  if exists (select 1 from public.projects where title = 'CI collaboration project') then
+    raise exception 'A member marked for removal retained project RLS access';
+  end if;
+end;
+$revoked_member_rls$;
+
+-- A revoked uploader must not retain the historical uploader-only DELETE path.
+delete from public.project_attachments
+where storage_path = 'ci/project-member-attachment.txt';
+commit;
+
+do $revoked_attachment_assert$
+begin
+  if not exists (
+    select 1 from public.project_attachments
+    where storage_path = 'ci/project-member-attachment.txt'
+      and uploaded_by = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'A revoked member deleted their project attachment';
+  end if;
+end;
+$revoked_attachment_assert$;
+
+-- A fresh invitation must not reactivate a membership while any document
+-- may still have an unacknowledged Worker revocation.
+begin;
+set local role service_role;
+insert into public.project_invitations (project_id,token_hash,invited_email,expires_at,created_by)
+values (
+  :'ci_project_id'::uuid, repeat('b',64), 'member@example.test', now() + interval '1 day',
+  '00000000-0000-0000-0000-000000000001'
+);
+do $pending_invitation_guard$
+begin
+  begin
+    perform public.accept_project_invitation(
+      repeat('b',64), '00000000-0000-0000-0000-000000000002', 'member@example.test'
+    );
+    raise exception 'A pending revoked member was unexpectedly reactivated';
+  exception
+    when sqlstate 'P0001' then
+      if sqlerrm <> 'PROJECT_MEMBER_REVOCATION_PENDING' then
+        raise;
+      end if;
+  end;
+end;
+$pending_invitation_guard$;
+commit;
+
+do $pending_revocation_assert$
+declare
+  v_project_id uuid;
+begin
+  select id into v_project_id from public.projects where title = 'CI collaboration project';
+  if not exists (
+    select 1 from public.project_members
+    where project_id = v_project_id
+      and user_id = '00000000-0000-0000-0000-000000000002'
+      and revoked_at is not null
+  ) then
+    raise exception 'A pending revocation was cleared by invitation acceptance';
+  end if;
+end;
+$pending_revocation_assert$;
+
+-- Finalize removal only after the Worker acknowledgement phase.
+begin;
+set local role service_role;
+select public.remove_project_member(
+  :'ci_project_id'::uuid,
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000001'
+);
+commit;
+
+do $member_remove_assert$
+declare
+  v_project_id uuid;
+begin
+  select id into v_project_id from public.projects where title = 'CI collaboration project';
+  if exists (
+    select 1 from public.project_members
+    where project_id = v_project_id
+      and user_id = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'Service-role member removal did not delete membership';
+  end if;
+  if not exists (
+    select 1 from public.project_activity
+    where project_id = v_project_id
+      and event_type = 'member_removed'
+      and payload->>'user_id' = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'Member removal did not write the member_removed audit event';
+  end if;
+end;
+$member_remove_assert$;
+
+-- Once the old membership is fully removed, a new invitation can create a
+-- clean membership row without reviving any prior collaboration session.
+begin;
+set local role service_role;
+insert into public.project_invitations (project_id,token_hash,invited_email,expires_at,created_by)
+values (
+  :'ci_project_id'::uuid, repeat('c',64), 'member@example.test', now() + interval '1 day',
+  '00000000-0000-0000-0000-000000000001'
+);
+select public.accept_project_invitation(
+  repeat('c',64), '00000000-0000-0000-0000-000000000002', 'member@example.test'
+);
+commit;
+
+do $member_reinvite_assert$
+declare
+  v_project_id uuid;
+begin
+  select id into v_project_id from public.projects where title = 'CI collaboration project';
+  if not exists (
+    select 1 from public.project_members
+    where project_id = v_project_id
+      and user_id = '00000000-0000-0000-0000-000000000002'
+      and revoked_at is null
+  ) then
+    raise exception 'A fresh invitation did not create a new active membership after removal';
+  end if;
+end;
+$member_reinvite_assert$;
+
+-- RLS must hide the project from a non-member.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000003',true);
+do $rls_check$
+begin
+  if exists (select 1 from public.projects where title = 'CI collaboration project') then
+    raise exception 'RLS leaked a project to a non-member';
+  end if;
+end;
+$rls_check$;
+commit;
+
+select 'AZ Projects migration contract passed' as result;

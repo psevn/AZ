@@ -5,20 +5,54 @@ on:
     branches:
       - main
       - feature/az-projects-mvp
+      - "fix/**"
   pull_request:
     branches:
       - main
       - feature/az-projects-mvp
+      - "fix/**"
 
 permissions:
   contents: read
 
 jobs:
+  sync-editor-lockfile:
+    if: github.event_name == 'pull_request' && (github.head_ref == 'fix/az-projects-collaboration-p0' || startsWith(github.head_ref, 'verify/az-projects-migrations-ci-'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out collaboration branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate updated npm lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit generated lockfile
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: sync npm lockfile for collaborative editor"
+            git push origin "HEAD:${HEAD_REF}"
+          fi
+
   build:
+    needs: sync-editor-lockfile
+    if: always() && (needs.sync-editor-lockfile.result == 'success' || needs.sync-editor-lockfile.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -28,3 +62,83 @@ jobs:
         run: npm ci
       - name: Type-check and build
         run: npm run build
+
+  collaboration-worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: collaboration-worker
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install collaboration worker dependencies
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+      - name: Type-check collaboration worker
+        run: npm run typecheck
+      - name: Test Yjs persistence and Worker runtime smoke tests
+        run: npm test
+      - name: Test real two-client collaboration over WebSockets
+        run: npm run test:integration
+
+  project-migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: az_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d az_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Run recovered AZ Projects migrations and RLS contract
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/az_test
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/az_projects_migrations_test.sql
+
+  browser-collaboration:
+    needs: sync-editor-lockfile
+    if: always() && (needs.sync-editor-lockfile.result == 'success' || needs.sync-editor-lockfile.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install AZ dependencies
+        run: npm ci
+      - name: Install collaboration Worker dependencies
+        working-directory: collaboration-worker
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Test the real browser workspace against a local Worker and mock Supabase
+        run: npm run test:e2e
+      - name: Upload Playwright traces and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: az-projects-browser-e2e-results
+          path: test-results/
+          if-no-files-found: ignore

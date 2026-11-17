@@ -322,7 +322,7 @@ Product behavior:
 
 ## 14. Implementation progress — 2026-11-08
 
-The following foundations have now been applied to the connected Supabase project and recorded as migration files in this branch:
+The following foundations exist in the connected Supabase project and appear in its migration history. However, the corresponding SQL source files are currently missing from this Git repository and must be recovered and committed before a clean environment rebuild or production deployment:
 
 - The existing `project_documents_one_primary_idx` unique partial index enforces at most one primary document per project.
 - A database trigger creates the primary `project_documents` metadata row when the project creator is added as the project's Lead. The insert is guarded by creator identity and `auth.uid()`; duplicate primary rows are ignored by the unique index.
@@ -336,6 +336,37 @@ The first frontend slice is now present in this branch:
 - A project workspace shell displays its primary document, team count, progress, task board, and activity feed.
 - Project tasks can be created and their status can be advanced by the lead or assignee.
 
-**Not yet implemented or verified:** secure invitations and member onboarding, the live Tiptap/Yjs collaborative editor, durable document update storage/recovery, active collaborator cursors/presence, file attachments, the AZ Project Assistant, and the submission checklist. The primary document screen is currently an explicit editor-in-progress placeholder, not a functioning collaborative editor.
+**At the time of this original progress note:** invitations, the collaborative editor, and the remaining project features were still pending. The newer P0 updates below supersede that status for invitations and the shared editor.
 
-**Verification boundary:** database migrations and rollback-only SQL trigger checks have been run. End-to-end browser tests with real authenticated users, cross-user RLS tests, and the frontend `npm run build` have not yet been completed. Do not treat this progress note as a beta-ready feature declaration.
+
+## P0 implementation update — invitation flow (2026-11-08)
+
+A first invitation implementation slice is now present on `fix/az-projects-collaboration-p0`:
+
+- The lead-only Edge Function creates 256-bit random invitation tokens, stores only SHA-256 hashes, optionally binds an invite to an email, expires links after seven days, and applies a per-creator daily issuance limit.
+- The acceptance RPC locks the invitation row, checks expiry and email binding, adds the authenticated user as a Member, marks the invitation as consumed, and records a member-joined activity event in one transaction.
+- The Edge Function verifies the caller's Supabase session and uses the service-role key only server-side. Invitation rows remain inaccessible to browser roles.
+- The project overview has lead-only invite controls, and the app can accept an invitation token after sign-in.
+- The migration also removes anonymous grants from project tables and keeps invitation-table access server-side.
+- The same migration makes the task-activity trigger write through a restricted `SECURITY DEFINER` function and removes direct client insert permission from the activity feed, preventing members from fabricating audit events.
+- The collaborative editor spike decision and acceptance matrix are documented in [AZ Projects collaboration spike](../technical/AZ-PROJECT-COLLABORATION-SPIKE.md).
+- The pending migration also extends the `project_activity` event constraint to allow `member_invited`, which the Edge Function writes. This change was syntax-tested in a transaction and rolled back.
+
+**Not deployed or verified yet:** the invitation migration has not been applied to the connected Supabase database, and the Edge Function has not been deployed. The invitation flow must not be treated as live until those steps and authenticated two-user tests pass.
+
+
+## P0 implementation update — shared editor integration (2026-11-08)
+
+The collaborative editor is now wired into the project workspace on `fix/az-projects-collaboration-p0`:
+
+- The primary document tab lazy-loads a Tiptap rich-text editor backed by Yjs and Hocuspocus.
+- The editor requests a short-lived document-scoped ticket from the collaboration Worker using the signed-in user's Supabase session.
+- Collaborator presence and cursor rendering are wired through Yjs awareness and CollaborationCaret.
+- Connection and sync states are visible; the client refreshes the ticket before expiry and the shared Yjs document remains the source of truth.
+- The root AZ package manifest and npm lockfile include the required Tiptap, Yjs, and Hocuspocus provider dependencies.
+
+**Automated verification passed in GitHub Actions:** root TypeScript/Vite production build; Worker TypeScript checks; Worker routing and Durable Object smoke tests; Yjs binary persistence and concurrent merge tests; and a real two-client Worker WebSocket integration test for text propagation, awareness presence, and disconnect/reconnect recovery.
+
+**Automated verification passed in GitHub Actions run #274:** root build, Worker type checks, Worker runtime tests, `POST /ticket` tests with mocked Supabase Auth/document/membership responses, real two-client WebSocket sync/presence/reconnect, a disposable PostgreSQL 17 contract covering the recovered project migrations and RLS, and a Playwright test mounting the actual ProjectWorkspace and shared editor in two browser contexts against a local Worker/DO. The browser test verifies shared text and presence across desktop/mobile-sized contexts; Supabase is mocked.
+
+**Still not production-ready:** browser verification is against a local Worker and mocked Supabase, not a deployed Worker and live Supabase Auth/RLS.  Forced Durable Object eviction/restart, prompt revocation of active sessions, and Arabic/English mixed-direction browser behavior remain unverified. The Worker and pending invitation migration have not been deployed/applied. Four missing Projects migration sources were reconstructed from the live schema and documented; eleven older historical migrations still lack source files, so clean database rebuild remains blocked.
