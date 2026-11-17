@@ -155,12 +155,16 @@ Deno.serve(async (request: Request) => {
 
     if (acceptError) {
       const message = acceptError.message || "";
+      const pendingRevocation = message.includes("PROJECT_MEMBER_REVOCATION_PENDING");
+      const alreadyMember = message.includes("PROJECT_MEMBER_ALREADY_ACTIVE");
       const status = message.includes("EXPIRED") ? 410
         : message.includes("EMAIL_MISMATCH") ? 403
-        : message.includes("ALREADY_USED") ? 409
+        : message.includes("ALREADY_USED") || pendingRevocation || alreadyMember ? 409
         : 400;
       return jsonResponse({ error: status === 410 ? "Invitation expired"
         : status === 403 ? "This invitation belongs to another email address"
+        : pendingRevocation ? "Member removal is still pending; complete it before sending a new invitation"
+        : alreadyMember ? "You are already an active project member"
         : status === 409 ? "Invitation has already been used"
         : "Invitation is invalid or unavailable" }, status, allowedOrigin);
     }
