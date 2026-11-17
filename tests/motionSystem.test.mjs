@@ -30,7 +30,7 @@ test("reduced-motion preference disables animation and transitions globally", ()
 });
 
 test("motion specification protects focus, truthful progress, and task-specific intensity", () => {
-  assert.match(motionSpec, /Never simulate upload or AI progress/);
+  assert.match(experienceSpec, /Never simulate upload or AI progress/);
   assert.match(motionSpec, /Focus:\*\*\s*static and distraction-free/);
   assert.match(motionSpec, /keyboard, touch, and visible focus/);
   assert.match(experienceSpec, /Motion foundation/);
