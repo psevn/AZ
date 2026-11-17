@@ -3,16 +3,17 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
+import { getStudyInsights } from "./lib/studyInsights";
+import { qatarDateKey } from "./lib/qatarTime.mjs";
+import { formatArabicCount } from "./lib/arabicPlural.mjs";
+import { selectDailyChallenge } from "./lib/aziDailyChallenge.mjs";
+
 const AcademicSetup = lazy(() => import("./components/AcademicSetup"));
 const PlanningPage = lazy(() => import("./components/PlanningPage"));
 const QuizPage = lazy(() => import("./components/QuizPage"));
 const DocumentUpload = lazy(() => import("./components/DocumentUpload"));
 const DocumentLibrary = lazy(() => import("./components/DocumentLibrary"));
 const DocumentReader = lazy(() => import("./components/DocumentReader"));
-import { getStudyInsights } from "./lib/studyInsights";
-import { qatarDateKey } from "./lib/qatarTime.mjs";
-import { formatArabicCount } from "./lib/arabicPlural.mjs";
-import { selectDailyChallenge } from "./lib/aziDailyChallenge.mjs";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
