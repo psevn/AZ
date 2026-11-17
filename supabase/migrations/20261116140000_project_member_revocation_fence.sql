@@ -260,3 +260,18 @@ revoke all on function public.accept_project_invitation(text, uuid, text) from p
 revoke all on function public.accept_project_invitation(text, uuid, text) from anon;
 revoke all on function public.accept_project_invitation(text, uuid, text) from authenticated;
 grant execute on function public.accept_project_invitation(text, uuid, text) to service_role;
+
+-- Every attachment mutation must require current project membership. The
+-- uploader-only branch in the historical policy otherwise survives revocation.
+drop policy if exists project_attachments_delete_uploader_or_lead on public.project_attachments;
+create policy project_attachments_delete_uploader_or_lead
+on public.project_attachments
+for delete
+to authenticated
+using (
+  private.is_project_member(project_id)
+  and (
+    uploaded_by = (select auth.uid())
+    or private.is_project_lead(project_id)
+  )
+);
