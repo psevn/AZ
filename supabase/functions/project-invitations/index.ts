@@ -98,7 +98,7 @@ Deno.serve(async (request: Request) => {
       .maybeSingle();
 
     if (membershipError) return jsonResponse({ error: "Could not verify project role" }, 500, allowedOrigin);
-    if (membership?.role !== "lead" || membership.revoked_at !== null) {
+    if (membership?.role !== "lead" || membership?.revoked_at !== null) {
       return jsonResponse({ error: "Only an active project lead can invite members" }, 403, allowedOrigin);
     }
 
