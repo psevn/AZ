@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { createDocumentProcessingError, isTerminalDocumentProcessingError, normalizeDocumentProcessingError } from "./documentProcessingResponse.mjs";
 
 type RecoverableStatus = "uploaded" | "processing";
 
@@ -7,10 +8,8 @@ async function invokeProcessing(
   body: Record<string, unknown>,
 ) {
   const { data, error } = await client.functions.invoke("process-document-pages", { body });
-  if (error) throw error;
-  if (!data || data.ok !== true) {
-    throw new Error(typeof data?.error === "string" ? data.error : "Document processing did not complete.");
-  }
+  if (error) throw await normalizeDocumentProcessingError(error);
+  if (!data || data.ok !== true) throw createDocumentProcessingError(data);
   return data as Record<string, unknown>;
 }
 
@@ -88,7 +87,7 @@ export async function recoverDocumentProcessing(
     await invokeProcessing(client, { action: "complete", documentId, pageCount, processingToken });
     processingStarted = false;
   } catch (cause) {
-    if (processingStarted) {
+    if (processingStarted && !isTerminalDocumentProcessingError(cause)) {
       const { error } = await client.functions.invoke("process-document-pages", {
         body: { action: "fail", documentId, processingToken, reasonCode: failureReason(cause) },
       });
