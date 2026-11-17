@@ -92,13 +92,15 @@ Deno.serve(async (request: Request) => {
 
     const { data: membership, error: membershipError } = await serviceClient
       .from("project_members")
-      .select("role")
+      .select("role,revoked_at")
       .eq("project_id", body.projectId)
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (membershipError) return jsonResponse({ error: "Could not verify project role" }, 500, allowedOrigin);
-    if (membership?.role !== "lead") return jsonResponse({ error: "Only the project lead can invite members" }, 403, allowedOrigin);
+    if (membership?.role !== "lead" || membership.revoked_at !== null) {
+      return jsonResponse({ error: "Only an active project lead can invite members" }, 403, allowedOrigin);
+    }
 
     const invitedEmail = typeof body.invitedEmail === "string" ? body.invitedEmail.trim().toLowerCase() : null;
     if (invitedEmail && !isValidEmail(invitedEmail)) {
