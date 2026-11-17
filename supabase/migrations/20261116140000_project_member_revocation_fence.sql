@@ -173,8 +173,10 @@ revoke all on function public.remove_project_member(uuid, uuid, uuid) from anon;
 revoke all on function public.remove_project_member(uuid, uuid, uuid) from authenticated;
 grant execute on function public.remove_project_member(uuid, uuid, uuid) to service_role;
 
--- A previously revoked member can be reactivated only by accepting a fresh,
--- valid invitation. Existing active memberships and lead roles are unchanged.
+-- A pending revocation must finish across every document before the user can
+-- rejoin. Otherwise a fresh invitation could reactivate membership while a
+-- document whose Worker acknowledgement failed still accepts the old socket.
+-- Once removal is finalized, a fresh invitation inserts a new membership row.
 create or replace function public.accept_project_invitation(
   p_token_hash text,
   p_user_id uuid,
@@ -184,9 +186,11 @@ returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $$
+as $
 declare
   v_invitation public.project_invitations%rowtype;
+  v_inserted integer;
+  v_existing_revoked_at timestamptz;
 begin
   if p_token_hash is null or length(p_token_hash) <> 64 then
     raise exception 'INVITATION_INVALID' using errcode = '22023';
@@ -220,13 +224,22 @@ begin
     raise exception 'INVITATION_EMAIL_MISMATCH' using errcode = 'P0001';
   end if;
 
-  insert into public.project_members as existing_member (project_id, user_id, role, invited_by)
+  insert into public.project_members (project_id, user_id, role, invited_by)
   values (v_invitation.project_id, p_user_id, 'member', v_invitation.created_by)
-  on conflict (project_id, user_id) do update
-    set revoked_at = null,
-        invited_by = excluded.invited_by
-    where existing_member.role = 'member'
-      and existing_member.revoked_at is not null;
+  on conflict (project_id, user_id) do nothing;
+  get diagnostics v_inserted = row_count;
+
+  if v_inserted = 0 then
+    select revoked_at into v_existing_revoked_at
+      from public.project_members
+     where project_id = v_invitation.project_id
+       and user_id = p_user_id
+     for update;
+    if v_existing_revoked_at is not null then
+      raise exception 'PROJECT_MEMBER_REVOCATION_PENDING' using errcode = 'P0001';
+    end if;
+    raise exception 'PROJECT_MEMBER_ALREADY_ACTIVE' using errcode = 'P0001';
+  end if;
 
   update public.project_invitations
      set accepted_at = now()
@@ -241,7 +254,7 @@ begin
   );
   return v_invitation.project_id;
 end;
-$$;
+$;
 
 revoke all on function public.accept_project_invitation(text, uuid, text) from public;
 revoke all on function public.accept_project_invitation(text, uuid, text) from anon;
