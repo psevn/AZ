@@ -33,6 +33,11 @@ Technical corrections from the ChatGPT review (Claude agrees with all; none chan
 - **AZ Connect** (students command Claude/ChatGPT to create files/quizzes inside AZ): V2 candidate. Conditions: API-first design now; scoped OAuth tokens; any path that triggers AZ's own AI goes through the credit system; prompt-injection review; verify third-party integration platforms/policies at that time; prototype on the owner's account after beta.
 - **Claude ↔ ChatGPT automation** (Codex GitHub review, bridges/MCP between the tools): postponed to V1.5 (decided 2026-11-04). Until then ChatGPT only verifies: the owner relays by pasting files or sharing the repo link. No third-party bridge tools, no paid subscriptions for this. Rule when revisited: one agent per branch at a time, no auto-reply loops, check what the owner's ChatGPT plan includes before paying.
 
+## Approved 2026-11-17 — AZI and AZ Intelligence naming (PSEVN)
+- To the student there is **one name: AZI**. AZ Intelligence stays the name of the system (rule-based analysis, action layer, possible future specialized agents) in specs, privacy, consent and trust documents.
+- Not two characters, not two navigation items. Does not change the five-item navigation or any code or route.
+- Reason: AZ Intelligence is more than the companion (deterministic algorithms, approval-gated actions), so a full merge of the names would blur the privacy and consent wording.
+
 ## Open (need a decision)
 1. Native app implementation route after web launch: evaluate Capacitor (reuse much of the web UI) vs React Native/Expo (more native UI); decide based on V1 needs, maintenance cost, and device requirements.
 2. Stage B implementation route: the initial scaffold and integration work is being authored through the GitHub-assisted ChatGPT workflow; Claude Code remains deferred and no paid plan is approved.
