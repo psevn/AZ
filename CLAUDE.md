@@ -9,6 +9,7 @@ Before changing product structure, UX, or branding, read:
 - **AZ** is the overall platform brand.
 - **AZ Intelligence** is the intelligence system and main product section (not AZ Core).
 - **AZI** (pronounced “Ah-zee” / «آزي») is the default name of the primary student-facing personal companion.
+- **Student-facing naming (decided 2026-11-17):** students deal with one name, AZI. AZ Intelligence remains the system/architecture name used in specs, privacy, consent and trust documents; do not present the two as separate student-facing characters or navigation items.
 - Students may customize the displayed nickname for their own AZI. This does not rename AZ Intelligence or change the companion's underlying identity.
 - AZI should be context-aware, proactive when genuinely useful, and available on demand. Avoid interrupting students or implying surveillance.
 - AZ Intelligence is an academic intelligence layer, not merely a chatbot or an AI API wrapper.
