@@ -37,6 +37,8 @@ test("only exact HTTP(S) origins in the comma-separated allowlist are reflected"
 test("preflight and actual endpoint responses share the request-specific CORS headers", () => {
   for (const source of sources) {
     assert.match(source, /request\.method === "OPTIONS".*cors\.headers/);
-    assert.match(source, /new Response\(JSON\.stringify\(body\), \{ status, headers: cors\.headers \}\)/);
+    const directHeaders = /new Response\(JSON\.stringify\(body\), \{ status, headers: cors\.headers \}\)/;
+    const mergedHeaders = /new Headers\(cors\.headers\)[\s\S]*new Response\(JSON\.stringify\(body\), \{ status, headers \}\)/;
+    assert.ok(directHeaders.test(source) || mergedHeaders.test(source), "JSON responses must start from the request-specific CORS headers");
   }
 });
