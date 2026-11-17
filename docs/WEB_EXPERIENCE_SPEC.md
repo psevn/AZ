@@ -309,7 +309,7 @@ Only record a decision here after it has been explicitly approved.
 |---|---|---|---|---|
 | 2026-11-04 | Overall direction | Explore a future-forward experience built around fluidity, spatial UI, cursor interaction, living backgrounds, micro-interactions, intelligent motion, and performance. | Founder-approved direction. | Approved |
 | 2026-11-05 | Visual identity | Adopt **The Academic Universe** as AZ's guiding visual concept. V1 includes a lightweight 2D cosmic atmosphere, ambient lighting, controlled AZ gradients, spatial depth, layered surfaces, and purposeful micro-interactions. Full 3D, advanced cursor-reactive lighting, particles, and deeper environmental personalization remain post-launch. | Establish a distinctive future-forward identity in V1 without compromising delivery, accessibility, or performance. | Approved |
-| 2026-11-17 | Motion foundation | Adopt shared V1 motion durations/easing, truthful state feedback, context-specific intensity, and a global reduced-motion fallback. | Make interaction feedback consistent without delaying academic work or excluding reduced-motion users. | Approved |
+| 2026-11-17 | Motion foundation | Propose shared V1 motion durations/easing, truthful state feedback, context-specific intensity, and a global reduced-motion fallback. | Make interaction feedback consistent without delaying academic work or excluding reduced-motion users. | Proposed |
 
 ## Readiness Checklist
 
