@@ -311,6 +311,29 @@ select public.remove_project_member(
 );
 commit;
 
+do $member_remove_assert$
+declare
+  v_project_id uuid;
+begin
+  select id into v_project_id from public.projects where title = 'CI collaboration project';
+  if exists (
+    select 1 from public.project_members
+    where project_id = v_project_id
+      and user_id = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'Service-role member removal did not delete membership';
+  end if;
+  if not exists (
+    select 1 from public.project_activity
+    where project_id = v_project_id
+      and event_type = 'member_removed'
+      and payload->>'user_id' = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'Member removal did not write the member_removed audit event';
+  end if;
+end;
+$member_remove_assert$;
+
 -- Once the old membership is fully removed, a new invitation can create a
 -- clean membership row without reviving any prior collaboration session.
 begin;
