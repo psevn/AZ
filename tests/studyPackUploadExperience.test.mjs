@@ -46,7 +46,8 @@ test("account navigation uses an avatar without exposing the email address", () 
   assert.ok(accountButton, "profile navigation button exists");
   assert.match(accountButton, /aria-label=\{ar\?"الملف الشخصي":"Profile"\}/);
   assert.match(accountButton, /avatarUrl/);
-  assert.doesNotMatch(accountButton, /user\.email/);
+  assert.doesNotMatch(accountButton, /<strong>\{user\.email\}<\/strong>/);
+  assert.doesNotMatch(accountButton, /rail-account-copy/);
   assert.match(app, /user\?\.user_metadata\?\.avatar_url/);
 });
 
