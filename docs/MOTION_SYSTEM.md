@@ -1,6 +1,6 @@
 # AZ Motion System
 
-**Status:** V1 foundation approved  
+**Status:** Proposed V1 foundation  
 **Scope:** Shared web interaction language  
 **Related:** [DESIGN.md](./DESIGN.md), [WEB_EXPERIENCE_SPEC.md](./WEB_EXPERIENCE_SPEC.md)
 
