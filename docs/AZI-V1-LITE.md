@@ -162,3 +162,32 @@ Both sources describe groups of learners, not an individual student. AZI must no
 2. Per-subject differences (numeric versus text-heavy courses) are reasoned from the cited limits and not tested; measure in beta.
 3. Whether a self-explanation prompt reduces session completion; measure before making it default.
 4. Success measure: accuracy change on a topic after the strategy AZI suggested, versus no suggestion. Undefined until beta data exists.
+
+## 15. Personality and sense of intelligence (proposal; PSEVN direction 2026-11-17)
+
+AZI should feel intelligent through real behavior, not staged behavior. Autonomy stays bounded (see CLAUDE.md): no consequential action without student approval.
+
+1. **Data-driven observations (rule-based, near-zero cost).** Natural wording from many template variants, each with a "Why this suggestion?" control that shows the evidence (for example the three mistakes behind it). Shown at suitable moments only: after a quiz, before an exam, on opening the page. No interruptions.
+2. **Free questions about the student's own materials (real AI call, daily cap).** Answers grounded in the uploaded material with source and page. If the material does not support the question, AZI says so instead of inventing. After the cap, the student continues with the question bank, review and mock exams at no cost.
+3. **Presence.** A "thinking" state is shown only while a real AI call is running. Streaming text. A consistent friendly tone in natural Arabic; a Gulf-flavored option is an open question.
+
+Not allowed: presenting canned or lookup answers as live thinking; guilt-based streaks; a companion that "gets sad" when the student is away.
+
+Open: cost per free question is unmeasured (Stage C); the daily cap value is undecided.
+
+## 16. AZI character and shareable moment in V1 (proposal; PSEVN direction 2026-11-17)
+
+**Character.** PSEVN decided the AZI character appears in V1, using the "v2" character sheet (cosmic purple/blue body, golden eyes, gold orbit ring) generated with an AI image tool as a **working reference, not final artwork**.
+
+V1 minimum (no Rive/Lottie):
+- Static image per state (calm, happy, thinking, encouraging, celebration with graduation cap, sleepy), with a short fade between states.
+- Correct and mistake feedback as a CSS glow over the neutral image: green for correct, warm amber for a mistake. Never red for a mistake; do not rely on color alone (expression or icon also changes).
+- Slow floating motion only; stops under `prefers-reduced-motion`.
+- Face-only icon sizes (32, 48, 64) and a large version; optimized WebP or SVG.
+- Student setting: playful, calm, minimal (minimal stops motion and shrinks the character).
+
+Conditions before release: test on the light theme (the blue rim glow disappears on light backgrounds); keep a log of generation prompts and dates for ownership; consider a human-finalized version later. Layered vector and Rive animation, and regional celebration animations, are after V1.
+
+**Shareable moment.** When the student finishes the day's tasks or a quiz, AZI appears with the graduation cap and a share card (for example "3 tasks done today"). The card never shows scores or personal data unless the student chooses. Sharing is the student's action. The semester summary and student-chosen celebrations are V1.5. Celebration styles are chosen by the student, never inferred from nationality.
+
+Open: legal check on AI-generated image ownership (not verified for Qatar); light-theme variant; whether the share card needs a privacy review for minors (see DECISIONS 2026-11-16).
