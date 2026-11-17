@@ -265,7 +265,11 @@ export default function ProjectWorkspace({ client, lang, projectId, userId, onBa
       // A failed request may still have completed phase one (the database
       // revocation fence). Refresh so the pending state and retry action are
       // visible instead of leaving stale membership data on screen.
-      await refresh();
+      try {
+        await refresh();
+      } catch {
+        if (!removalMessage) removalMessage = copy.failed;
+      }
       if (removalMessage) setError(removalMessage);
       setRemovingMemberId(null);
     }
