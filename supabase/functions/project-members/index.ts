@@ -81,7 +81,7 @@ Deno.serve(async (request: Request) => {
 
   const [projectResult, actorResult, memberResult, documentsResult] = await Promise.all([
     serviceClient.from("projects").select("id,created_by").eq("id", body.projectId).maybeSingle(),
-    serviceClient.from("project_members").select("role").eq("project_id", body.projectId)
+    serviceClient.from("project_members").select("role,revoked_at").eq("project_id", body.projectId)
       .eq("user_id", authData.user.id).maybeSingle(),
     serviceClient.from("project_members").select("role,revoked_at").eq("project_id", body.projectId)
       .eq("user_id", body.memberUserId).maybeSingle(),
@@ -93,7 +93,7 @@ Deno.serve(async (request: Request) => {
   }
   const project = projectResult.data;
   if (!project) return jsonResponse({ error: "Project not found" }, 404, allowedOrigin);
-  if (actorResult.data?.role !== "lead") {
+  if (actorResult.data?.role !== "lead" || actorResult.data.revoked_at !== null) {
     return jsonResponse({ error: "Only the project lead can remove members" }, 403, allowedOrigin);
   }
   if (memberResult.data?.role !== "member" || body.memberUserId === project.created_by) {
@@ -113,9 +113,9 @@ Deno.serve(async (request: Request) => {
     return jsonResponse({ error: "Could not begin member removal" }, status, allowedOrigin);
   }
 
-  // Revoke all document sessions first. If the Worker cannot confirm each
-  // revocation, do not mutate membership; already-revoked sessions can safely
-  // reconnect while the user remains a member because a fresh ticket is newer.
+  // The database fence is already active. If any Worker acknowledgement fails,
+  // leave the membership revoked and pending; existing sockets on an unacknowledged
+  // document may remain connected until the lead retries successfully.
   for (const document of documentsResult.data || []) {
     let revokeResponse: Response;
     try {
