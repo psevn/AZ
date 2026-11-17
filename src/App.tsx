@@ -1,9 +1,9 @@
+import UniverseEffects from "./components/UniverseEffects";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseConfigReady } from "./lib/supabase";
 import AcademicSetup from "./components/AcademicSetup";
-import UniverseEffects from "./components/UniverseEffects";
 
 type Language = "ar" | "en";
 type Page = "workspace" | "notebook" | "focus" | "arena";
@@ -34,6 +34,12 @@ function Universe() {
 }
 
 export default function App() {
+  const [universe,setUniverse] = useState<boolean>(() => {
+    try { return window.localStorage.getItem("az-background") === "universe"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("az-background", universe ? "universe" : "plain"); } catch { /* storage unavailable */ }
+  }, [universe]);
   const [lang,setLang] = useState<Language>(() => {
     try {
       const saved = window.localStorage.getItem("az-language");
@@ -69,6 +75,7 @@ export default function App() {
   const [showAcademicSetup,setShowAcademicSetup] = useState(false);
   const [sidebarCollapsed,setSidebarCollapsed] = useState(false);
   const [mobileNavOpen,setMobileNavOpen] = useState(false);
+  const [homePrompt,setHomePrompt] = useState("");
   const [message,setMessage] = useState("");
   const [error,setError] = useState("");
   const t = labels[lang];
@@ -230,13 +237,14 @@ export default function App() {
   const sectionNav:Section[] = ["home","planning","az","community","me"];
   const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",community:"◎",me:"◌"};
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
-  return <main className={"app-shell "+(dark?"theme-dark":"theme-light")} dir={ar?"rtl":"ltr"} lang={lang}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/><UniverseEffects />
+  return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")} dir={ar?"rtl":"ltr"} lang={lang}>
+    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>{universe && <UniverseEffects />}
     <header className="topbar">
       {user && <button className="mobile-nav-toggle" type="button" onClick={()=>setMobileNavOpen(v=>!v)} aria-label={mobileNavOpen?(ar?"إغلاق القائمة":"Close navigation"):(ar?"فتح القائمة":"Open navigation")} aria-expanded={mobileNavOpen}>{mobileNavOpen?"×":"☰"}</button>}
       <a className="brand" href="/" aria-label="AZ"><img className="brand-logo" src="/az-mark.svg" alt="AZ"/></a>
       <div className="top-actions">
         <button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button>
+        <button className={"icon-button"+(universe?" is-on":"")} onClick={()=>setUniverse(v=>!v)} aria-pressed={universe} aria-label={ar?"خلفية الكون":"Universe background"} title={ar?"خلفية الكون":"Universe background"}>✦</button>
         <button className="icon-button" onClick={()=>setDark(v=>!v)} aria-label="Toggle theme">{dark?"☼":"☾"}</button>
         {user && <button className="quiet-button signout-button" onClick={signOut} disabled={busy}>{t.signOut}</button>}
       </div>
@@ -260,21 +268,25 @@ export default function App() {
       </div> : <div className="az-workspace">
         {mobileNavOpen && <button className="mobile-nav-backdrop" type="button" aria-label={ar?"إغلاق القائمة":"Close navigation"} onClick={()=>setMobileNavOpen(false)}/>}
         <aside className={"workspace-rail"+(sidebarCollapsed?" is-collapsed":"")+(mobileNavOpen?" is-mobile-open":"")}>
-          <div className="rail-topline"><div className="rail-label">AZ / THE ACADEMIC UNIVERSE</div><button className="rail-collapse" type="button" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?(ar?"توسيع القائمة":"Expand sidebar"):(ar?"طي القائمة":"Collapse sidebar")}>{sidebarCollapsed?"⇤":"⇥"}</button></div>
+          <div className="rail-topline"><div className="rail-label"><img className="rail-logo" src="/az-mark.svg" alt="AZ"/></div><button className="rail-collapse" type="button" onClick={()=>setSidebarCollapsed(v=>!v)} aria-label={sidebarCollapsed?(ar?"توسيع القائمة":"Expand sidebar"):(ar?"طي القائمة":"Collapse sidebar")}>{sidebarCollapsed?"⇤":"⇥"}</button></div><button className="rail-new-session" type="button" onClick={()=>{setSection("az");setPage("focus");setMessage("");setMobileNavOpen(false);}}><span aria-hidden="true">＋</span><span>{ar?"جلسة جديدة":"New session"}</span></button>
           <nav className="primary-nav" aria-label={ar?"الأقسام الرئيسية":"Main sections"}>{sectionNav.map((item,i)=><div className="primary-nav-item" key={item}><button className={section===item?"active":""} aria-expanded={item==="az"?section==="az":undefined} title={sidebarCollapsed?t[item]:undefined} onClick={()=>{setSection(item);setMessage("");setMobileNavOpen(false);}}><span className="nav-glyph" aria-hidden="true">{navGlyphs[item]}</span><span className="nav-index">0{i+1}</span><span className="nav-text">{t[item]}</span><i/></button>{item==="az" && section==="az" && <div className="workspace-subnav"><span className="subnav-label">{ar?"داخل AZ":"AZ MODULES"}</span><nav className="workspace-nav" aria-label={ar?"أدوات AZ":"AZ modules"}>{workspaceNav.map((subItem,j)=><button key={subItem} className={page===subItem?"active":""} title={sidebarCollapsed?t[subItem]:undefined} onClick={()=>{setPage(subItem);setMessage("");setMobileNavOpen(false);}}><span className="module-glyph" aria-hidden="true">{moduleGlyphs[subItem]}</span><span className="nav-index">0{j+1}</span><span className="nav-text">{t[subItem]}</span><i/></button>)}</nav></div>}</div>)}</nav>
-          <div className="rail-bottom"><span className="rail-orbit"/> <span className="rail-motto">PLAN · STUDY · GROW</span></div>
+          <div className="rail-bottom"><button className="rail-account" type="button" onClick={()=>{setSection("me");setMessage("");setMobileNavOpen(false);}}><span className="rail-account-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</span><span className="rail-account-copy"><small>{ar?"الحساب":"Account"}</small><strong>{user.email}</strong></span></button></div>
         </aside>
         <div className="workspace-main">
           <div className="workspace-heading"><div><span className="eyebrow"><span className="eyebrow-pulse"/>{section==="home"?t.home:section==="planning"?t.planning:section==="az"?t.az:section==="community"?t.community:t.me}</span><h1>{section==="home"?t.today:section==="planning"?t.planning:section==="az"?(page==="workspace"?t.workspace:page==="notebook"?t.notebook:page==="focus"?t.focus:t.arenaTitle):section==="community"?t.communityTitle:t.meTitle}</h1><p>{section==="home"?t.todayText:section==="planning"?(ar?"رتّب مهامك ومواعيدك الدراسية.":"Organize your tasks and academic deadlines."):section==="az"?(page==="workspace"?t.studyText:page==="notebook"?t.notebookText:page==="focus"?t.focusText:t.arenaText):section==="community"?t.communityText:t.meText}</p></div><div className="workspace-meta"><span className="status-dot"/>{user.email}</div></div>
           {section==="home" && <div className="home-view">
             <section className="home-hero">
               <div className="home-hero-copy">
-                <span className="home-kicker"><span className="eyebrow-pulse"/>{ar?"AZ — عالمك الأكاديمي":"AZ — THE ACADEMIC UNIVERSE"}</span>
+                <span className="home-kicker"><span className="eyebrow-pulse"/>{ar?"مساحتك الأكاديمية":"YOUR ACADEMIC SPACE"}</span>
                 <p className="home-date">{todayLabel}</p>
-                <h2>{ar?"مسارك يبدأ من هنا.":"Your next chapter starts here."}</h2>
-                <p className="home-hero-description">{ar?"حوّل أهدافك إلى خطوات واضحة، وتقدّم في دراستك بإيقاعك الخاص.":"Turn your goals into clear steps, and move your learning forward at your own pace."}</p>
+                <h2>{ar?"أهلاً بعودتك.":"Welcome back."}</h2>
+                <p className="home-hero-description">{ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"}</p>
+                <form className="home-study-input" onSubmit={event=>{event.preventDefault();if(!homePrompt.trim())return;setTitle(homePrompt.trim());setHomePrompt("");setSection("planning");}}>
+                  <input value={homePrompt} onChange={event=>setHomePrompt(event.target.value)} placeholder={ar?"اكتب ما تريد إنجازه أو مراجعته...":"Add a topic or task to work on..."} aria-label={ar?"ماذا تريد أن تدرس اليوم؟":"What would you like to study today?"} />
+                  <button className="primary-button" type="submit" disabled={!homePrompt.trim()}>{ar?"تابع إلى خطتك":"Continue to plan"} <span>↗</span></button>
+                </form>
                 <div className="home-hero-actions">
-                  <button className="primary-button" onClick={()=>setSection("planning")}>{ar?"افتح خطتك":"Open your plan"} <span>↗</span></button>
+                  <button className="home-secondary-action" onClick={()=>setSection("planning")}>{ar?"افتح خطتك":"Open your plan"} <span>↗</span></button>
                   <button className="home-secondary-action" onClick={()=>{setSection("az");setPage("focus");}}><span className="play-mark">▶</span>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</button>
                 </div>
               </div>
@@ -327,8 +339,10 @@ export default function App() {
           </div>}
           {section==="az" && page==="focus" && <section className="focus-view content-panel"><span className="eyebrow">DEEP WORK SESSION</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>FOCUS ELAPSED</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
           {section==="az" && page==="workspace" && <section className="study-placeholder content-panel"><div className="study-orbit"><div className="study-core"><img src="/az-mark.svg" alt="AZ"/></div><span className="study-ring ring-a"/><span className="study-ring ring-b"/></div><span className="eyebrow">KNOWLEDGE SYSTEM / 01</span><h2>{t.studyTitle}</h2><p>{t.studyText}</p><div className="study-next">{t.studyNext}</div></section>}
-          {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / NOTEBOOK</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}\n          {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / ARENA</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">COMING SOON</span></section>}\n          {section==="community" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / COMMUNITY</span><h2>{t.communityTitle}</h2><p>{t.communityText}</p><span className="coming-soon-label">{ar?"قريبًا":"COMING IN A LATER PHASE"}</span></section>}
-          {section==="me" && <section className="profile-view content-panel"><div className="profile-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</div><span className="eyebrow">AZ / PERSONAL SPACE</span><h2>{t.meTitle}</h2><p>{t.meText}</p><div className="profile-details"><div><span>{t.account}</span><strong>{user.email}</strong></div><div><span>{t.appearance}</span><strong>{dark?(ar?"داكن":"Dark"):(ar?"فاتح":"Light")}</strong></div></div><div className="profile-actions"><button className="quiet-button" onClick={()=>setDark(v=>!v)}>{ar?"تغيير المظهر":"Change appearance"}</button><button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button><button className="quiet-button" onClick={()=>setShowAcademicSetup(true)}>{ar?"إعداد المساحة الأكاديمية":"Academic setup"}</button><button className="primary-button" onClick={signOut} disabled={busy}>{t.signOut}</button></div></section>}
+          {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / NOTEBOOK</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
+          {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / ARENA</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">COMING SOON</span></section>}
+          {section==="community" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">AZ / COMMUNITY</span><h2>{t.communityTitle}</h2><p>{t.communityText}</p><span className="coming-soon-label">{ar?"قريبًا":"COMING IN A LATER PHASE"}</span></section>}
+          {section==="me" && <section className="profile-view content-panel"><div className="profile-avatar">{(user.email||"A").slice(0,1).toUpperCase()}</div><span className="eyebrow">AZ / PERSONAL SPACE</span><p>{t.meText}</p><div className="profile-details"><div><span>{t.account}</span><strong>{user.email}</strong></div><div><span>{t.appearance}</span><strong>{dark?(ar?"داكن":"Dark"):(ar?"فاتح":"Light")}</strong></div></div><div className="profile-actions"><button className="quiet-button" onClick={()=>setDark(v=>!v)}>{ar?"تغيير المظهر":"Change appearance"}</button><button className="quiet-button" onClick={()=>setLang(ar?"en":"ar")}>{t.language}</button><button className="quiet-button" onClick={()=>setShowAcademicSetup(true)}>{ar?"إعداد المساحة الأكاديمية":"Academic setup"}</button><button className="primary-button" onClick={signOut} disabled={busy}>{t.signOut}</button></div></section>}
         </div>
       </div>}
       {showAcademicSetup && setupChecked && !loading && user && <AcademicSetup userId={user.id} lang={lang} existingSubjects={subjects} onComplete={()=>{setShowAcademicSetup(false); void loadData();}} />}
