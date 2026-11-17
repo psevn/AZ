@@ -241,7 +241,23 @@ begin
   end if;
 end;
 $revoked_member_rls$;
+
+-- A revoked uploader must not retain the historical uploader-only DELETE path.
+delete from public.project_attachments
+where storage_path = 'ci/project-member-attachment.txt';
 commit;
+
+do $revoked_attachment_assert$
+begin
+  if not exists (
+    select 1 from public.project_attachments
+    where storage_path = 'ci/project-member-attachment.txt'
+      and uploaded_by = '00000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'A revoked member deleted their project attachment';
+  end if;
+end;
+$revoked_attachment_assert$;
 
 -- A fresh invitation must not reactivate a membership while any document
 -- may still have an unacknowledged Worker revocation.
