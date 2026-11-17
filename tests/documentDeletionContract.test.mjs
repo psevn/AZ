@@ -41,7 +41,7 @@ test("the begin RPC locks the owner-scoped row and clears the processing lock at
 });
 
 test("completion refuses to delete the relational tombstone while a signed upload token may still work", () => {
-  assert.match(migration, /upload_token_expires_at \+ interval '5 minutes' > clock_timestamp\(\)/);
+  assert.match(migration, /(?:upload_token_expires_at|v_upload_expires_at) \+ interval '5 minutes' > clock_timestamp\(\)/);
   assert.match(migration, /UPLOAD_TOKEN_WINDOW_ACTIVE/);
   assert.match(migration, /delete from public\.documents/);
   assert.match(migration, /status = 'deleting'/);
@@ -114,7 +114,7 @@ test("the endpoint uses the shared fail-closed CORS policy and bounded POST body
 
 
 test("deletion fails closed when the upload-token expiry RPC value is missing or invalid", () => {
-  assert.match(endpoint, /getUploadTokenExpiryDecision\(begun\.uploadTokenExpiresAt/);
+  assert.match(endpoint, /getUploadTokenExpiryDecision\(\s*begun\.uploadTokenExpiresAt/);
   const invalidBranch = endpoint.slice(
     endpoint.indexOf('expiryDecision.kind === "invalid"'),
     endpoint.indexOf('expiryDecision.kind === "wait"'),
