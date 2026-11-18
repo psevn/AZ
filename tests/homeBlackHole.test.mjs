@@ -42,3 +42,22 @@ test("the cosmic focus scene is responsive and respects reduced motion", () => {
   assert.match(styles, /@media \(prefers-reduced-motion:reduce\)[\s\S]*?\.focus-starfield-a[\s\S]*?animation:none !important/);
   assert.match(styles, /\.app-shell\.is-focus-mode \.workspace-rail/);
 });
+
+
+test("Focus sessions persist active seconds separately from wall-clock timestamps", () => {
+  assert.match(app, /active_seconds:activeSeconds/);
+  assert.match(app, /const activeSeconds=Math\.max\(0,Math\.floor\(elapsed\)\)/);
+  assert.match(app, /started_at:new Date\(focusSessionStartedAt\)\.toISOString\(\)/);
+  assert.match(app, /ended_at:new Date\(endedAt\)\.toISOString\(\)/);
+  assert.match(app, /if \(e\) \{\s*setError\(e\.message\);\s*return;/);
+  assert.match(app, /finally \{\s*setBusy\(false\);\s*\}/);
+  assert.match(app, /setFocusSessionStartedAt\(null\)/);
+});
+
+test("the additive focus duration migration preserves legacy session rows", () => {
+  const migration = readFileSync(resolve(root, "supabase/migrations/20261118130000_focus_sessions_active_seconds.sql"), "utf8");
+  assert.match(migration, /add column active_seconds integer/);
+  assert.match(migration, /active_seconds is null or active_seconds >= 0/);
+  assert.match(migration, /comment on column public\.focus_sessions\.active_seconds/);
+  assert.doesNotMatch(migration, /update public\.focus_sessions/);
+});
