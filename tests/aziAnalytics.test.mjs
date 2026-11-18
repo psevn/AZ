@@ -51,6 +51,49 @@ test("completed tasks and focus sessions count only within the seven-day window"
   assert.equal(result.focus.minutesLastSevenDays, 115);
 });
 
+test("new focus sessions prefer active seconds and exclude paused wall-clock time", () => {
+  const result = analyzeAcademicActivity({
+    now,
+    focusSessions: [
+      {
+        started_at: "2026-11-09T09:00:00.000Z",
+        ended_at: "2026-11-09T10:30:00.000Z",
+        active_seconds: 900,
+      },
+      {
+        started_at: "2026-11-09T10:30:00.000Z",
+        ended_at: "2026-11-09T11:00:00.000Z",
+        active_seconds: 0,
+      },
+    ],
+  });
+
+  assert.equal(result.focus.sessionsLastSevenDays, 2);
+  assert.equal(result.focus.minutesLastSevenDays, 15);
+});
+
+test("legacy focus sessions fall back to wall-clock duration", () => {
+  const result = analyzeAcademicActivity({
+    now,
+    focusSessions: [
+      { started_at: "2026-11-09T09:00:00.000Z", ended_at: "2026-11-09T09:25:00.000Z" },
+      {
+        started_at: "2026-11-09T09:25:00.000Z",
+        ended_at: "2026-11-09T10:00:00.000Z",
+        active_seconds: null,
+      },
+      {
+        started_at: "2026-11-09T10:00:00.000Z",
+        ended_at: "2026-11-09T10:30:00.000Z",
+        active_seconds: -1,
+      },
+    ],
+  });
+
+  assert.equal(result.focus.sessionsLastSevenDays, 2);
+  assert.equal(result.focus.minutesLastSevenDays, 60);
+});
+
 test("insights cite exact task IDs and propose navigation only", () => {
   const result = analyzeAcademicActivity({
     now,
