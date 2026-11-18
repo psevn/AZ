@@ -272,8 +272,13 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .home-orbit.one { width:190px; height:74px; transform:rotate(-30deg); }
 .home-orbit.two { width:155px; height:155px; transform:rotate(45deg); border-color:rgba(32,230,242,.25); }
 .home-orbit.three { width:205px; height:125px; transform:rotate(65deg); border-style:dashed; border-color:rgba(138,0,232,.32); }
-.home-planet { width:78px; height:78px; display:grid; place-items:center; border-radius:25px; background:linear-gradient(145deg,rgba(24,54,88,.9),rgba(9,17,36,.9)); border:1px solid rgba(145,220,255,.3); box-shadow:0 0 45px rgba(8,121,232,.34),inset 0 1px rgba(255,255,255,.12); }
-.home-planet img { width:55px; height:55px; object-fit:contain; filter:drop-shadow(0 0 12px rgba(32,230,242,.45)); }
+.home-black-hole { position:relative; z-index:2; width:230px; height:158px; display:block; perspective:720px; filter:drop-shadow(0 0 22px rgba(8,121,232,.16)); }
+.black-hole-aura { position:absolute; inset:12% 5%; border-radius:50%; background:radial-gradient(ellipse,rgba(35,139,220,.2),rgba(118,64,210,.1) 42%,transparent 72%); filter:blur(18px); }
+.black-hole-disk { position:absolute; left:50%; top:50%; width:230px; height:100px; border-radius:50%; transform:translate(-50%,-50%) rotate(-16deg) rotateX(68deg); background:conic-gradient(from 0deg,rgba(72,177,255,.08),rgba(255,183,105,.88) 42deg,rgba(255,244,218,.96) 92deg,rgba(151,105,255,.76) 158deg,rgba(32,230,242,.82) 228deg,rgba(255,176,92,.9) 302deg,rgba(72,177,255,.08)); -webkit-mask:radial-gradient(ellipse at center,transparent 0 40%,#000 46% 60%,transparent 69%); mask:radial-gradient(ellipse at center,transparent 0 40%,#000 46% 60%,transparent 69%); filter:drop-shadow(0 0 8px rgba(255,185,112,.38)); }
+.black-hole-disk-back { z-index:1; clip-path:inset(0 0 50% 0); opacity:.88; }
+.black-hole-core { position:absolute; z-index:3; left:50%; top:50%; width:88px; height:88px; border-radius:50%; transform:translate(-50%,-50%); background:radial-gradient(circle at 38% 34%,#080b15 0 48%,#020308 72%,#000 100%); box-shadow:0 0 0 1px rgba(161,202,255,.2),0 0 26px 9px rgba(0,0,0,.78),inset -8px -5px 18px rgba(0,0,0,.95); }
+.black-hole-disk-front { z-index:4; clip-path:inset(50% 0 0 0); opacity:.98; }
+.black-hole-photon-ring { position:absolute; z-index:5; left:50%; top:50%; width:98px; height:98px; border:1px solid rgba(255,224,183,.48); border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 8px rgba(255,204,146,.22),inset 0 0 8px rgba(255,220,180,.08); pointer-events:none; }
 .home-star { position:absolute; width:5px; height:5px; border-radius:50%; background:#20E6F2; box-shadow:0 0 13px 3px rgba(32,230,242,.6); }
 .star-one { top:20px; right:45px; }.star-two { bottom:34px; left:24px; }.star-three { top:95px; left:8px; width:3px; height:3px; }
 .stats-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; margin:16px 0; }
@@ -320,7 +325,8 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .study-placeholder>p { max-width:420px; }.study-next { margin-top:17px; padding:12px 16px; border:1px solid rgba(32,230,242,.18); border-radius:10px; color:var(--accent); background:rgba(32,230,242,.06); font-size:12px; line-height:1.7; max-width:520px; }
 .study-orbit { position:relative; width:140px; height:140px; display:grid; place-items:center; margin-bottom:24px; }.study-core { width:60px; height:60px; display:grid; place-items:center; border-radius:19px; background:rgba(16,39,68,.9); border:1px solid rgba(32,230,242,.3); box-shadow:0 0 40px rgba(8,121,232,.3); }.study-core img { width:43px; }.study-ring { position:absolute; border:1px solid rgba(32,230,242,.28); border-radius:50%; }.ring-a { inset:5px 0; transform:rotate(35deg); }.ring-b { inset:0 12px; transform:rotate(-42deg); border-style:dashed; }
 @media (prefers-reduced-motion:no-preference) {
-  .home-planet { animation:float-mark 7s ease-in-out infinite,mark-glow 5s ease-in-out infinite; }
+  .black-hole-disk { animation:black-hole-disk-turn 54s linear infinite; }
+  .black-hole-aura { animation:black-hole-aura-pulse 8s ease-in-out infinite; }
   .home-orbit.one { animation:orbit-a-spin 50s linear infinite; }.home-orbit.two { animation:orbit-b-spin 65s linear infinite; }.home-orbit.three { animation:orbit-c-spin 80s linear infinite; }
   .study-ring.ring-a { animation:orbit-a-spin 45s linear infinite; }.study-ring.ring-b { animation:orbit-b-spin 60s linear infinite; }
 }
@@ -397,10 +403,9 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .theme-light .home-orbit { border-color: rgba(8,121,232,.25); }
 .theme-light .home-orbit.two { border-color: rgba(8,121,232,.24); }
 .theme-light .home-orbit.three { border-color: rgba(138,0,232,.25); }
-.theme-light .home-planet {
-  background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(225,237,252,.9));
-  border-color: rgba(8,121,232,.2);
-  box-shadow: 0 0 38px rgba(8,121,232,.13), inset 0 1px rgba(255,255,255,.95);
+.theme-light .home-black-hole .black-hole-core {
+  background:radial-gradient(circle at 38% 34%,#080b15 0 48%,#020308 72%,#000 100%);
+  box-shadow:0 0 0 1px rgba(161,202,255,.2),0 0 26px 9px rgba(0,0,0,.78);
 }
 .theme-light .clock-ring {
   border-color: rgba(8,121,232,.3);
@@ -476,7 +481,8 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   .universe-node,
   .panel-progress,
   .panel-spark,
-  .home-planet,
+  .black-hole-disk,
+  .black-hole-aura,
   .home-orbit,
   .study-ring {
     animation: none !important;
@@ -485,6 +491,15 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 
 
 /* Home — Academic Universe experience */
+@keyframes black-hole-disk-turn {
+  from { transform:translate(-50%,-50%) rotate(-16deg) rotateX(68deg) rotateZ(0deg); }
+  to { transform:translate(-50%,-50%) rotate(-16deg) rotateX(68deg) rotateZ(360deg); }
+}
+@keyframes black-hole-aura-pulse {
+  0%,100% { opacity:.68; transform:scale(.96); }
+  50% { opacity:.95; transform:scale(1.04); }
+}
+
 .home-view { display:grid; gap:18px; }
 .home-hero {
   min-height:350px; position:relative; isolation:isolate; overflow:hidden; display:grid;
@@ -521,8 +536,10 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
 .home-universe-visual .home-orbit.one { width:310px; height:112px; transform:rotate(-28deg); }
 .home-universe-visual .home-orbit.two { width:230px; height:230px; transform:rotate(36deg); border-color:rgba(32,230,242,.3); }
 .home-universe-visual .home-orbit.three { width:350px; height:190px; transform:rotate(62deg); border-style:dashed; border-color:rgba(154,111,255,.3); }
-.home-universe-visual .home-planet { width:104px; height:104px; border-radius:31px; background:linear-gradient(145deg,rgba(21,48,83,.96),rgba(8,15,34,.96)); border-color:rgba(150,222,255,.42); box-shadow:0 0 0 13px rgba(32,230,242,.035),0 0 75px rgba(8,121,232,.4),0 0 125px rgba(138,0,232,.16),inset 0 1px rgba(255,255,255,.16); }
-.home-universe-visual .home-planet img { width:72px; height:72px; }
+.home-universe-visual .home-black-hole { width:250px; height:172px; }
+.home-universe-visual .black-hole-disk { width:250px; height:108px; }
+.home-universe-visual .black-hole-core { width:94px; height:94px; }
+.home-universe-visual .black-hole-photon-ring { width:106px; height:106px; }
 .home-universe-visual .home-star { width:6px; height:6px; }
 .home-universe-visual .star-one { top:17%; right:19%; }.home-universe-visual .star-two { bottom:19%; left:17%; }.home-universe-visual .star-three { top:54%; left:8%; }
 .universe-label,.universe-coordinate { position:absolute; color:rgba(180,207,238,.72); font-size:8px; letter-spacing:.2em; }
@@ -565,8 +582,8 @@ h1 { max-width: 690px; margin: 22px 0 16px; font-size: clamp(42px, 5.1vw, 70px);
   .home-universe-visual .home-orbit.one { width:250px; height:90px; }
   .home-universe-visual .home-orbit.two { width:185px; height:185px; }
   .home-universe-visual .home-orbit.three { width:285px; height:150px; }
-  .home-universe-visual .home-planet { width:82px; height:82px; border-radius:25px; }
-  .home-universe-visual .home-planet img { width:58px; height:58px; }
+  .home-universe-visual .home-black-hole { transform:scale(.82); }
+  
   .home-progress-panel { display:block; }
   .home-progress-panel .home-section-heading { margin-bottom:18px; }
   .home-metrics { padding-top:16px; border-top:1px solid var(--line); }
