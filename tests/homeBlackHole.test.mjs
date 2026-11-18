@@ -16,6 +16,7 @@ test("the black hole is exclusive to the Focus Universe, not the Home hero", () 
   assert.ok(homeVisualStart >= 0 && homeVisualEnd > homeVisualStart);
   assert.doesNotMatch(homeVisual, /home-black-hole|black-hole-core|black-hole-disk/);
   assert.match(focus, /className="focus-black-hole"/);
+  assert.match(focus, /is-active/);
   assert.match(focus, /black-hole-disk black-hole-disk-back/);
   assert.match(focus, /black-hole-disk black-hole-disk-front/);
   assert.match(focus, /black-hole-photon-ring/);
@@ -34,6 +35,8 @@ test("Focus Universe presents elapsed time, the selected subject, and working se
 test("the cosmic focus scene is responsive and respects reduced motion", () => {
   assert.match(styles, /\.focus-universe \{/);
   assert.match(styles, /\.focus-black-hole \{/);
+  assert.match(styles, /\.focus-universe\.is-active \.focus-cosmos \{ opacity:1; \}/);
+  assert.match(styles, /@keyframes focus-star-twinkle/);
   assert.match(styles, /@media \(max-width:680px\)[\s\S]*?\.focus-black-hole/);
   assert.match(styles, /@media \(prefers-reduced-motion:reduce\)[\s\S]*?\.focus-starfield-a[\s\S]*?animation:none !important/);
   assert.match(styles, /\.app-shell\.is-focus-mode \.workspace-rail/);
