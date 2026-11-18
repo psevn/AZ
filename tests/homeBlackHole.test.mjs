@@ -24,6 +24,7 @@ test("the black hole is exclusive to the Focus Universe, not the Home hero", () 
 
 test("Focus Universe presents elapsed time, the selected subject, and working session controls", () => {
   assert.match(focus, /className="focus-timer-display"/);
+  assert.match(app, /focusSessionStartedAt!==null\) && <><div className="ambient ambient-one"\/>/);
   assert.match(focus, /className="focus-subject-name"/);
   assert.match(focus, /onPause/);
   assert.match(focus, /onResume/);
