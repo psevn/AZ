@@ -24,6 +24,16 @@ type Comet = {
   delay: number;
 };
 
+type DustParticle = {
+  x: number;
+  y: number;
+  radius: number;
+  opacity: number;
+  drift: number;
+  phase: number;
+  tint: "cyan" | "violet";
+};
+
 function makeLayer(width: number, height: number, count: number, speed: number, radius: number): StarLayer {
   return {
     speed,
@@ -52,6 +62,18 @@ function makeComet(width: number, height: number, delay = Math.random() * 2.5): 
   };
 }
 
+function makeDust(width: number, height: number, count: number): DustParticle[] {
+  return Array.from({ length: count }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    radius: 0.35 + Math.random() * 0.65,
+    opacity: 0.035 + Math.random() * 0.055,
+    drift: 0.08 + Math.random() * 0.22,
+    phase: Math.random() * Math.PI * 2,
+    tint: Math.random() > 0.5 ? "cyan" : "violet"
+  }));
+}
+
 export default function UniverseEffects() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -61,7 +83,7 @@ export default function UniverseEffects() {
     const context = canvas?.getContext("2d", { alpha: true });
     if (!canvas || !shell || !context) return;
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const frameInterval = 1000 / 30;
     let width = 0;
     let height = 0;
@@ -70,6 +92,7 @@ export default function UniverseEffects() {
     let previousTime = 0;
     let layers: StarLayer[] = [];
     let comets: Comet[] = [];
+    let dustParticles: DustParticle[] = [];
 
     const draw = () => {
       context.clearRect(0, 0, width, height);
@@ -80,6 +103,15 @@ export default function UniverseEffects() {
           context.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
           context.fill();
         }
+      }
+
+      for (const particle of dustParticles) {
+        const shimmer = motionQuery.matches ? 1 : 0.82 + Math.sin(particle.phase) * 0.18;
+        const tint = particle.tint === "cyan" ? "105, 225, 242" : "157, 125, 255";
+        context.fillStyle = `rgba(${tint}, ${particle.opacity * shimmer})`;
+        context.beginPath();
+        context.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        context.fill();
       }
 
       // Draw sparse, low-opacity comets after the stars but on the same
@@ -126,6 +158,7 @@ export default function UniverseEffects() {
       comets = Array.from({ length: compact ? 2 : 3 }, (_, index) =>
         makeComet(width, height, index * 0.8 + Math.random() * 0.35)
       );
+      dustParticles = makeDust(width, height, Math.round(26 * scale));
       draw();
     };
 
@@ -160,6 +193,15 @@ export default function UniverseEffects() {
         }
       }
 
+      for (const particle of dustParticles) {
+        particle.y += particle.drift * delta;
+        particle.phase += delta * 0.7;
+        if (particle.y > height + 2) {
+          particle.y = -2;
+          particle.x = Math.random() * width;
+        }
+      }
+
       for (let index = 0; index < comets.length; index += 1) {
         const comet = comets[index];
         if (comet.delay > 0) {
@@ -178,7 +220,7 @@ export default function UniverseEffects() {
     };
 
     const start = () => {
-      if (reducedMotion || document.hidden || frame) return;
+      if (motionQuery.matches || document.hidden || frame) return;
       previousTime = 0;
       frame = window.requestAnimationFrame(animate);
     };
@@ -191,12 +233,22 @@ export default function UniverseEffects() {
       else start();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    if (!reducedMotion) start();
+    const onMotionChange = () => {
+      if (motionQuery.matches) {
+        stop();
+        draw();
+      } else {
+        start();
+      }
+    };
+    motionQuery.addEventListener("change", onMotionChange);
+    if (!motionQuery.matches) start();
 
     return () => {
       stop();
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      motionQuery.removeEventListener("change", onMotionChange);
       context.clearRect(0, 0, width, height);
     };
   }, []);
