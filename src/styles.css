@@ -1744,7 +1744,8 @@ button.primary-button:disabled,
   background:#03040a;
   box-shadow:0 28px 90px rgba(0,0,0,.28);
 }
-.focus-cosmos { position:absolute; z-index:-1; inset:0; overflow:hidden; background:radial-gradient(ellipse at 76% 44%,rgba(12,33,70,.34),transparent 42%),linear-gradient(115deg,#03040a,#050711 60%,#03040a); }
+.focus-cosmos { position:absolute; z-index:-1; inset:0; overflow:hidden; opacity:0; transition:opacity 1.4s ease; background:radial-gradient(ellipse at 76% 44%,rgba(12,33,70,.34),transparent 42%),linear-gradient(115deg,#03040a,#050711 60%,#03040a); }
+.focus-universe.is-active .focus-cosmos { opacity:1; }
 .focus-nebula { position:absolute; width:54vw; height:42vw; max-width:720px; max-height:520px; border-radius:50%; filter:blur(70px); opacity:.12; }
 .focus-nebula-cyan { right:2%; top:12%; background:#0879e8; }
 .focus-nebula-violet { left:4%; bottom:-28%; background:#6500b8; opacity:.09; }
@@ -1784,11 +1785,12 @@ button.primary-button:disabled,
 .app-shell.is-focus-mode .main-content { min-height:100vh; padding:12px; }
 .app-shell.is-focus-mode .focus-universe { min-height:calc(100vh - 24px); }
 @media (prefers-reduced-motion:no-preference) {
-  .focus-starfield-a { animation:focus-star-drift 110s linear infinite; }
-  .focus-starfield-b { animation:focus-star-drift 160s linear infinite reverse; }
+  .focus-starfield-a { animation:focus-star-drift 110s linear infinite,focus-star-twinkle 7s ease-in-out infinite alternate; }
+  .focus-starfield-b { animation:focus-star-drift 160s linear infinite reverse,focus-star-twinkle 11s ease-in-out infinite alternate-reverse; }
   .focus-dust-a { animation:focus-dust-drift 48s ease-in-out infinite alternate; }
   .focus-dust-b { animation:focus-dust-drift 65s ease-in-out infinite alternate-reverse; }
 }
+@keyframes focus-star-twinkle { from { opacity:.18; } to { opacity:.62; } }
 @keyframes focus-star-drift { from { transform:translate3d(0,0,0); } to { transform:translate3d(-2%,1%,0); } }
 @keyframes focus-dust-drift { from { opacity:.06; transform:translate3d(-8px,4px,0) rotate(-22deg); } to { opacity:.15; transform:translate3d(12px,-6px,0) rotate(-17deg); } }
 @media (max-width:680px) {
@@ -1806,7 +1808,7 @@ button.primary-button:disabled,
 }
 @media (prefers-reduced-motion:reduce) {
   .focus-starfield-a,.focus-starfield-b,.focus-dust-a,.focus-dust-b { animation:none !important; }
-  .focus-control { transition:none; }
+  .focus-control,.focus-cosmos { transition:none; }
 }
 
 .app-shell.is-focus-mode .main-content { width:100%; margin:0; }
