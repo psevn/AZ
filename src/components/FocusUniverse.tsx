@@ -32,7 +32,7 @@ export default function FocusUniverse(props: Props) {
     active, running, paused, busy, onStart, onPause, onResume, onEnd,
   } = props;
   const ar = lang === "ar";
-  const stageRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLElement | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
