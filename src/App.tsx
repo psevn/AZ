@@ -394,13 +394,6 @@ export default function App() {
                 <div className="universe-nebula nebula-cyan"/><div className="universe-nebula nebula-violet"/>
                 <div className="universe-grid-plane"/>
                 <div className="home-orbit one"/><div className="home-orbit two"/><div className="home-orbit three"/>
-                <div className="home-black-hole">
-                  <div className="black-hole-aura"/>
-                  <div className="black-hole-disk black-hole-disk-back"/>
-                  <div className="black-hole-core"/>
-                  <div className="black-hole-disk black-hole-disk-front"/>
-                  <div className="black-hole-photon-ring"/>
-                </div>
                 <span className="home-star star-one"/><span className="home-star star-two"/><span className="home-star star-three"/>
                 <span className="universe-label label-plan">{ar?"خطّط":"Plan"}</span><span className="universe-label label-study">{ar?"تعلّم":"Study"}</span><span className="universe-label label-grow">{ar?"تطوّر":"Grow"}</span>
                 <span className="universe-coordinate coordinate-top">AZ · 01</span><span className="universe-coordinate coordinate-bottom">From A to Z</span>
