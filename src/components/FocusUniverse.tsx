@@ -53,7 +53,7 @@ export default function FocusUniverse(props: Props) {
   }
 
   return (
-    <section className="focus-universe" ref={stageRef} aria-label={ar ? "مساحة التركيز" : "Focus space"}>
+    <section className={"focus-universe" + (active ? " is-active" : "")} ref={stageRef} aria-label={ar ? "مساحة التركيز" : "Focus space"}>
       <div className="focus-cosmos" aria-hidden="true">
         <div className="focus-nebula focus-nebula-cyan" />
         <div className="focus-nebula focus-nebula-violet" />
