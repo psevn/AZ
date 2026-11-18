@@ -1,4 +1,5 @@
 import UniverseEffects from "./components/UniverseEffects";
+import FocusUniverse from "./components/FocusUniverse";
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -79,6 +80,8 @@ export default function App() {
   const [focusTask,setFocusTask] = useState("");
   const [finishedFocus,setFinishedFocus] = useState<{taskId:string|null;taskTitle:string;minutes:number}|null>(null);
   const [started,setStarted] = useState<number|null>(null);
+  const [focusSessionStartedAt,setFocusSessionStartedAt] = useState<number|null>(null);
+  const [focusPaused,setFocusPaused] = useState(false);
   const [elapsed,setElapsed] = useState(0);
   const [busy,setBusy] = useState(false);
   const [loading,setLoading] = useState(false);
@@ -264,9 +267,7 @@ export default function App() {
 
   useEffect(() => {
     if (started === null) return;
-    const tick = () => setElapsed(Math.floor((Date.now()-started)/1000));
-    tick();
-    const id = window.setInterval(tick,1000);
+    const id = window.setInterval(() => setElapsed(value => value + 1),1000);
     return () => window.clearInterval(id);
   },[started]);
 
@@ -327,24 +328,24 @@ export default function App() {
     setActiveDocument({id:data.id,title:data.title,url:signed.signedUrl,status:data.status,pageCount:data.page_count});setSection("az");setPage("workspace");
   }
   async function stopFocus() {
-    if (!supabase || !user || started===null) return;
+    if (!supabase || !user || focusSessionStartedAt===null) return;
     setBusy(true);
     const endedAt=Date.now();
     const task=tasks.find(x=>x.id===focusTask);
-    const duration=Math.max(0,Math.round((endedAt-started)/60000));
+    const duration=Math.max(0,Math.round(elapsed/60));
     const {error:e} = await supabase.from("focus_sessions").insert({
       user_id:user.id,task_id:focusTask||null,
-      started_at:new Date(started).toISOString(),ended_at:new Date(endedAt).toISOString()
+      started_at:new Date(focusSessionStartedAt).toISOString(),ended_at:new Date(endedAt).toISOString()
     });
     if (e) setError(e.message); else { setMessage(t.saved); setFinishedFocus({taskId:focusTask||null,taskTitle:task?.title??(ar?"جلسة تركيز":"Focus session"),minutes:duration}); }
-    setStarted(null); setElapsed(0); setBusy(false);
+    setStarted(null); setFocusSessionStartedAt(null); setFocusPaused(false); setElapsed(0); setBusy(false);
   }
 
   const workspaceNav:Page[] = ["workspace","focus"];
   const sectionNav:Section[] = ["home","planning","az","projects"];
   const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",projects:"▧",community:"◎",me:"◌",quiz:"◇"};
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
-  return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")} dir={ar?"rtl":"ltr"} lang={lang}>
+  return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")+(section==="az"&&page==="focus"&&focusSessionStartedAt!==null?" is-focus-mode":"")} dir={ar?"rtl":"ltr"} lang={lang}>
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/>{universe && <UniverseEffects />}
     <section className="main-content">
       {!supabaseConfigReady ? <div className="auth-layout">
@@ -417,7 +418,7 @@ export default function App() {
             <section className="home-insights-slot" data-insights-slot aria-label={ar?"موضع رؤى الدراسة":"Study insights"}>{homeInsights.map(insight=><p key={insight.id}>{insight.message}</p>)}</section>
             {showHomeError&&<div className="home-state" role="alert"><p>{ar?"تعذّر تحميل بياناتك. حاول مرة أخرى.":"Could not load your data. Please try again."}</p><button type="button" className="az-btn az-btn--primary" onClick={()=>void loadData()}>{ar?"إعادة المحاولة":"Retry"}</button></div>}
             {showHomeLoading?<section className="home-skeleton" aria-label={t.loading}><span/><span/><span/></section>:<>
-            <section className="home-dashboard-cards"><article className="az-card home-dashboard-card"><span>{ar?"مهام اليوم":"Today"}</span><strong>{todayTaskCount}</strong><small>{ar?formatArabicCount(todayTaskCount,{zero:"لا مهام بموعد اليوم",one:"مهمة واحدة بموعد اليوم",two:"مهمتان بموعد اليوم",few:"مهام بموعد اليوم",many:"مهمة بموعد اليوم"}):"Tasks due today"}</small></article><article className="az-card home-dashboard-card"><span>{ar?"التركيز":"Focus"}</span><strong>{started===null?(ar?"جاهز":"Ready"):clock(elapsed)}</strong><small>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</small><button type="button" className="az-btn az-btn--ghost" onClick={()=>{setSection("az");setPage("focus");}}>{ar?"ابدأ":"Start"} ↗</button></article><article className="az-card home-dashboard-card"><span>{ar?"الاختبار القادم":"Upcoming exam"}</span><strong>{nearestExamLabel}</strong><small>{nearestExam?.name ?? (ar?"لا توجد اختبارات قادمة":"No upcoming exams")}</small></article></section>
+            <section className="home-dashboard-cards"><article className="az-card home-dashboard-card"><span>{ar?"مهام اليوم":"Today"}</span><strong>{todayTaskCount}</strong><small>{ar?formatArabicCount(todayTaskCount,{zero:"لا مهام بموعد اليوم",one:"مهمة واحدة بموعد اليوم",two:"مهمتان بموعد اليوم",few:"مهام بموعد اليوم",many:"مهمة بموعد اليوم"}):"Tasks due today"}</small></article><article className="az-card home-dashboard-card"><span>{ar?"التركيز":"Focus"}</span><strong>{focusSessionStartedAt===null?(ar?"جاهز":"Ready"):clock(elapsed)}</strong><small>{ar?"ابدأ جلسة تركيز":"Start a focus session"}</small><button type="button" className="az-btn az-btn--ghost" onClick={()=>{setSection("az");setPage("focus");}}>{ar?"ابدأ":"Start"} ↗</button></article><article className="az-card home-dashboard-card"><span>{ar?"الاختبار القادم":"Upcoming exam"}</span><strong>{nearestExamLabel}</strong><small>{nearestExam?.name ?? (ar?"لا توجد اختبارات قادمة":"No upcoming exams")}</small></article></section>
             <section className="home-overview">
               <div className="az-card home-progress-panel">
                 <div className="home-section-heading"><div><span className="eyebrow">{ar?"إشارتك اليومية":"Daily progress"}</span><h2>{ar?"تقدّمك":"Your progress"}</h2></div><span className="progress-orbit-icon">✧</span></div>
@@ -435,9 +436,9 @@ export default function App() {
             </section>
             </>}
           </div>}
-          {section==="planning" && <Suspense fallback={loadingFallback}><PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} hasError={Boolean(error)} onRetry={loadData} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setStarted(Date.now());setSection("az");setPage("focus");setMessage("");}} onStartQuiz={()=>setSection("quiz")}/></Suspense>}
+          {section==="planning" && <Suspense fallback={loadingFallback}><PlanningPage userId={user.id} lang={lang} tasks={tasks} subjects={subjects} loading={loading} hasError={Boolean(error)} onRetry={loadData} documentLinkAvailable={taskDocumentLinkAvailable} onOpenDocument={openDocument} initialText={homePrompt} onInitialTextConsumed={()=>setHomePrompt("")} onRefresh={loadData} onStartFocus={(taskId)=>{setFocusTask(taskId);setElapsed(0);setFocusSessionStartedAt(null);setStarted(null);setFocusPaused(false);setSection("az");setPage("focus");setMessage("");}} onStartQuiz={()=>setSection("quiz")}/></Suspense>}
           {section==="quiz" && <Suspense fallback={loadingFallback}><QuizPage userId={user.id} lang={lang} subjects={subjects} offline={offline} initialDocumentId={quizDocumentId} challenge={dailyChallenge} onChallengeCompleted={(completion)=>setDailyChallengeCompletion(completion)} onBackPlanning={()=>{setQuizDocumentId(null);setSection(dailyChallenge ? "home" : "planning");}} onOpenWorkspace={()=>{setQuizDocumentId(null);setSection("az");setPage("workspace");}}/></Suspense>}
-          {section==="az" && page==="focus" && <section className="focus-view content-panel">{finishedFocus&&<div className="focus-finish-card"><strong>{ar?"أحسنت!":"Nice work."} {finishedFocus.minutes} {ar?"دقيقة على":"min on"} {finishedFocus.taskTitle}.</strong><div><button type="button" onClick={async()=>{if(finishedFocus.taskId){const finishedTask=tasks.find(x=>x.id===finishedFocus.taskId);if(finishedTask)await changeTask(finishedTask,"done");}setFinishedFocus(null);}}>{ar?"وضع علامة مكتملة":"Mark done"}</button><button type="button" onClick={()=>setFinishedFocus(null)}>{ar?"ليس الآن":"Not yet"}</button></div></div>}<span className="eyebrow">Deep work session</span><h2>{t.focusTitle}</h2><p>{t.focusText}</p><div className="focus-clock"><div className="clock-ring"><span>{clock(elapsed)}</span><small>Focus elapsed</small></div></div><label className="focus-select"><span>{t.chooseSubject}</span><select value={focusTask} onChange={e=>setFocusTask(e.target.value)} disabled={started!==null}><option value="">{t.noSubject}</option>{tasks.filter(x=>x.status!=="done").map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label>{started===null?<button className="primary-button focus-button" onClick={()=>{setElapsed(0);setStarted(Date.now());}}>{t.start} ↗</button>:<button className="primary-button focus-button" onClick={()=>void stopFocus()} disabled={busy}>{busy?t.loading:t.stop}</button>}</section>}
+          {section==="az" && page==="focus" && <>{finishedFocus&&<div className="focus-finish-card"><strong>{ar?"أحسنت!":"Nice work."} {finishedFocus.minutes} {ar?"دقيقة على":"min on"} {finishedFocus.taskTitle}.</strong><div><button type="button" onClick={async()=>{if(finishedFocus.taskId){const finishedTask=tasks.find(x=>x.id===finishedFocus.taskId);if(finishedTask)await changeTask(finishedTask,"done");}setFinishedFocus(null);}}>{ar?"وضع علامة مكتملة":"Mark done"}</button><button type="button" onClick={()=>setFinishedFocus(null)}>{ar?"ليس الآن":"Not yet"}</button></div></div>}<FocusUniverse lang={lang} elapsed={elapsed} subjectName={subjectFor(tasks.find(x=>x.id===focusTask)?.subject_id??null)} tasks={tasks.filter(x=>x.status!=="done").map(x=>({id:x.id,title:x.title}))} selectedTaskId={focusTask} onSelectTask={setFocusTask} active={focusSessionStartedAt!==null} running={started!==null} paused={focusPaused} busy={busy} onStart={()=>{const now=Date.now();setElapsed(0);setFocusSessionStartedAt(now);setStarted(now);setFocusPaused(false);setFinishedFocus(null);}} onPause={()=>{setStarted(null);setFocusPaused(true);}} onResume={()=>{setStarted(Date.now());setFocusPaused(false);}} onEnd={()=>void stopFocus()} /></>}
           {section==="az" && page==="workspace" && (activeDocument?<Suspense fallback={loadingFallback}><DocumentReader documentId={activeDocument.id} title={activeDocument.title} signedUrl={activeDocument.url} status={activeDocument.status} pageCount={activeDocument.pageCount} lang={lang} onClose={()=>setActiveDocument(null)} /></Suspense>:<section className="study-placeholder content-panel study-pack-view"><Suspense fallback={loadingFallback}><DocumentUpload lang={lang} onUploaded={() => { setDocumentsRefresh(value => value + 1); void loadData(); }} /></Suspense><Suspense fallback={loadingFallback}><DocumentLibrary userId={user.id} lang={lang} refreshKey={documentsRefresh} onOpenDocument={openDocument} onStartQuiz={(documentId) => { setQuizDocumentId(documentId); setSection("quiz"); }} /></Suspense></section>)}
           {section==="az" && page==="notebook" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Notebook</span><h2>{t.notebookTitle}</h2><p>{t.notebookText}</p></section>}
           {section==="az" && page==="arena" && <section className="section-placeholder content-panel"><div className="section-placeholder-orbit"><span className="community-symbol">✧</span></div><span className="eyebrow">Arena</span><h2>{t.arenaTitle}</h2><p>{t.arenaText}</p><span className="coming-soon-label">Coming soon</span></section>}
