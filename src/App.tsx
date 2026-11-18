@@ -328,17 +328,35 @@ export default function App() {
     setActiveDocument({id:data.id,title:data.title,url:signed.signedUrl,status:data.status,pageCount:data.page_count});setSection("az");setPage("workspace");
   }
   async function stopFocus() {
-    if (!supabase || !user || focusSessionStartedAt===null) return;
+    if (!supabase || !user || focusSessionStartedAt===null || busy) return;
     setBusy(true);
     const endedAt=Date.now();
     const task=tasks.find(x=>x.id===focusTask);
-    const duration=Math.max(0,Math.round(elapsed/60));
-    const {error:e} = await supabase.from("focus_sessions").insert({
-      user_id:user.id,task_id:focusTask||null,
-      started_at:new Date(focusSessionStartedAt).toISOString(),ended_at:new Date(endedAt).toISOString()
-    });
-    if (e) setError(e.message); else { setMessage(t.saved); setFinishedFocus({taskId:focusTask||null,taskTitle:task?.title??(ar?"جلسة تركيز":"Focus session"),minutes:duration}); }
-    setStarted(null); setFocusSessionStartedAt(null); setFocusPaused(false); setElapsed(0); setBusy(false);
+    const activeSeconds=Math.max(0,Math.floor(elapsed));
+    const duration=Math.max(0,Math.round(activeSeconds/60));
+    try {
+      const {error:e} = await supabase.from("focus_sessions").insert({
+        user_id:user.id,task_id:focusTask||null,
+        started_at:new Date(focusSessionStartedAt).toISOString(),
+        ended_at:new Date(endedAt).toISOString(),
+        active_seconds:activeSeconds
+      });
+      if (e) {
+        setError(e.message);
+        return;
+      }
+      setError("");
+      setMessage(t.saved);
+      setFinishedFocus({taskId:focusTask||null,taskTitle:task?.title??(ar?"جلسة تركيز":"Focus session"),minutes:duration});
+      setStarted(null);
+      setFocusSessionStartedAt(null);
+      setFocusPaused(false);
+      setElapsed(0);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : (ar ? "تعذر حفظ جلسة التركيز." : "Could not save the focus session."));
+    } finally {
+      setBusy(false);
+    }
   }
 
   const workspaceNav:Page[] = ["workspace","focus"];
