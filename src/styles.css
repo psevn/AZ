@@ -1780,7 +1780,9 @@ button.primary-button:disabled,
 .focus-universe:fullscreen { width:100vw; height:100vh; min-height:100vh; max-width:none; border:0; border-radius:0; }
 .focus-universe:fullscreen .focus-universe-content { min-height:100vh; padding:clamp(24px,5vw,64px); }
 .app-shell.is-focus-mode .workspace-rail,
-.app-shell.is-focus-mode .workspace-heading { display:none !important; }
+.app-shell.is-focus-mode .workspace-heading,
+.app-shell.is-focus-mode .mobile-nav-toggle,
+.app-shell.is-focus-mode .mobile-nav-backdrop { display:none !important; }
 .app-shell.is-focus-mode .workspace-main { width:100%; max-width:none; padding:0; }
 .app-shell.is-focus-mode .main-content { min-height:100vh; padding:12px; }
 .app-shell.is-focus-mode .focus-universe { min-height:calc(100vh - 24px); }
