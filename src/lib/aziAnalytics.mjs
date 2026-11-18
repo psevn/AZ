@@ -64,15 +64,26 @@ export function analyzeAcademicActivity({
     isWithinLastSevenDays(task.completed_at, startKey, today, timeZone),
   );
 
-  let focusMilliseconds = 0;
+  let focusSeconds = 0;
   let sessionsLastSevenDays = 0;
   for (const session of focusSessions) {
-    const startedAt = validDate(session?.started_at);
     const endedAt = validDate(session?.ended_at);
-    if (!startedAt || !endedAt || endedAt <= startedAt) continue;
-    if (!isWithinLastSevenDays(endedAt, startKey, today, timeZone)) continue;
+    if (!endedAt || !isWithinLastSevenDays(endedAt, startKey, today, timeZone)) continue;
+
+    const hasActiveSeconds = session?.active_seconds !== null && session?.active_seconds !== undefined;
+    let sessionSeconds = 0;
+    if (hasActiveSeconds) {
+      if (!Number.isInteger(session.active_seconds) || session.active_seconds < 0) continue;
+      sessionSeconds = session.active_seconds;
+    } else {
+      // Legacy rows predate active_seconds; retain their wall-clock calculation.
+      const startedAt = validDate(session?.started_at);
+      if (!startedAt || endedAt <= startedAt) continue;
+      sessionSeconds = (endedAt.getTime() - startedAt.getTime()) / 1000;
+    }
+
     sessionsLastSevenDays += 1;
-    focusMilliseconds += endedAt.getTime() - startedAt.getTime();
+    focusSeconds += sessionSeconds;
   }
 
   const subjectTaskCounts = {};
@@ -98,7 +109,7 @@ export function analyzeAcademicActivity({
     },
     focus: {
       sessionsLastSevenDays,
-      minutesLastSevenDays: Math.round(focusMilliseconds / 60000),
+      minutesLastSevenDays: Math.round(focusSeconds / 60),
     },
   };
 }
