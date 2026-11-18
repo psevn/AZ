@@ -1808,3 +1808,6 @@ button.primary-button:disabled,
   .focus-starfield-a,.focus-starfield-b,.focus-dust-a,.focus-dust-b { animation:none !important; }
   .focus-control { transition:none; }
 }
+
+.app-shell.is-focus-mode .main-content { width:100%; margin:0; }
+.app-shell.is-focus-mode .az-workspace { grid-template-columns:minmax(0,1fr); min-height:100vh; }
