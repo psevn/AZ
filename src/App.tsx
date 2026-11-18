@@ -346,7 +346,7 @@ export default function App() {
   const navGlyphs:Record<Section,string> = {home:"⌂",planning:"◷",az:"✧",projects:"▧",community:"◎",me:"◌",quiz:"◇"};
   const moduleGlyphs:Record<Page,string> = {workspace:"▦",notebook:"▤",focus:"◉",arena:"◇"};
   return <main className={"app-shell "+(dark?"theme-dark":"theme-light")+(universe?" bg-universe":" bg-plain")+(section==="az"&&page==="focus"&&focusSessionStartedAt!==null?" is-focus-mode":"")} dir={ar?"rtl":"ltr"} lang={lang}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>{universe && <UniverseEffects />}
+    {!(section==="az"&&page==="focus"&&focusSessionStartedAt!==null) && <><div className="ambient ambient-one"/><div className="ambient ambient-two"/>{universe && <UniverseEffects />}</>}
     <section className="main-content">
       {!supabaseConfigReady ? <div className="auth-layout">
         <div className="hero-copy"><span className="eyebrow"><span className="eyebrow-pulse"/>{t.eyebrow}</span><h1>{t.headline}</h1><p>{t.intro}</p><Universe/></div>
