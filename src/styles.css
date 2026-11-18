@@ -1815,3 +1815,5 @@ button.primary-button:disabled,
 
 .app-shell.is-focus-mode .main-content { width:100%; margin:0; }
 .app-shell.is-focus-mode .az-workspace { grid-template-columns:minmax(0,1fr); min-height:100vh; }
+
+.app-shell.is-focus-mode > .ambient { display:none !important; }
