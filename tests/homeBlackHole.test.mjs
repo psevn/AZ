@@ -22,7 +22,7 @@ test("the black hole composition is mounted only in the Home universe visual", (
 test("the accretion disk has restrained motion and respects reduced-motion", () => {
   assert.match(styles, /@keyframes black-hole-disk-turn/);
   assert.match(styles, /@media \(prefers-reduced-motion:no-preference\)[\s\S]*?\.black-hole-disk \{ animation:black-hole-disk-turn/);
-  assert.match(styles, /@media \\(prefers-reduced-motion:\\s*reduce\\)[\\s\\S]*?\\.black-hole-disk,[\\s\\S]*?\\.black-hole-aura,[\\s\\S]*?animation: none !important/);
+  assert.match(styles, /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.black-hole-disk,[\s\S]*?\.black-hole-aura,[\s\S]*?animation: none !important/);
 });
 
 test("the black hole remains responsive on compact screens", () => {
