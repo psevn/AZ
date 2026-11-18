@@ -9,6 +9,8 @@ export type AcademicTask = {
 export type FocusSession = {
   started_at?: string | null;
   ended_at?: string | null;
+  /** Actual focused time in seconds; null or omitted for legacy rows. */
+  active_seconds?: number | null;
 };
 
 export type AcademicActivityMetrics = {
