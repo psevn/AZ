@@ -6,10 +6,23 @@ export async function checkUserRateLimit(
   | { allowed: true }
   | { allowed: false; status: 429 | 503; code: string; message: string; retryAfterSeconds?: number }
 > {
-  const { data, error } = await adminClient.rpc("consume_edge_rate_limit", {
-    p_user_id: userId,
-    p_endpoint: endpoint,
-  });
+  let data: unknown;
+  let error: { code?: string } | null;
+  try {
+    const result = await adminClient.rpc("consume_edge_rate_limit", {
+      p_user_id: userId,
+      p_endpoint: endpoint,
+    });
+    data = result.data;
+    error = result.error;
+  } catch {
+    return {
+      allowed: false,
+      status: 503,
+      code: "RATE_LIMIT_SERVICE_UNAVAILABLE",
+      message: "Request protection is temporarily unavailable. Please try again.",
+    };
+  }
   if (error) {
     return {
       allowed: false,

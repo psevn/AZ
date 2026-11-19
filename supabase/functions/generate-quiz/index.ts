@@ -6,25 +6,16 @@ import {
   validateGeneratedQuestions,
 } from "../_shared/quizGeneration.mjs";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-  "Cache-Control": "no-store",
-};
+import { corsForRequest } from "../_shared/cors.ts";
+import { checkUserRateLimit } from "../_shared/rateLimit.ts";
 const FEATURE = "generate_quiz";
 const PROMPT_VERSION = "quiz-v1";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_OUTPUT_TOKENS = 6000;
 
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
-}
-
 function readBearerToken(request: Request) {
   const value = request.headers.get("Authorization") ?? "";
-  const match = value.match(/^Bearer\\s+(.+)$/i);
+  const match = value.match(/^Bearer\s+(.+)$/i);
   return match?.[1] ?? null;
 }
 
@@ -42,30 +33,51 @@ async function refund(
   requestKey: string,
   reason: string,
   usage?: { model: string; inputTokens: number; outputTokens: number; actualCost: number },
-) {
-  const { error } = usage
-    ? await adminClient.rpc("refund_quiz_generation", {
-      p_user_id: userId,
-      p_feature: FEATURE,
-      p_request_key: requestKey,
-      p_error: reason,
-      p_provider: "openai",
-      p_model: usage.model,
-      p_input_tokens: usage.inputTokens,
-      p_output_tokens: usage.outputTokens,
-      p_actual_cost: usage.actualCost,
-    })
-    : await adminClient.rpc("refund_credits", {
-      p_user_id: userId,
-      p_feature: FEATURE,
-      p_request_key: requestKey,
-      p_error: reason,
-    });
-  if (error) console.error("generate-quiz reservation refund failed:", error.code);
+): Promise<boolean> {
+  // Both refund RPCs are idempotent; retry once for a lost response after a committed refund.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const { error } = usage
+        ? await adminClient.rpc("refund_quiz_generation", {
+          p_user_id: userId,
+          p_feature: FEATURE,
+          p_request_key: requestKey,
+          p_error: reason,
+          p_provider: "openai",
+          p_model: usage.model,
+          p_input_tokens: usage.inputTokens,
+          p_output_tokens: usage.outputTokens,
+          p_actual_cost: usage.actualCost,
+        })
+        : await adminClient.rpc("refund_credits", {
+          p_user_id: userId,
+          p_feature: FEATURE,
+          p_request_key: requestKey,
+          p_error: reason,
+        });
+      if (!error) return true;
+      console.error("generate-quiz reservation refund failed:", error.code);
+    } catch {
+      console.error("generate-quiz reservation refund request failed.");
+    }
+  }
+  return false;
 }
 
 Deno.serve(async (request: Request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = corsForRequest(request);
+  const json = (status: number, body: Record<string, unknown>, extraHeaders?: HeadersInit) => {
+    const headers = new Headers(cors.headers);
+    new Headers(extraHeaders).forEach((value, key) => headers.set(key, value));
+    return new Response(JSON.stringify(body), { status, headers });
+  };
+  if (!cors.allowed) return json(cors.status, {
+    error: cors.code === "CORS_NOT_CONFIGURED"
+      ? "This Edge Function has no configured browser origin allowlist."
+      : "This request origin is not allowed.",
+    code: cors.code ?? "CORS_REJECTED",
+  });
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors.headers });
   if (request.method !== "POST") return json(405, { error: "Method not allowed." });
 
   const token = readBearerToken(request);
@@ -75,7 +87,7 @@ Deno.serve(async (request: Request) => {
   const publishableKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const openAIKey = Deno.env.get("OPENAI_API_KEY");
-  const model = Deno.env.get("OPENAI_MODEL");
+  const model = Deno.env.get("OPENAI_MODEL")?.trim();
 
   if (!supabaseUrl || !publishableKey || !serviceRoleKey) {
     console.error("generate-quiz is missing Supabase server configuration.");
@@ -175,9 +187,10 @@ Deno.serve(async (request: Request) => {
   }
 
   const inputCharacters = boundedPages.reduce((sum, page) => sum + page.text.length, 0) + topic.length + 2500;
-  // Reserve against a conservative character-based input bound and the full output-token ceiling.
+  // Reserve against a conservative character-based input bound and a question-count-scaled output-token ceiling.
   const estimatedInputTokens = inputCharacters * 4;
-  const estimatedCost = quizCostUsd(estimatedInputTokens, MAX_OUTPUT_TOKENS, modelPricing);
+  const outputTokenBudget = Math.min(MAX_OUTPUT_TOKENS, questionCount * 600);
+  const estimatedCost = quizCostUsd(estimatedInputTokens, outputTokenBudget, modelPricing);
   const creditMultiplier = questionCount / 8 + boundedPages.length / 40;
 
   const { data: reservationRows, error: reservationError } = await adminClient.rpc("reserve_credits", {
@@ -219,6 +232,21 @@ Deno.serve(async (request: Request) => {
   }
   if (reservation.r_status !== "reserved") return json(503, { error: "Could not reserve quiz-generation credits." });
 
+  // Idempotent replays are resolved above; only a new generation consumes a rate-limit slot.
+  const rateLimit = await checkUserRateLimit(adminClient, userId, "generate_quiz");
+  if (!rateLimit.allowed) {
+    const refunded = await refund(adminClient, userId, requestKey, `rate_limit_${rateLimit.code}`);
+    if (!refunded) return json(503, {
+      error: "The usage reservation could not be released yet. Please retry shortly.",
+      code: "REFUND_PENDING",
+    });
+    return json(rateLimit.status, {
+      error: rateLimit.message,
+      code: rateLimit.code,
+      ...(rateLimit.retryAfterSeconds ? { retryAfterSeconds: rateLimit.retryAfterSeconds } : {}),
+    }, rateLimit.retryAfterSeconds ? { "Retry-After": String(rateLimit.retryAfterSeconds) } : {});
+  }
+
   const startedAt = Date.now();
   let payload: any;
   let generated: ReturnType<typeof validateGeneratedQuestions>;
@@ -237,6 +265,7 @@ Deno.serve(async (request: Request) => {
         questionCount,
         topic,
         pages: boundedPages,
+        maxOutputTokens: outputTokenBudget,
       })),
       signal: AbortSignal.timeout(45000),
     });
@@ -247,7 +276,7 @@ Deno.serve(async (request: Request) => {
       const failedOutputTokens = Number(payload?.usage?.output_tokens);
       const hasFailedUsage = Number.isInteger(failedInputTokens) && failedInputTokens >= 0 &&
         Number.isInteger(failedOutputTokens) && failedOutputTokens >= 0;
-      await refund(
+      const refunded = await refund(
         adminClient,
         userId,
         requestKey,
@@ -259,67 +288,96 @@ Deno.serve(async (request: Request) => {
           actualCost: hasFailedUsage ? quizCostUsd(failedInputTokens, failedOutputTokens, modelPricing) : 0,
         },
       );
+      if (!refunded) return json(503, {
+        error: "The provider request failed and credit release could not be confirmed.",
+        code: "REFUND_PENDING",
+      });
       console.error("OpenAI Responses API failed:", openAIResponse.status);
       return json(openAIResponse.status === 429 ? 429 : 502, { error: "AI could not prepare this quiz. No credits were charged." });
     }
-    inputTokens = Number(payload?.usage?.input_tokens);
-    outputTokens = Number(payload?.usage?.output_tokens);
-    if (!Number.isInteger(inputTokens) || inputTokens < 0 ||
-        !Number.isInteger(outputTokens) || outputTokens < 0) {
+    const reportedInputTokens = Number(payload?.usage?.input_tokens);
+    const reportedOutputTokens = Number(payload?.usage?.output_tokens);
+    if (!Number.isInteger(reportedInputTokens) || reportedInputTokens < 0 ||
+        !Number.isInteger(reportedOutputTokens) || reportedOutputTokens < 0) {
       throw new Error("Missing or invalid provider token usage.");
     }
+    inputTokens = reportedInputTokens;
+    outputTokens = reportedOutputTokens;
     generated = validateGeneratedQuestions(
       extractResponsesOutput(payload),
       boundedPages.map((page) => page.page_no),
       questionCount,
     );
   } catch (error) {
-    await refund(
+    const refunded = await refund(
       adminClient,
       userId,
       requestKey,
       error instanceof Error ? error.message.slice(0, 160) : "generation_failed",
       { model, inputTokens, outputTokens, actualCost: quizCostUsd(inputTokens, outputTokens, modelPricing) },
     );
+    if (!refunded) return json(503, {
+      error: "Quiz generation failed and credit release could not be confirmed.",
+      code: "REFUND_PENDING",
+    });
     console.error("generate-quiz generation/validation failed:", error instanceof Error ? error.message : "unknown");
     return json(502, { error: "AI returned an invalid or incomplete quiz. No credits were charged." });
   }
 
   const actualCost = quizCostUsd(inputTokens, outputTokens, modelPricing);
-  const { data: finalized, error: finalizeError } = await adminClient.rpc("complete_generated_quiz", {
-    p_user_id: userId,
-    p_document_id: documentId,
-    p_document_title: document.title,
-    p_request_key: requestKey,
-    p_questions: generated,
-    p_actual_cost: actualCost,
-    p_provider: "openai",
-    p_model: model,
-    p_prompt_version: PROMPT_VERSION,
-    p_latency_ms: Date.now() - startedAt,
-    p_input_tokens: inputTokens,
-    p_output_tokens: outputTokens,
-  });
-  const completed = Array.isArray(finalized) ? finalized[0] : finalized;
+  let finalized: unknown = null;
+  let finalizeError: { code?: string } | null = null;
+  try {
+    const result = await adminClient.rpc("complete_generated_quiz", {
+      p_user_id: userId,
+      p_document_id: documentId,
+      p_document_title: document.title,
+      p_request_key: requestKey,
+      p_questions: generated,
+      p_actual_cost: actualCost,
+      p_provider: "openai",
+      p_model: model,
+      p_prompt_version: PROMPT_VERSION,
+      p_latency_ms: Date.now() - startedAt,
+      p_input_tokens: inputTokens,
+      p_output_tokens: outputTokens,
+    });
+    finalized = result.data;
+    finalizeError = result.error;
+  } catch {
+    finalizeError = { code: "rpc_transport_error" };
+  }
+  const completedRows = Array.isArray(finalized) ? finalized : [finalized];
+  const completed = completedRows[0] as Record<string, unknown> | null;
 
   if (finalizeError || !completed?.result_payload) {
     // The RPC is transactional; this lookup handles a response lost after a committed finalization.
-    const { data: reservationState } = await adminClient.from("ai_usage_log")
-      .select("status,result_payload").eq("user_id", userId).eq("feature", FEATURE)
-      .eq("request_key", requestKey).maybeSingle();
-    if (reservationState?.status === "succeeded" && reservationState.result_payload) {
-      return json(200, reservationState.result_payload);
+    let reservationState: { status?: string; result_payload?: unknown } | null = null;
+    try {
+      const { data } = await adminClient.from("ai_usage_log")
+        .select("status,result_payload").eq("user_id", userId).eq("feature", FEATURE)
+        .eq("request_key", requestKey).maybeSingle();
+      reservationState = data;
+    } catch {
+      console.error("generate-quiz finalization state lookup failed.");
     }
-    await refund(adminClient, userId, requestKey, "quiz_finalization_failed", {
+    if (reservationState?.status === "succeeded" && reservationState.result_payload) {
+      return json(200, reservationState.result_payload as Record<string, unknown>);
+    }
+    const refunded = await refund(adminClient, userId, requestKey, "quiz_finalization_failed", {
       model,
       inputTokens,
       outputTokens,
       actualCost,
+    });
+    if (!refunded) return json(503, {
+      error: "Quiz finalization failed and credit release could not be confirmed.",
+      code: "REFUND_PENDING",
     });
     console.error("generate-quiz finalization failed:", finalizeError?.code ?? "invalid-rpc-result");
     return json(503, { error: "Quiz storage or billing is not ready. No credits were charged." });
   }
 
   // No correct indexes or explanations are sent to the browser.
-  return json(200, completed.result_payload);
+  return json(200, completed.result_payload as Record<string, unknown>);
 });

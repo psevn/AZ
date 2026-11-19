@@ -12,6 +12,7 @@ on:
       - "tests/quizBillingSecurity.test.mjs"
       - "tests/edgeRateLimitsContract.test.mjs"
       - "tests/edgeCorsAllowlist.test.mjs"
+      - "tests/pageReferenceTrustContract.test.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/quiz-generation-tests.yml"
@@ -50,3 +51,5 @@ jobs:
         run: npm run test:edge-rate-limits
       - name: Test fail-closed CORS allowlist
         run: npm run test:edge-cors
+      - name: Test unverified PDF page-reference labeling
+        run: npm run test:page-reference-trust

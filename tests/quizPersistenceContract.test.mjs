@@ -38,7 +38,7 @@ test("restricts execution to the trusted service role", () => {
 
 test("enforces the 5–20 question contract and strict question shape", () => {
   assert.match(proposal, /jsonb_array_length\(p_questions\) not between 5 and 20/i);
-  assert.match(proposal, /jsonb_object_length\(v_question\) <> 7/i);
+  assert.match(proposal, /count\(\*\) from jsonb_object_keys\(v_question\)/i);
   assert.match(proposal, /v_question - array\[[\s\S]*?'difficulty'[\s\S]*?\]/i);
   assert.match(proposal, /Duplicate question prompt/i);
   assert.match(proposal, /count\(distinct lower\(btrim/i);
