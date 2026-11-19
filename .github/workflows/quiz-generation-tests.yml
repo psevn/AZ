@@ -6,6 +6,7 @@ on:
       - "supabase/functions/_shared/quizGeneration.*"
       - "supabase/functions/generate-quiz/**"
       - "tests/quizGeneration.test.mjs"
+      - "tests/quizBillingSecurity.test.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/quiz-generation-tests.yml"
@@ -38,3 +39,5 @@ jobs:
         run: npm ci
       - name: Test quiz generation contract
         run: npm run test:quiz-generation
+      - name: Test quiz billing and ownership security contracts
+        run: npm run test:quiz-billing

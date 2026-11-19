@@ -6,6 +6,10 @@ const proposal = readFileSync(
   new URL("../supabase/proposals/create_generated_quiz_rpc.sql", import.meta.url),
   "utf8",
 );
+const finalizeProposal = readFileSync(
+  new URL("../supabase/proposals/complete_generated_quiz_rpc.sql", import.meta.url),
+  "utf8",
+);
 const edgeFunction = readFileSync(
   new URL("../supabase/functions/generate-quiz/index.ts", import.meta.url),
   "utf8",
@@ -55,7 +59,7 @@ test("Edge Function derives the owner from a verified JWT and uses server-only p
   assert.match(edgeFunction, /const userId = authData\.user\.id/);
   assert.match(edgeFunction, /\.eq\("user_id", userId\)/);
   assert.match(edgeFunction, /createClient\(supabaseUrl, serviceRoleKey/);
-  assert.match(edgeFunction, /adminClient\.rpc\("create_generated_quiz"/);
+  assert.match(edgeFunction, /adminClient\.rpc\("complete_generated_quiz"/);
   assert.match(edgeFunction, /correct indexes or explanations are sent to the browser/i);
   assert.doesNotMatch(edgeFunction, /return json\(200,\s*\{[\s\S]*?correct_index/i);
 });
@@ -67,4 +71,15 @@ test("shared validator enforces matching text-size and count bounds", () => {
   assert.match(generation, /choice\.trim\(\)\.length > 500/);
   assert.match(generation, /topic\.trim\(\)\.length > 120/);
   assert.match(generation, /explanation\.trim\(\)\.length > 4000/);
+});
+
+
+test("quiz persistence and credit settlement are atomic in one service-role-only RPC", () => {
+  assert.match(finalizeProposal, /PROPOSAL ONLY/i);
+  assert.match(finalizeProposal, /public\.create_generated_quiz\(/);
+  assert.match(finalizeProposal, /public\.settle_quiz_generation\(/);
+  assert.match(finalizeProposal, /raise exception 'Quiz credit settlement did not succeed'/);
+  assert.match(finalizeProposal, /returns table\(quiz_id uuid, questions jsonb, result_payload jsonb\)/i);
+  assert.match(finalizeProposal, /GRANT EXECUTE[\s\S]*TO service_role/i);
+  assert.doesNotMatch(finalizeProposal, /SECURITY DEFINER/i);
 });
