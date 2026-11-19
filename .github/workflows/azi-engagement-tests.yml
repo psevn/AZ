@@ -1,7 +1,7 @@
 name: AZI Engagement Tests
 concurrency:
   # Keep the newest run for each workflow and source branch; never skip the latest check.
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 
 
