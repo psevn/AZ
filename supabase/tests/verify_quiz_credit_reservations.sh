@@ -80,7 +80,11 @@ psql_run "select r_status from public.refund_quiz_generation(
   '$USER_ID','$FEATURE','failed-provider-key','retry_refund','openai','test-model',7,11,0.002
 );" | grep -qx 'refunded'
 SPEND="$(psql_run "select settled_cost from public.spend_counters where month=date_trunc('month',now() at time zone 'utc')::date;")"
-if [[ "$FAILED_USAGE" != "refunded|openai|test-model|7|11|0.002" || "$SPEND" != "0.003" ]]; then
+# Compare numerically in SQL: cost_actual and settled_cost are numeric(14,6), so they render as 0.002000 / 0.003000.
+# An empty result (missing row) is not "t", so a missing row still fails the check.
+FAILED_USAGE_OK="$(psql_run "select status = 'refunded' and provider = 'openai' and model = 'test-model' and input_tokens = 7 and output_tokens = 11 and cost_actual = 0.002 from public.ai_usage_log where user_id='$USER_ID' and feature='$FEATURE' and request_key='failed-provider-key';")"
+SPEND_OK="$(psql_run "select settled_cost = 0.003 from public.spend_counters where month=date_trunc('month',now() at time zone 'utc')::date;")"
+if [[ "$FAILED_USAGE_OK" != "t" || "$SPEND_OK" != "t" ]]; then
   echo "Failed-call usage was not logged exactly once: usage=$FAILED_USAGE settled_spend=$SPEND" >&2
   exit 1
 fi

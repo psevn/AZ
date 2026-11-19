@@ -6,9 +6,14 @@ if [[ -n "${PSQL_DOCKER_CONTAINER:-}" ]]; then
   psql_run() {
     docker exec "$PSQL_DOCKER_CONTAINER" psql -U postgres -d az_clean_replay -X -v ON_ERROR_STOP=1 -At -c "$1"
   }
+  # -q suppresses command tags (e.g. "DO") so multi-statement captures return only the final SELECT.
+  psql_quiet() {
+    docker exec "$PSQL_DOCKER_CONTAINER" psql -U postgres -d az_clean_replay -X -q -v ON_ERROR_STOP=1 -At -c "$1"
+  }
 else
   : "${DATABASE_URL:?Set DATABASE_URL to a disposable local PostgreSQL database}"
   psql_run() { psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -At -c "$1"; }
+  psql_quiet() { psql "$DATABASE_URL" -X -q -v ON_ERROR_STOP=1 -At -c "$1"; }
 fi
 
 USER_ID="a2222222-2222-4222-8222-222222222222"
@@ -46,7 +51,7 @@ psql_run "update public.documents set status='ready' where id='$DOC_TWO';
 psql_run "insert into public.document_pages(user_id,document_id,page_no,text) values ('$USER_ID','$DOC_TWO',1,'abcde')
   on conflict(document_id,page_no) do update set text=excluded.text;"
 
-PAGE_ERROR="$(psql_run "do \$\$ begin
+PAGE_ERROR="$(psql_quiet "do \$\$ begin
   begin
     insert into public.document_pages(user_id,document_id,page_no,text) values ('$USER_ID','$DOC_TWO',2,'x');
     raise exception 'expected page quota failure';
@@ -58,7 +63,7 @@ if [[ "$PAGE_ERROR" != "page-check-ok" ]]; then echo "Page quota trigger check f
 
 # Raise the page ceiling but keep the text ceiling; the second page must now fail on text.
 psql_run "update public.app_config set value=jsonb_set(value,'{free,max_pages}','5'::jsonb) where key='document_limits';"
-TEXT_ERROR="$(psql_run "do \$\$ begin
+TEXT_ERROR="$(psql_quiet "do \$\$ begin
   begin
     insert into public.document_pages(user_id,document_id,page_no,text) values ('$USER_ID','$DOC_TWO',2,'x');
     raise exception 'expected text quota failure';
@@ -69,15 +74,15 @@ end \$\$; select 'text-check-ok';")"
 if [[ "$TEXT_ERROR" != "text-check-ok" ]]; then echo "Text quota trigger check failed." >&2; exit 1; fi
 
 # Upload creation also rejects already-consumed page/text quotas with stable error codes.
-PAGE_CODE="$(psql_run "update public.app_config set value=jsonb_set(value,'{free,max_pages}','1'::jsonb) where key='document_limits';
+PAGE_CODE="$(psql_quiet "update public.app_config set value=jsonb_set(value,'{free,max_pages}','1'::jsonb) where key='document_limits';
   select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';")"
 if [[ "$PAGE_CODE" != "DOCUMENT_PAGE_LIMIT_EXCEEDED" ]]; then echo "Expected page limit code, got $PAGE_CODE" >&2; exit 1; fi
 
-TEXT_CODE="$(psql_run "update public.app_config set value=jsonb_set(value,'{free,max_pages}','5'::jsonb) where key='document_limits';
+TEXT_CODE="$(psql_quiet "update public.app_config set value=jsonb_set(value,'{free,max_pages}','5'::jsonb) where key='document_limits';
   select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';")"
 if [[ "$TEXT_CODE" != "DOCUMENT_TEXT_LIMIT_EXCEEDED" ]]; then echo "Expected text limit code, got $TEXT_CODE" >&2; exit 1; fi
 
-DOC_CODE="$(psql_run "update public.app_config set value=jsonb_set(value,'{free,max_text_chars}','10'::jsonb) where key='document_limits';
+DOC_CODE="$(psql_quiet "update public.app_config set value=jsonb_set(value,'{free,max_text_chars}','10'::jsonb) where key='document_limits';
   update public.app_config set value=jsonb_set(value,'{free,max_documents}','1'::jsonb) where key='document_limits';
   select public.create_document_upload_record('$USER_ID','$DOC_THREE','Third','$USER_ID/$DOC_THREE.pdf')->>'code';")"
 if [[ "$DOC_CODE" != "DOCUMENT_LIMIT_EXCEEDED" ]]; then echo "Expected document limit code, got $DOC_CODE" >&2; exit 1; fi
