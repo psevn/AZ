@@ -31,7 +31,8 @@ test("page search highlights text without injecting HTML", () => {
 });
 
 test("the application opens the custom reader using the verified document metadata", () => {
-  assert.match(app, /import DocumentReader from "\.\/components\/DocumentReader"/);
+  assert.match(app, /const DocumentReader = lazy\(\(\) => import\("\.\/components\/DocumentReader"\)\)/);
+  assert.match(app, /<Suspense fallback=\{loadingFallback\}><DocumentReader/);
   assert.match(app, /select\("id,title,status,page_count"\)/);
   assert.match(app, /<DocumentReader documentId=\{activeDocument\.id\}/);
   assert.match(app, /pageCount=\{activeDocument\.pageCount\}/);
